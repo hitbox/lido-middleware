@@ -1,0 +1,81 @@
+This is the format of the file required to be received by the queue.
+
+Lines starting with pound sign are meant to act like an id and be easily
+searchable.
+
+date_format = '%d%b%Y'
+time_format = '%H%M%S'
+
+#message_table
+| index | Field Description          | Length | A/N | Example or Remarks                       |
+|-------+----------------------------+--------+-----+------------------------------------------|
+| 1     | Message Type               | 3      | A   | Always "WAB"                             |
+| 2     | GMT Timestamp              | 15     | AN  | 27APR1996133023                          |
+| 3     | Airline Designator         | 3      | AN  | Left justified "2A ", "LCI"              |
+| 4     | Flight Number              | 5      | AN  | Right justified "1503", "400"            |
+| 5     | Operational Suffix         | 1      | A   | A-Z or Blank                             |
+| 6     | Date of Origin             | 9      | AN  | 27APR1996                                |
+| 7     | Departure airport (IATA)   | 5      | A   | Left justified "FRA  "                   |
+| 8     | Destination airport (IATA) | 5      | A   | Left justified "HAM  "                   |
+| 9     | Planning Status            | 2      | N   | see #planning_status                     |
+| 10    | Duplicate number           | 1      | N   | Default 1                                |
+| 11    | Revision number            | 2      | N   | Default 00                               |
+| 12    | Dry Operating Weight (DOW) | 6      | N   | see #dry_operating_weight                |
+| 13    | Est. Total Traffic Load    | 6      | N   | see #est_total_traffic_load              |
+| 14    | PAX/Baggage Indicator      | 1      | A   | Y/N                                      |
+| 15    | Cargo/Mail Indicator       | 1      | A   | Y/N                                      |
+| 16    | Transit-load Indicator     | 1      | A   | Y/N                                      |
+| 17    | Tail tank Indicator        | 1      | A   | Y/N or BLANK                             |
+| 18    | Center of Gravity          | 5      | N   | 00000; 09.24; 15.12                      |
+| 19    | Actual Zero Fuel Weight    | 6      | N   | see #actual_zero_fuel_weight             |
+| 20    | Actual T/O Fuel            | 6      | N   | see #actual_takeoff_fuel                 |
+| 21    | Number of est. PAX         | 4      | N   | 0135, 135, 0                             |
+| 22    | Unit of measure            | 1      | A   | K or L.                                  |
+| 23    | Dry Operating Index        | 5      | N   | 00231 or if not available set to BLANK.  |
+| 24    | Cargo Weight               | 6      | N   | 012345 or if not available set to BLANK. |
+| 25    | Separator                  | 18     | A   | eighteen blanks for further extension    |
+| 26    | Class one est. PAX         | 4      | N   | 0016, 16, 0 or BLANK                     |
+| 27    | Class two est. PAX         | 4      | N   | 0135, 135, 0 or BLANK                    |
+| 28    | Class three est. PAX       | 4      | N   | 0215, 215, 0 or BLANK                    |
+
+#planning_status
+| Code | Description                                                                                             |
+|------+---------------------------------------------------------------------------------------------------------|
+| 01   | time drive mode (approx. at STD-5 hrs, AOS is not triggered)                                            |
+| 02   | first estimates WAB (approx. at STD-3,5 hrs)                                                            |
+| 03   | final estimates WAB (approx. at STD-1 hr, AOS is not triggered)                                         |
+| 04   | load sheet information (actual values for ZFW and fuel, shortly before off-block, AOS is not triggered) |
+| 05   | Load information from W&B agent (no DOW, at any time)                                                   |
+| 51   | Like 05, but no automatic calculation in AOS                                                            |
+| 52   | Like 05, but no automatic calculation in AOS                                                            |
+| 53   | Like 05, but no automatic calculation in AOS                                                            |
+| 54   | Like 05, but no automatic calculation in AOS                                                            |
+| 55   | Like 05, but no automatic calculation in AOS                                                            |
+
+#dry_operating_weight
+| Plan Status Code | Dry Operating Weight |
+|------------------+----------------------|
+| 01               | {value}              |
+| 02               | {value}              |
+| 03               | {value}              |
+| 04               | BLANK                |
+| 95               | BLANK                |
+
+#est_total_traffic_load
+| Plan Status Code | Estimated Total Traffic Load |
+| 01               | {value}                      |
+| 02               | {value}                      |
+| 03               | {value}                      |
+| 04               | 000000                       |
+| 05               | {value}                      |
+
+#actual_zero_fuel_weight
+#actual_takeoff_fuel
+| Planning Status Code | Value                    |
+|----------------------+--------------------------|
+| 01                   | zeros                    |
+| 02                   | zeros                    |
+| 03                   | zeros                    |
+| 04                   | right-align, zero-padded |
+| 05                   | zeros                    |
+
