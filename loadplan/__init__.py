@@ -100,6 +100,7 @@ class LoadPlan(Base):
     actual_departure_time = sa.Column(sa.Time)
     origin_station = sa.Column(sa.String)
     destination_station = sa.Column(sa.String)
+    day = sa.Column(sa.Integer)
     souls_onboard = sa.Column(sa.Integer)
     color_code = sa.Column(sa.String)
     # sqlalchemy_utils.ChoiceType:

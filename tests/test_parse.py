@@ -13,6 +13,7 @@ class TestParse(unittest.TestCase):
             aircraft_registration = 'N000ZZ',
             origin_station = 'KMIA',
             destination_station = 'KNGU',
+            day = '09',
             actual_departure_time = None,
             color_code = 'B PURPLE',
             souls_onboard = '19',

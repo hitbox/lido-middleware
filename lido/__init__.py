@@ -1,5 +1,6 @@
 import inspect
-import warnings
+
+from datetime import date
 
 DATEFMT = '%d%b%Y'
 TIMEFMT = '%H%M%S'
@@ -73,7 +74,6 @@ class LIDOWeightBalanceMessage:
         """
         WABFORMAT.txt:2
         """
-        warnings.warn('TODO: using print time gmt for timestamp in gmt')
         value = self.loadplan.print_time_gmt
         return value.strftime(DATEFMT + TIMEFMT).upper()
 
@@ -97,16 +97,15 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:5
         A-Z or BLANK
         """
-        warnings.warn('TODO: what is operational suffix?')
-        return'{: >1}'.format('?')
+        return'{: >1}'.format(' ')
 
     @property
     def date_of_origin(self):
         """
         WABFORMAT.txt:6
         """
-        warnings.warn('TODO: using print time gmt for date of origin')
         date_of_origin = self.loadplan.print_time_gmt.date()
+        date_of_orign = date(date_of_origin.year, date_of_origin.month, self.loadplan.day)
         return date_of_origin.strftime(DATEFMT).upper()
 
     @property
@@ -128,25 +127,22 @@ class LIDOWeightBalanceMessage:
         """
         WABFORMAT.txt:9
         """
-        warnings.warn('TODO: what is "planning status"? using "04"')
         return '04'
 
     @property
     def duplicate_number(self):
         """
         WABFORMAT.txt:10
-        Default 00.
+        Default 1.
         """
-        warnings.warn('TODO: what is "duplicate number"? using "?"')
-        return '?'
+        return '1'
 
     @property
     def revision_number(self):
         """
         WABFORMAT.txt:11
-        Default 00. What is this?
+        Default 00.
         """
-        warnings.warn('TODO: where does "revision number" come from? using "00"')
         return '00'
 
     @property
@@ -156,7 +152,6 @@ class LIDOWeightBalanceMessage:
         Dry Operating Weight (DOW)
         depends on planning status.
         """
-        warnings.warn('TODO: OEW is dry operating weight?')
         for weight in self.loadplan.weights:
             if weight.name == 'OEW':
                 return weight.weight
@@ -169,7 +164,7 @@ class LIDOWeightBalanceMessage:
         Est. Total Traffic Load
         depends on planning status.
         """
-        warnings.warn('TODO: estimated_total_traffic_load')
+        # default for planning status 04
         return '0' * 6
 
     @property
@@ -178,8 +173,7 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:14
         Y/N
         """
-        warnings.warn('TODO: pax_baggage_indicator')
-        return '?'
+        return 'N'
 
     @property
     def cargo_mail_indicator(self):
@@ -187,8 +181,7 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:15
         Y/N
         """
-        warnings.warn('TODO: cargo_mail_indicator')
-        return '?'
+        return 'N'
 
     @property
     def transit_load_indicator(self):
@@ -196,8 +189,7 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:16
         Y/N
         """
-        warnings.warn('TODO: transit_load_indicator')
-        return '?'
+        return 'N'
 
     @property
     def tail_tank_indicator(self):
@@ -205,8 +197,7 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:17
         Y/N/BLANK
         """
-        warnings.warn('TODO: tail_tank_indicator')
-        return '?'
+        return ' '
 
     @property
     def center_of_gravity(self):
@@ -214,7 +205,6 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:18
         00000; 09.23; 15.12
         """
-        warnings.warn('Using OEW center of gravity for center_of_gravity')
         for weight in self.loadplan.weights:
             if weight.name == 'OEW':
                 value = float(weight.cg_percent_mac)
@@ -252,8 +242,7 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:21
         Number of estim. PAX [sic]
         """
-        warnings.warn('TODO: estimated_pax')
-        return '{:0>4}'.format('EPAX')
+        return '{:0>4}'.format('0')
 
     @property
     def unit_of_measure(self):
@@ -269,8 +258,7 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:23
         {:0<5} if available else BLANK*5.
         """
-        warnings.warn('TODO: dry_operating_index')
-        return '{:0>5}'.format('?????')
+        return '{:0>5}'.format('     ')
 
     @property
     def cargo_weight(self):
@@ -299,8 +287,7 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:26
         {:0<4} if available else BLANK*4 -#}
         """
-        warnings.warn('TODO: estimated_pax_class_one')
-        return '{:0>4}'.format('EP1_')
+        return '{:0>4}'.format('    ')
 
     @property
     def estimated_pax_class_two(self):
@@ -308,8 +295,7 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:27
         {:0<4} if available else BLANK*4 -#}
         """
-        warnings.warn('TODO: estimated_pax_class_two')
-        return '{:0>4}'.format('EP2_')
+        return '{:0>4}'.format('    ')
 
     @property
     def estimated_pax_class_three(self):
@@ -317,5 +303,4 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:28
         {:0<4} if available else BLANK*4 -#}
         """
-        warnings.warn('TODO: estimated_pax_class_three')
-        return '{:0>4}'.format('EP3_')
+        return '{:0>4}'.format('    ')

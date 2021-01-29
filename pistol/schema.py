@@ -60,6 +60,7 @@ class LoadPlanSchema(Schema):
     actual_departure_time = fields.Time(allow_none=True, format='%H%M')
     origin_station = fields.String()
     destination_station = fields.String()
+    day = fields.Integer()
     souls_onboard = fields.Integer()
     color_code = fields.String()
     all_weights_unit = fields.String(validate=OneOf(VALID_WEIGHT_UNITS))

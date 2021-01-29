@@ -239,6 +239,7 @@ def loadplan_from_lines(lines):
         raise ParsingError('aircraft registrations differ')
     if daynum1 != daynum2:
         raise ParsingError('day numbers differ')
+    loadplan_data['day'] = daynum2
     loadplan_data['color_code'] = color_code
 
     # list of positions and weights
