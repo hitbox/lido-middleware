@@ -5,6 +5,11 @@ from datetime import date
 DATEFMT = '%d%b%Y'
 TIMEFMT = '%H%M%S'
 
+AIRLINE_DESIGNATOR = {
+    'ABX': 'GB',
+    'ATI': '8C',
+}
+
 class LIDOError(Exception):
     """
     """
@@ -49,8 +54,9 @@ class LIDOWeightBalanceMessage:
     # something is wrong if the final message is not this length:
     MESSAGELENGTH = 130
 
-    def __init__(self, loadplan):
+    def __init__(self, loadplan, icao2iata):
         self.loadplan = loadplan
+        self.icao2iata = icao2iata
 
     def get_context(self):
         """
@@ -82,7 +88,9 @@ class LIDOWeightBalanceMessage:
         """
         WABFORMAT.txt:3
         """
-        return '{: <3}'.format(self.loadplan.company)
+        company = self.loadplan.company
+        designator = AIRLINE_DESIGNATOR[company]
+        return '{: <3}'.format(designator)
 
     @property
     def flight_number(self):
@@ -113,14 +121,18 @@ class LIDOWeightBalanceMessage:
         """
         WABFORMAT.txt:7
         """
-        return '{: <5}'.format(self.loadplan.origin_station)
+        station = self.loadplan.origin_station
+        station = self.icao2iata[station]
+        return '{: <5}'.format(station)
 
     @property
     def destination_airport_iata(self):
         """
         WABFORMAT.txt:8
         """
-        return '{: <5}'.format(self.loadplan.destination_station)
+        station = self.loadplan.destination_station
+        station = self.icao2iata[station]
+        return '{: <5}'.format(station)
 
     @property
     def planning_status(self):
@@ -152,10 +164,14 @@ class LIDOWeightBalanceMessage:
         Dry Operating Weight (DOW)
         depends on planning status.
         """
-        for weight in self.loadplan.weights:
-            if weight.name == 'OEW':
-                return weight.weight
-        raise LIDOError('Unable to find dry operating weight.')
+        if self.planning_status in ('04', '95'):
+            return ' ' * 6
+        else:
+            for weight in self.loadplan.weights:
+                if weight.name == 'OEW':
+                    value = weight.weight
+                    return '{:0>6}'.format(value)
+            raise LIDOError('Unable to find dry operating weight.')
 
     @property
     def estimated_total_traffic_load(self):
@@ -164,8 +180,10 @@ class LIDOWeightBalanceMessage:
         Est. Total Traffic Load
         depends on planning status.
         """
-        # default for planning status 04
-        return '0' * 6
+        if self.planning_status in ('04', ):
+            return '0' * 6
+        else:
+            raise NotImplementedError
 
     @property
     def pax_baggage_indicator(self):
