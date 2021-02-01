@@ -16,24 +16,13 @@ import lido
 import pistol.parse
 import pistol.schema
 
-def run(pistol_config, upload_config, iata2icao_config):
-    with MailBox(pistol_config['host']).login(
-                pistol_config['username'],
-                pistol_config['password']) as mailbox, \
+def run(pistol_config, upload_config):
+    with MailBox(pistol_config['host']) \
+            .login(pistol_config['username'],
+                   pistol_config['password']) as mailbox, \
             ftplib.FTP(upload_config['host'],
-                    upload_config['username'],
-                    upload_config['password']) as upload_ftp, \
-            ftplib.FTP(iata2icao_config['host'],
-                    iata2icao_config['user'],
-                    iata2icao_config['passwd']) as iata2icao_ftp, \
-            io.BytesIO() as iata2icao_file:
-        #
-        cmd = 'RETR ' + iata2icao_config['mapping_source']
-        iata2icao_ftp.retrbinary(cmd, iata2icao_file.write)
-        iata2icao_file.seek(0)
-        csvlines = iata2icao_file.read().decode(iata2icao_config['encoding']).splitlines()
-        icao2iata = {stationmap['ICAOCode']: stationmap['IATACode']
-                     for stationmap in csv.DictReader(csvlines)}
+                       upload_config['username'],
+                       upload_config['password']) as upload_ftp:
         #
         yesterday = date.today() - timedelta(days=1)
         # messages since yesterday, from the pstl message sender
@@ -47,13 +36,13 @@ def run(pistol_config, upload_config, iata2icao_config):
             print(msg.text, file=open('run_last_msg.txt', 'w'))
             loadplan_data = pistol.parse.loadplan_from_text(msg.text)
             loadplan = pistol.schema.LoadPlanSchema().load(loadplan_data)
-            lidowb = lido.LIDOWeightBalanceMessage(loadplan, icao2iata)
+            lidowb = lido.LIDOWeightBalanceMessage(loadplan)
             lidowb_msg = str(lidowb)
             print(lidowb)
 
-            upload_ftp.cwd(upload_config['path'])
+            upload_ftp.cwd(upload_config['directory'])
             fp = io.BytesIO(lidowb_msg.encode('utf8'))
-            upload_ftp.storbinary('STOR wab.txt', fp)
+            upload_ftp.storbinary('STOR ' upload_config['filename'], fp)
             print('written')
 
 def main(argv=None):
@@ -70,9 +59,8 @@ def main(argv=None):
 
     pistol_config = cp['pistol']
     upload_config = cp['upload']
-    iata2icao_config = cp['iata2icao_ftp']
 
-    run(pistol_config, upload_config, iata2icao_config)
+    run(pistol_config, upload_config)
 
 if __name__ == '__main__':
     main()

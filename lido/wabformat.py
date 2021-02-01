@@ -1,4 +1,11 @@
 def parse_wabformat(file):
+    """
+    Parse the human readable WABFORMAT.txt file for the message table that
+    describes the format of a LIDO message.
+
+    This function builds a dictionary that makes plucking the values FROM a
+    LIDO message.
+    """
     # hasty parse for the WABFORMAT.txt file.
     text = file.read()
     lines = iter(text.splitlines())

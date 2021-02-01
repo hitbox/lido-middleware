@@ -1,0 +1,13 @@
+QU first1.last1@company.com,email2@company2.com,email3@company.com,first2.last@company.com
+.BRUMBER 123456
+LDM
+GB987/30.N123BB.AAA-BBB
+SI LOAD   GROSS:12345  NET:67890  ULOAD:1234   SOB:5   WT:KG
+
+ POS DST ULDNUMBER  TARE NETT TOTAL FLAG                          VOL
+:A1  BBB ABC0123ZZZ  111 1171  1282 *DGRORDGTWLATWPXNCYORGCGN(AAC 100
+:A2      VOID          0    0     0                                 0
+:A3      VOID                                                        
+:3L  CCC DEF4567ZZZ  258 1234  1492 CVGHUBMIPCNYORGBAH(SPX)       100
+
+SI COMPLIANT WITH GLOBAL SECURITY ALERT SPX + GB/RA/00085-04

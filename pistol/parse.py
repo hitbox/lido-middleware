@@ -28,7 +28,7 @@ def _position(line):
         #text_src = line,
         position = None,
         unit_load_device = None,
-        destination = None,
+        destination_icao = None,
         weight = None,
         weight_unit = None,
         building = None,
@@ -39,10 +39,10 @@ def _position(line):
     if line.endswith('.NIL'):
         position_data['position'] = line.split('.')[0]
     else:
-        position, unit_load_device, destination, weight, building = line.split('/')
+        position, unit_load_device, destination_icao, weight, building = line.split('/')
         position_data['position'] = position
         position_data['unit_load_device'] = unit_load_device
-        position_data['destination'] = destination
+        position_data['destination_icao'] = destination_icao
 
         match = weight_and_unit_re.match(weight)
         if not match:
@@ -184,15 +184,15 @@ def loadplan_from_lines(lines):
     #if line != 'MVT':
     #    raise ParsingError('MVT line not found, got %r' % line)
     company_and_flight_number, rest = next(lines_iter).split('/')
-    daynum1, ac_registration1, origin_station = rest.split('.')
+    daynum1, ac_registration1, origin_icao = rest.split('.')
     flight_number, company = _flight_number_and_company(company_and_flight_number)
     loadplan_data['company'] = company
     loadplan_data['flight_number'] = flight_number
     loadplan_data['aircraft_registration'] = ac_registration1
-    loadplan_data['origin_station'] = origin_station
+    loadplan_data['origin_icao'] = origin_icao
 
     # ATD: Actual Time of Departure
-    # AD(Update|\d{4})/(Update|???).<some code>.<destination station>
+    # AD(Update|\d{4})/(Update|???).<some code>.<destination station icao>
     # FL171.docx says this is an "Aircraft Registration" section.
     line = next(lines_iter)
     if not line.startswith('AD'):
@@ -207,8 +207,8 @@ def loadplan_from_lines(lines):
     # can be N/A too.
     # ad_unknown1 is four digts, N/A or Update
     # if it is a time is is usually after actual_departure_time but can be before.
-    ad_unknown1, ad_unknown2, destination_station = rest.split('.')
-    loadplan_data['destination_station'] = destination_station
+    ad_unknown1, ad_unknown2, destination_icao = rest.split('.')
+    loadplan_data['destination_icao'] = destination_icao
 
     # this seems to be a summary of total weight and number of ulds
     line = next(lines_iter)

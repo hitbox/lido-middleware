@@ -1,0 +1,73 @@
+<style>
+table {
+    border-collapse: collapse;
+    font-family: monospace;
+    margin-bottom: 1rem;
+}
+td, th {
+    border: 1px solid black;
+}
+td {
+    padding: .25rem .5rem;
+}
+</style>
+<table>
+    <thead>
+        <tr>
+            <th>flight_number</th>
+            <th>company</th>
+            <th>airline_designator</th>
+            <th>day</th>
+            <th>tail</th>
+            <th>origin_iata</th>
+            <th>destination_iata</th>
+            <th>gross</th>
+            <th>net_weight</th>
+            <th>uload</th>
+            <th>souls_onboard</th>
+            <th>weights_unit</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ loadplan.flight_number }}</td>
+            <td>{{ loadplan.company }}</td>
+            <td>{{ loadplan.airline_designator }}</td>
+            <td>{{ loadplan.day }}</td>
+            <td>{{ loadplan.tail }}</td>
+            <td>{{ loadplan.origin_iata }}</td>
+            <td>{{ loadplan.destination_iata }}</td>
+            <td>{{ loadplan.gross }}</td>
+            <td>{{ loadplan.net_weight }}</td>
+            <td>{{ loadplan.uload }}</td>
+            <td>{{ loadplan.souls_onboard }}</td>
+            <td>{{ loadplan.weights_unit }}</td>
+        </tr>
+    </tbody>
+</table>
+<table>
+    <thead>
+        <tr>
+            <th>POS</th>
+            <th>DST</th>
+            <th>ULDNUMBER</th>
+            <th>TARE</th>
+            <th>NETT</th>
+            <th>TOTAL</th>
+            <th>FLAG</th>
+            <th>VOL</th>
+        </tr>
+    </thead>
+    <tbody>{% for row in loadplan.positions %}
+        <tr>
+            <td>{{ row.position }}</td>
+            <td>{{ row.destination_iata }}</td>
+            <td>{{ row.unit_load_device }}</td>
+            <td>{{ row.tare }}</td>
+            <td>{{ row.net_weight }}</td>
+            <td>{{ row.total }}</td>
+            <td>{{ row.flag }}</td>
+            <td>{{ row.volume }}</td>
+        </tr>{% endfor %}
+    </tbody>
+</table>

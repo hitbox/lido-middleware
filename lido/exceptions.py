@@ -1,0 +1,3 @@
+class LIDOError(Exception):
+    """
+    """
