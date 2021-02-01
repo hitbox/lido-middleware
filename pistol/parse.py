@@ -10,6 +10,8 @@ from .regex import space_run
 from .regex import tape_line_re
 from .regex import weight_and_unit_re
 
+from extradata import stations
+
 class ParsingError(Exception):
     """
     """
@@ -28,6 +30,7 @@ def _position(line):
         #text_src = line,
         position = None,
         unit_load_device = None,
+        destination_iata = None,
         destination_icao = None,
         weight = None,
         weight_unit = None,
@@ -39,11 +42,15 @@ def _position(line):
     if line.endswith('.NIL'):
         position_data['position'] = line.split('.')[0]
     else:
-        position, unit_load_device, destination_icao, weight, building = line.split('/')
+        position, unit_load_device, destination_iata_or_icao, weight, building = line.split('/')
         position_data['position'] = position
         position_data['unit_load_device'] = unit_load_device
-        position_data['destination_icao'] = destination_icao
-
+        # destination station
+        # it can be IATA or ICAO. detect and set.
+        station = destination_iata_or_icao.strip()
+        postfix = stations.detect_code_type(station).lower()
+        position_data['destination_' + postfix] = station
+        #
         match = weight_and_unit_re.match(weight)
         if not match:
             raise ParsingError('Unable to parse weight %r' % weight)
@@ -158,7 +165,12 @@ def loadplan_from_lines(lines):
     """
     # this function takes the strategy of reading the lines in an expected
     # order, with some being optional.
-    loadplan_data = {}
+    loadplan_data = dict(
+        destination_iata = None,
+        destination_icao = None,
+        origin_iata = None,
+        origin_icao = None,
+    )
     lines_iter = iter(lines)
 
     # load planner
@@ -177,12 +189,6 @@ def loadplan_from_lines(lines):
                     'Unable to process LP line, failed looking for MVT line.' % maxtries)
         loadplan_data['load_planner'] += line
 
-    # TODO: remove commented out, it is done by the LP loop above
-    ## Find Aircraft Movement start
-    ## skip line: 'MVT'
-    #line = next(lines_iter)
-    #if line != 'MVT':
-    #    raise ParsingError('MVT line not found, got %r' % line)
     company_and_flight_number, rest = next(lines_iter).split('/')
     daynum1, ac_registration1, origin_icao = rest.split('.')
     flight_number, company = _flight_number_and_company(company_and_flight_number)
@@ -207,8 +213,11 @@ def loadplan_from_lines(lines):
     # can be N/A too.
     # ad_unknown1 is four digts, N/A or Update
     # if it is a time is is usually after actual_departure_time but can be before.
-    ad_unknown1, ad_unknown2, destination_icao = rest.split('.')
-    loadplan_data['destination_icao'] = destination_icao
+    ad_unknown1, ad_unknown2, destination_iata_or_icao = rest.split('.')
+    # destination station can be IATA or ICAO. detect and set appropriately.
+    station = destination_iata_or_icao.strip()
+    postfix = stations.detect_code_type(station).lower()
+    loadplan_data['destination_' + postfix] = station
 
     # this seems to be a summary of total weight and number of ulds
     line = next(lines_iter)

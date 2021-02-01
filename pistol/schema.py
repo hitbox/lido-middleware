@@ -1,3 +1,5 @@
+from operator import xor
+
 from marshmallow import Schema
 from marshmallow import post_load
 from marshmallow import pre_load
@@ -13,19 +15,14 @@ from marshmallow.fields import Time
 from marshmallow.validate import OneOf
 from marshmallow.validate import Regexp
 
-from pistol.regex import valid_config_name_pattern
-from pistol.regex import valid_weight_name_pattern
+from extradata import airline_designators
+from extradata import stations
 from units import VALID_WEIGHT_UNITS
 
-import extradata
-
-from extradata import airline_designators
+from .regex import valid_config_name_pattern
+from .regex import valid_weight_name_pattern
 
 PRINT_DATETIME_FORMAT = '%m/%d/%y %H%M'
-
-def validate_oneof_station(prefix, data):
-    if not (data.get(prefix + '_iata') or data.get(prefix + '_icao')):
-        raise ValidationError('Neither IATA nor ICAO for ' + prefix)
 
 class PositionSchema(Schema):
     """
@@ -41,15 +38,25 @@ class PositionSchema(Schema):
     building = String(allow_none=True)
 
     @pre_load
-    def if_icao_update_iata(self, data, **kwargs):
+    def update_other_station(self, data, **kwargs):
         """
-        If ICAO destiation station was set, update the IATA field.
+        Validate that one or the other (IATA/ICAO) station is present, but not
+        both, and update the other.
         """
-        # fill out iata if icao is present
-        icao2iata = extradata.icao2iata()
-        icao = data.get('destination_icao')
-        if icao:
-            data['destination_iata'] = icao2iata[icao]
+        stations.update_other_station_by_type(data, 'destination')
+        return data
+
+    @post_load
+    def validate_station_types(self, data, **kwargs):
+        """
+        Validate that if one type of station is set, both are.
+        """
+        iata = bool(data['destination_iata'])
+        icao = bool(data['destination_icao'])
+        either = iata or icao
+        both = iata and icao
+        if either and not both:
+            raise ValidationError('If one station type is set, both must be')
         return data
 
 
@@ -85,10 +92,10 @@ class LoadPlanSchema(Schema):
     flight_number = String()
     aircraft_registration = String()
     actual_departure_time = Time(allow_none=True, format='%H%M')
-    origin_icao = String(allow_none=True)
-    origin_iata = String(allow_none=True)
-    destination_icao = String(allow_none=True)
-    destination_iata = String(allow_none=True)
+    origin_icao = String(required=True)
+    origin_iata = String(required=True)
+    destination_icao = String(required=True)
+    destination_iata = String(required=True)
     day = Integer()
     souls_onboard = Integer()
     color_code = String()
@@ -160,17 +167,13 @@ class LoadPlanSchema(Schema):
         return data
 
     @pre_load
-    def if_icao_update_iata(self, data, **kwargs):
+    def update_other_station_type(self, data, **kwargs):
         """
-        Update IATA if ICAO station present.
+        Validate that one or the other (IATA/ICAO) station is present, but not
+        both, and update the other
         """
-        # fill out iata if icao is present
-        icao2iata = extradata.icao2iata()
         for field in ['destination', 'origin']:
-            icaokey = field + '_icao'
-            icao = data.get(icaokey)
-            if icao:
-                data[field + '_iata'] = icao2iata[icao]
+            stations.update_other_station_by_type(data, field)
         return data
 
     @pre_load
@@ -180,14 +183,4 @@ class LoadPlanSchema(Schema):
         """
         company = data['company']
         data['airline_designator'] = airline_designators.by_company[company]
-        return data
-
-    @post_load
-    def validate_oneof_icao_or_iata(self, data, **kwargs):
-        """
-        Validate that either IATA or ICAO station codes are set and update the
-        equivalent IATA fields.
-        """
-        validate_oneof_station('origin', data)
-        validate_oneof_station('destination', data)
         return data
