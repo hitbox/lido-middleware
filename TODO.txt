@@ -1,0 +1,10 @@
+* Airline designator for AMZ
+* print datetime (email datetime?)
+* dry operating weight
+* cg percent mac
+* actual takeoff fuel
+* actual zero fuel weight
+
+NOTES
+
+* pistol has both IATA and ICAO

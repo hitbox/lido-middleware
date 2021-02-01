@@ -15,7 +15,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=main.__doc__)
     parser.add_argument('-f', '--file', nargs='+', type=argparse.FileType())
     parser.add_argument('-p', '--pickle', nargs='+')
-    parser.add_argument('--html', action='store_true')
+    parser.add_argument('--html', default='-', nargs='?', type=argparse.FileType('w'))
     args = parser.parse_args(argv)
 
     if args.file and args.pickle:
@@ -45,7 +45,7 @@ def main(argv=None):
             template = Template(template_file.read())
             for loadplan in loadplans:
                 html = template.render(loadplan=loadplan)
-                print(html)
+                print(html, file=args.html)
 
 if __name__ == '__main__':
     sys.exit(main())

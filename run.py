@@ -13,37 +13,38 @@ from imap_tools import AND
 from imap_tools import MailBox
 
 import lido
-import pistol.parse
-import pistol.schema
 
-def run(pistol_config, upload_config):
-    with MailBox(pistol_config['host']) \
-            .login(pistol_config['username'],
-                   pistol_config['password']) as mailbox, \
-            ftplib.FTP(upload_config['host'],
-                       upload_config['username'],
-                       upload_config['password']) as upload_ftp:
+from utils import _resolve
+
+def run(source_conf, message_processor, schema, upload_conf):
+    """
+    :param message_processor: callable to take email message and return loadplan data.
+    """
+    with MailBox(source_conf['host']) \
+            .login(source_conf['username'],
+                   source_conf['password']) as mailbox, \
+            ftplib.FTP(upload_conf['host'],
+                       upload_conf['username'],
+                       upload_conf['password']) as upload_ftp:
         #
         yesterday = date.today() - timedelta(days=1)
         # messages since yesterday, from the pstl message sender
         pstl_since_yesterday = AND(
-            from_ = pistol_config['from_'],
+            from_ = source_conf['from_'],
             date_gte = yesterday,
         )
-        # XXX: limit 1
-        messages = mailbox.fetch(pstl_since_yesterday, limit=1, mark_seen=False)
-        for msg in messages:
-            print(msg.text, file=open('run_last_msg.txt', 'w'))
-            loadplan_data = pistol.parse.loadplan_from_text(msg.text)
-            loadplan = pistol.schema.LoadPlanSchema().load(loadplan_data)
-            lidowb = lido.LIDOWeightBalanceMessage(loadplan)
-            lidowb_msg = str(lidowb)
-            print(lidowb)
-
-            upload_ftp.cwd(upload_config['directory'])
-            fp = io.BytesIO(lidowb_msg.encode('utf8'))
-            upload_ftp.storbinary('STOR ' upload_config['filename'], fp)
-            print('written')
+        limit = source_conf.get('limit')
+        if limit is not None:
+            limit = int(limit)
+        messages = mailbox.fetch(pstl_since_yesterday, limit=limit, mark_seen=False)
+        for message in messages:
+            loadplan_data = message_processor(message)
+            loadplan = schema.load(loadplan_data)
+            lidomsg = lido.LIDOWeightBalanceMessage(loadplan)
+            fp = io.BytesIO(str(lidomsg).encode('utf8'))
+            pathfmt = upload_conf['filename']
+            path = pathfmt.format(lidomsg=lidomsg)
+            upload_ftp.storbinary('STOR ' + path, fp)
 
 def main(argv=None):
     """
@@ -54,13 +55,15 @@ def main(argv=None):
     parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args(argv)
 
-    cp = configparser.ConfigParser()
+    cp = configparser.RawConfigParser()
     cp.read(args.config)
 
-    pistol_config = cp['pistol']
-    upload_config = cp['upload']
+    source_conf = cp['source']
+    message_processor = _resolve(source_conf['message_processor'])
+    schema = _resolve(source_conf['schema_class'])()
+    upload_conf = cp['upload']
 
-    run(pistol_config, upload_config)
+    run(source_conf, message_processor, schema, upload_conf)
 
 if __name__ == '__main__':
     main()

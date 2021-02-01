@@ -304,6 +304,9 @@ def loadplan_from_text(text):
     """
     return loadplan_from_lines(text.splitlines())
 
+def loadplan_from_message(message):
+    return loadplan_from_text(message.text)
+
 def main(argv=None):
     """
     Parse PSTL weight and balance message from file.
