@@ -14,3 +14,15 @@ def _resolve(name):
             __import__(used)
             found = getattr(found, n)
     return found
+
+def cleanlines(s):
+    """
+    Return s with cleaned newlines.
+    """
+    return '\n'.join(s.splitlines())
+
+def hide(s, char='*'):
+    """
+    Hide/mask characters of string.
+    """
+    return ''.join(char for c in s)
