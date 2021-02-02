@@ -5,7 +5,7 @@ Python 3
 # Directory structure
 
 ## lido
-    
+
     Produce LIDO message string for the LIDO system.
 
 ## loadplan
@@ -14,7 +14,7 @@ Python 3
     and lido messages.
 
 ## pistol
-    
+
     Interface to pistol load plan messages. A database of sorts.
 
 ## units
