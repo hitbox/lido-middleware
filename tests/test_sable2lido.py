@@ -6,6 +6,7 @@ from sable.parse import parse_from_text
 
 class TestLIDO(unittest.TestCase):
 
+    @unittest.skip('unfinished')
     def test_sable_message_to_lido_string(self):
         loadplan_schema = LoadPlanSchema()
         with open('tests/sable_message.txt') as sable_file:

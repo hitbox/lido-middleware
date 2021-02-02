@@ -1,23 +1,11 @@
 import csv
 
+from collections import defaultdict
 from pathlib import Path
 
 class ExtradataError(Exception):
-    """
-    """
+    pass
 
-
-def trash():
-    def _iata2icao_csvfile():
-        return open(Path(__file__).parent / 'iata2icao.csv', newline='')
-
-    def iata2icao():
-        with _iata2icao_csvfile() as fp:
-            return {iata: icao for iata, icao in csv.reader(fp)}
-
-    def icao2iata():
-        with _iata2icao_csvfile() as fp:
-            return {icao: iata for iata, icao in csv.reader(fp)}
 
 class Stations:
 
@@ -47,6 +35,16 @@ class Stations:
                 'Station detected as both IATA and ICAO, %r' % station)
         return 'iata' if is_iata else 'icao'
 
+    def filled(self, station):
+        """
+        Return {'iata': ..., 'icao': ...} by detecting if `station` is iata or
+        icao and filling the other.
+        """
+        if self.detect_code_type(station) == 'iata':
+            return {'iata': station, 'icao': self.iata2icao[station]}
+        else:
+            return {'iata': self.icao2iata[station], 'icao': station}
+
     def update_other_station_by_type(self, data, prefix, sep='_'):
         """
         Update the IATA/ICAO station that is not already set, INPLACE. Both may
@@ -66,7 +64,7 @@ class Stations:
 
 class AirlineDesignators:
     """
-    Access to company/airline mappings in both directions.
+    Access to company/airline designator mappings in both directions.
 
     airline_designators.by_company[company] -> airline code
     airline_designators.by_airline[airline] -> company code
@@ -82,5 +80,17 @@ class AirlineDesignators:
             self.all_codes = self.company_codes + self.airline_codes
 
 
+class AircraftRegistrationAirlineMapping:
+    """
+    Map aircraft registration to airline.
+    """
+
+    def __init__(self):
+        import warnings
+        warnings.warn('Temporary defaultdict implementation')
+        self.airline = defaultdict(lambda:'ABX')
+
+
 stations = Stations()
 airline_designators = AirlineDesignators()
+aircraftregistration2airline = AircraftRegistrationAirlineMapping()

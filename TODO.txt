@@ -1,10 +1,13 @@
-* Airline designator for AMZ
-* print datetime (email datetime?)
-* dry operating weight
-* cg percent mac
+Sable:
+* a/c reg. to airline mapping coming from netline/base database
+* use email datetime for lido timestamp
+
+
+Active Sable questions to Paul P.
 * actual takeoff fuel
 * actual zero fuel weight
 
 NOTES
 
 * pistol has both IATA and ICAO
+* sable looks like only IATA

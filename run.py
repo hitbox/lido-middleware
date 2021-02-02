@@ -1,9 +1,7 @@
 import argparse
 import configparser
-import csv
 import ftplib
 import io
-import pickle
 
 from datetime import date
 from datetime import timedelta
@@ -20,23 +18,22 @@ def run(source_conf, message_processor, schema, upload_conf):
     """
     :param message_processor: callable to take email message and return loadplan data.
     """
+    # messages since yesterday, from the pstl message sender
+    since_yesterday_from = AND(
+        from_ = source_conf['from_'],
+        date_gte = date.today() - timedelta(days=1), # yesterday
+    )
     with MailBox(source_conf['host']) \
             .login(source_conf['username'],
                    source_conf['password']) as mailbox, \
             ftplib.FTP(upload_conf['host'],
                        upload_conf['username'],
                        upload_conf['password']) as upload_ftp:
-        #
-        yesterday = date.today() - timedelta(days=1)
-        # messages since yesterday, from the pstl message sender
-        pstl_since_yesterday = AND(
-            from_ = source_conf['from_'],
-            date_gte = yesterday,
-        )
         limit = source_conf.get('limit')
         if limit is not None:
             limit = int(limit)
-        messages = mailbox.fetch(pstl_since_yesterday, limit=limit, mark_seen=False)
+        messages = mailbox.fetch(
+            since_yesterday_from, limit=limit, mark_seen=False)
         for message in messages:
             loadplan_data = message_processor(message)
             loadplan = schema.load(loadplan_data)

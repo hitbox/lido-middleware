@@ -1,5 +1,3 @@
-from operator import xor
-
 from marshmallow import Schema
 from marshmallow import post_load
 from marshmallow import pre_load
@@ -29,7 +27,22 @@ class PositionSchema(Schema):
     Pistol Position Schema
     """
 
-    position = String()
+    @pre_load
+    def pre_load(self, position_data, **kwargs):
+        """
+        Prepare data for loading
+        """
+        if 'destination_iata_or_icao' in position_data:
+            # fill destination iata and icao
+            destination_iata_or_icao = position_data['destination_iata_or_icao'].strip()
+            del position_data['destination_iata_or_icao']
+            if destination_iata_or_icao:
+                full = stations.filled(destination_iata_or_icao)
+                position_data['destination_iata'] = full['iata']
+                position_data['destination_icao'] = full['icao']
+        return position_data
+
+    position = String(required=True)
     unit_load_device = String(allow_none=True)
     destination_icao = String(allow_none=True)
     destination_iata = String(allow_none=True)
@@ -37,26 +50,18 @@ class PositionSchema(Schema):
     weight_unit = String(allow_none=True, validate=OneOf(VALID_WEIGHT_UNITS))
     building = String(allow_none=True)
 
-    @pre_load
-    def update_other_station(self, data, **kwargs):
-        """
-        Validate that one or the other (IATA/ICAO) station is present, but not
-        both, and update the other.
-        """
-        stations.update_other_station_by_type(data, 'destination')
-        return data
-
     @post_load
     def validate_station_types(self, data, **kwargs):
         """
         Validate that if one type of station is set, both are.
         """
-        iata = bool(data['destination_iata'])
-        icao = bool(data['destination_icao'])
-        either = iata or icao
-        both = iata and icao
-        if either and not both:
-            raise ValidationError('If one station type is set, both must be')
+        if 'destination_iata' in data and 'destination_icao' in data:
+            iata = bool(data['destination_iata'])
+            icao = bool(data['destination_icao'])
+            either = iata or icao
+            both = iata and icao
+            if either and not both:
+                raise ValidationError('If one station type is set, both must be')
         return data
 
 
@@ -64,6 +69,13 @@ class WeightSchema(Schema):
     """
     Pistol Weight Schema
     """
+
+    @pre_load
+    def pre_load(self, data, **kwargs):
+        for key, value in data.items():
+            if value == 'N/A':
+                data[key] = None
+        return data
 
     name = String(validate=Regexp(valid_weight_name_pattern))
     weight = Integer(allow_none=True)
@@ -85,6 +97,85 @@ class LoadPlanSchema(Schema):
     """
     Pistol Load Plan Schema
     """
+
+    @pre_load
+    def pre_load(self, data, **kwargs):
+        # merges with sanity check
+        # aircraft_registration
+        if data['aircraft_registration1'] != data['aircraft_registration2']:
+            raise ValidationError('aircraft registrations do not match')
+        data['aircraft_registration'] = data['aircraft_registration1']
+        del data['aircraft_registration1']
+        del data['aircraft_registration2']
+
+        # day
+        if data['day1'] != data['day2']:
+            raise ValidationError('day fields do not match')
+        data['day'] = data['day1']
+        del data['day1']
+        del data['day2']
+
+        # split and fill iata and icao origin/destination
+        for prefix in ['origin', 'destination']:
+            full = stations.filled(data[prefix + '_iata_or_icao'])
+            del data[prefix + '_iata_or_icao']
+            data[prefix + '_iata'] = full['iata']
+            data[prefix + '_icao'] = full['icao']
+
+        # bring takeoff fuel weight out
+        for weight in data['weights']:
+            if weight['name'] == 'Takeoff':
+                data['actual_takeoff_fuel'] = weight['weight']
+                break
+        else:
+            data['actual_takeoff_fuel'] = None
+
+        # bring actual zero fuel weight out
+        for weight in data['weights']:
+            if weight['name'] == 'Zero Fuel':
+                data['actual_zero_fuel_weight'] = weight['weight']
+                break
+        else:
+            data['actual_zero_fuel_weight'] = None
+
+        # bring center of gravity percent mac out
+        for weight in data['weights']:
+            if weight['name'] == 'OEW':
+                data['cg_percent_mac'] = weight['cg_percent_mac']
+                break
+        else:
+            data['cg_percent_mac'] = None
+
+        # dry operating weight from operating empty weight
+        value = None
+        for weight in data['weights']:
+            if weight['name'] == 'OEW':
+                data['dry_operating_weight'] = weight['weight']
+                break
+        else:
+            data['dry_operating_weight'] = None
+
+        # split company_flight_number -> company, flight number
+        if data['company_and_flight_number1'] != data['company_and_flight_number2']:
+            raise ValidationError('company_and_flight_number{1,2} fields do not match')
+        company_and_flight_number = data['company_and_flight_number1']
+        del data['company_and_flight_number1']
+        del data['company_and_flight_number2']
+        if company_and_flight_number.startswith('ATIATN'):
+            data['company'] = 'ATI'
+            data['flight_number'] = company_and_flight_number[6:]
+        else:
+            data['company'] = company_and_flight_number[:3]
+            data['flight_number'] = company_and_flight_number[3:]
+
+        # Update airline designator from company value.
+        company = data['company']
+        data['airline_designator'] = airline_designators.by_company[company]
+
+        return data
+
+    ad_unknown1 = String()
+    ad_unknown2 = String()
 
     load_planner = String()
     company = String()
@@ -109,9 +200,9 @@ class LoadPlanSchema(Schema):
     duplicate_number = Constant('1')
     revision_number = Constant('00')
     operational_suffix = Constant(' ')
-    pax_baggage_indicator = Constant('N')
-    cargo_mail_indicator = Constant('N')
-    transit_load_indicator = Constant('N')
+    pax_baggage_indicator = Constant('Y')
+    cargo_mail_indicator = Constant('Y')
+    transit_load_indicator = Constant('Y')
     tail_tank_indicator = Constant(' ')
     estimated_pax = Constant(0)
     dry_operating_index = Constant(None)
@@ -123,64 +214,7 @@ class LoadPlanSchema(Schema):
     weights = List(Nested(WeightSchema))
     aircraft_configurations = List(Nested(AircraftConfigSchema))
 
-    # filled by pre-loads below, same name, prefixed with underscore
     actual_takeoff_fuel = Integer()
     actual_zero_fuel_weight = Integer()
     center_of_gravity = Float(data_key='cg_percent_mac')
     dry_operating_weight = Integer()
-
-    @pre_load
-    def _actual_takeoff_fuel(self, data, **kwargs):
-        for weight in data['weights']:
-            if weight['name'] == 'Takeoff':
-                value = weight['weight']
-                break
-        else:
-            value = None
-        data['actual_takeoff_fuel'] = value
-        return data
-
-    @pre_load
-    def _actual_zero_fuel_weight(self, data, **kwargs):
-        for weight in data['weights']:
-            if weight['name'] == 'Zero Fuel':
-                data['actual_zero_fuel_weight'] = weight['weight']
-        return data
-
-    @pre_load
-    def _center_of_gravity(self, data, **kwargs):
-        for weight in data['weights']:
-            if weight['name'] == 'OEW':
-                data['cg_percent_mac'] = weight['cg_percent_mac']
-        return data
-
-    @pre_load
-    def _dry_operating_weight(self, data, **kwargs):
-        """
-        Dry operating weight from operating empty weight
-        """
-        value = None
-        for weight in data['weights']:
-            if weight['name'] == 'OEW':
-                value = weight['weight']
-        data['dry_operating_weight'] = value
-        return data
-
-    @pre_load
-    def update_other_station_type(self, data, **kwargs):
-        """
-        Validate that one or the other (IATA/ICAO) station is present, but not
-        both, and update the other
-        """
-        for field in ['destination', 'origin']:
-            stations.update_other_station_by_type(data, field)
-        return data
-
-    @pre_load
-    def update_airline_designator_from_company(self, data, **kwargs):
-        """
-        Update airline designator from company value.
-        """
-        company = data['company']
-        data['airline_designator'] = airline_designators.by_company[company]
-        return data

@@ -3,7 +3,8 @@ import string
 
 from pathlib import Path
 
-from .parse import loadplan_from_text
+import pistol.extract
+import pistol.schema
 
 def main(argv=None):
     """
@@ -49,7 +50,8 @@ def main(argv=None):
             if args.only_ascii:
                 text = ''.join(c for c in text if c in string.printable)
             try:
-                loadplan_from_text(text)
+                loadplan_data = pistol.extract.loadplan_from_text(text)
+                loadplan = pistol.schema.LoadPlanSchema().load(loadplan_data)
             except Exception as e:
                 error_bucket.append((path, e, text))
 
