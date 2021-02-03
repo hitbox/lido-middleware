@@ -55,7 +55,7 @@ dense_line_re2 = re.compile(
     '\.'
     '(?P<aircraft_registration2>[A-Z0-9]+)'
     '\.'
-    '(?P<color_code>[A-Z ]+)$')
+    '(?P<color_code>[A-Za-z ]+)$')
 
 si_line_re = re.compile(
      '^SI ALL WGT ARE ' # preamble
