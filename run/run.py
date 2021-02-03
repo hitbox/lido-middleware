@@ -16,6 +16,9 @@ from utils import hide
 
 def run(emailconf, message_processor, schema, ftpconf):
     """
+    Download recent emails, convert them to LIDO weight and balance message
+    strings and upload to ftp.
+
     :param emailconf: email account info and message fetching config.
     :param message_processor: callable to take email message and return loadplan data.
     :param schema: instance of a schema to convert result of message_processor.
