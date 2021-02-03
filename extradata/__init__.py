@@ -35,6 +35,34 @@ class AirlineDesignators:
             self.airline_codes = list(self.by_airline)
             self.all_codes = self.company_codes + self.airline_codes
 
+    def split_company_or_airline_and_flight_number(self, s):
+        """
+        :param s: string that starts with an airline or company and ends with a
+                  flight number.
+        """
+        matches = [code for code in self.all_codes if s.startswith(code)]
+        nmatches = len(matches)
+        if nmatches == 0:
+            raise ExtradataError('No matches for airline or company')
+        elif nmatches > 1:
+            raise ExtradataError('More than one match for airline or company')
+        else:
+            # one match, is it the company or airline?
+            match = matches[0]
+            is_company = match in self.company_codes
+            is_airline = match in self.airline_codes
+            if is_company and is_airline:
+                raise ExtradataError(
+                    'code matches both company and airline, %r' % match)
+            data = {'flight_number': s[len(match):]}
+            if is_company:
+                data['company'] = match
+                data['airline_designator'] = self.by_company[match]
+            else:
+                data['company'] = self.by_airline[match]
+                data['airline_designator'] = match
+            return data
+
 
 class Stations:
     """

@@ -8,8 +8,8 @@ import lido
 class TestLIDO(unittest.TestCase):
 
     def test_pistol_message_to_lido_string(self):
-        thisdir = Path(__file__).parent
-        pistol_loadplan_path = thisdir / 'pistol_message.txt.schema-load-expect.py'
+        datadir = Path(__file__).parent / 'data'
+        pistol_loadplan_path = datadir / 'pistol_message.txt.schema-load-expect.py'
         with open(pistol_loadplan_path) as loadplan_file:
             loadplan = eval(loadplan_file.read(), {'datetime': datetime})
             wbmsg = lido.LIDOWeightBalanceMessage(loadplan)

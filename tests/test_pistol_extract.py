@@ -7,9 +7,9 @@ import pistol.extract
 class TestPistolExtract(unittest.TestCase):
 
     def test_pistol_extract(self):
-        thisdir = Path(__file__).parent
-        message_path = thisdir / 'pistol_message.txt'
-        expect_path = thisdir / 'pistol_message.txt.extract-expect.py'
+        datadir = Path(__file__).parent / 'data'
+        message_path = datadir / 'pistol_message.txt'
+        expect_path = datadir / 'pistol_message.txt.extract-expect.py'
         with open(message_path) as pistol_message_file, \
                 open(expect_path) as pistol_expected_file:
             message_text = pistol_message_file.read()

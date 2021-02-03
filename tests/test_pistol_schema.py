@@ -8,9 +8,9 @@ import pistol.schema
 class TestPistolSchema(unittest.TestCase):
 
     def test_pistol_schema_load(self):
-        thisdir = Path(__file__).parent
-        extracted_path = thisdir / 'pistol_message.txt.extract-expect.py'
-        expect_path = thisdir / 'pistol_message.txt.schema-load-expect.py'
+        datadir = Path(__file__).parent / 'data'
+        extracted_path = datadir / 'pistol_message.txt.extract-expect.py'
+        expect_path = datadir / 'pistol_message.txt.schema-load-expect.py'
         with open(extracted_path) as extracted_file, \
                 open(expect_path) as expected_file:
             extracted_data = eval(extracted_file.read(), {'datetime': datetime})

@@ -2,7 +2,6 @@ import re
 
 from .exceptions import SableParseError
 from .regex import dense_data_line_re
-from .regex import get_airline_flight_number_re
 from .regex import header_re
 from .regex import si_load_re
 
@@ -31,8 +30,6 @@ def from_text(text):
     lines = iter(text.splitlines())
     sable_data = {}
     # find and parse a line of densely packed data.
-    # <airline or company and flight number>
-    # /<day>.<tail>.<origin_iata>-<destination_iata>
     for line in lines:
         match = dense_data_line_re.match(line)
         if match:
@@ -41,6 +38,7 @@ def from_text(text):
     else:
         raise SableParseError(
             'Unable to find and parse dense data line, %r' % line)
+
     # SI LOAD information line
     line = next(lines)
     match = si_load_re.match(line)

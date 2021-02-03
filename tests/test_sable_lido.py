@@ -1,5 +1,7 @@
 import unittest
 
+from pathlib import Path
+
 import sable.extract
 
 from lido import LIDOWeightBalanceMessage
@@ -7,13 +9,13 @@ from sable.schema import LoadPlanSchema
 
 class TestLIDO(unittest.TestCase):
 
-    @unittest.skip('unfinished')
+    @unittest.skip('schema load and a/c reg. to airline is unfinished')
     def test_sable_message_to_lido_string(self):
         loadplan_schema = LoadPlanSchema()
-        with open('tests/sable_message.txt') as sable_file:
-            text = sable_file.read()
-            loadplan_data = sable.extract.from_text(text)
-            loadplan = loadplan_schema.load(loadplan_data)
+        datadir = Path(__file__).parent / 'data'
+        loadplan_path = datadir / 'sable_message.txt.schema-load-expect.py'
+        with open(loadplan_path) as loadplan_file:
+            loadplan = eval(loadplan_file.read())
             wbmsg = LIDOWeightBalanceMessage(loadplan)
             s = str(wbmsg)
             print(s)

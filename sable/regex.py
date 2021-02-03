@@ -38,16 +38,3 @@ header_re = re.compile(
     '(?P<total>\s+TOTAL)'
     '(?P<flag>\s+FLAG)'
     '(?P<vol>\s+VOL)$')
-
-def get_airline_flight_number_re():
-    """
-    Return named group regex to capture company or airline code and flight number.
-    """
-    all_codes_pattern = '|'.join(map(re.escape, airline_designators.all_codes))
-    # need to be strict about capturing the airline code because it is
-    # alphanumeric and so is the flight number
-    pattern = (
-        f'^(?P<company_or_airline_code>{all_codes_pattern})'
-         '(?P<flight_number>.*)$'
-    )
-    return re.compile(pattern)
