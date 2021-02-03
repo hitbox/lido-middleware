@@ -79,8 +79,6 @@ def run(emailconf, message_processor, schema, ftpconf):
                 for num, attachment in enumerate(message.attachments, start=1):
                     logger.debug('message attachment %s %r',
                                  num, attachment.filename)
-                    logger.debug('message attachment payload\n%s',
-                                 attachment.payload)
             logger.info('processing message')
             loadplan_data = message_processor(message)
             logger.debug('loadplan_data:\n%s', pformat(loadplan_data))
