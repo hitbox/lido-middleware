@@ -1,8 +1,9 @@
 import unittest
 
+import sable.extract
+
 from lido import LIDOWeightBalanceMessage
 from sable.schema import LoadPlanSchema
-from sable.parse import parse_from_text
 
 class TestLIDO(unittest.TestCase):
 
@@ -11,7 +12,7 @@ class TestLIDO(unittest.TestCase):
         loadplan_schema = LoadPlanSchema()
         with open('tests/sable_message.txt') as sable_file:
             text = sable_file.read()
-            loadplan_data = parse_from_text(text)
+            loadplan_data = sable.extract.from_text(text)
             loadplan = loadplan_schema.load(loadplan_data)
             wbmsg = LIDOWeightBalanceMessage(loadplan)
             s = str(wbmsg)
