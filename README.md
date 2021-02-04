@@ -2,25 +2,19 @@
 
 Python 3
 
-# Directory structure
+# Structure
 
-## lido
+Run as module, this project was designed to be as flat as possible. This is an
+experiment to avoid deeply nested things.
 
-    Produce LIDO message string for the LIDO system.
+```
+python -m run
+```
 
-## loadplan
+# Process
 
-    Intermediate group of objects for storage and an in-between for databases
-    and lido messages.
-
-## pistol
-
-    Interface to pistol load plan messages. A database of sorts.
-
-## units
-
-    Simple units, for instance weights (pounds and kilograms).
-
-## requirements.minimum.txt
-
-    minimum requirements to run.
+1. Download messages
+2. Extract data strings
+3. Deserialize strings to data types.
+4. Use data types to create LIDO message.
+5. Write LIDO message string to file.

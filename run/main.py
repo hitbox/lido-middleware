@@ -4,8 +4,7 @@ import logging.config
 
 from pathlib import Path
 
-from utils import _resolve
-
+from .config import file_config
 from .run import run
 
 def main(argv=None):
@@ -20,16 +19,16 @@ def main(argv=None):
     cp = configparser.RawConfigParser()
     cp.read(args.config)
 
+    # logging
     if all(section in cp for section in ['loggers', 'handlers', 'formatters']):
         logging.config.fileConfig(cp)
     else:
-        logging.basicConfig()
+        logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
+
+    conf = file_config(cp)
+    # run logging exceptions
     try:
-        emailconf = cp['source']
-        message_processor = _resolve(emailconf['message_processor'])
-        schema = _resolve(emailconf['schema_class'])()
-        ftpconf = cp['upload']
-        return run(emailconf, message_processor, schema, ftpconf)
+        return run(conf)
     except:
         logger.exception('An exception occurred')

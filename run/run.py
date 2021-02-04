@@ -11,18 +11,17 @@ from imap_tools import MailBox
 
 from lido import LIDOWeightBalanceMessage
 
+from utils import _resolve
 from utils import cleanlines
 from utils import hide
 
-def run(emailconf, message_processor, schema, ftpconf):
+def run(emailconf, outputconf):
     """
     Download recent emails, convert them to LIDO weight and balance message
     strings and upload to ftp.
 
     :param emailconf: email account info and message fetching config.
-    :param message_processor: callable to take email message and return loadplan data.
-    :param schema: instance of a schema to convert result of message_processor.
-    :param ftpconf: ftp account info and output path format string.
+    :param outputconf: output configuration.
     """
     logger = logging.getLogger(__name__)
     logger.info('starting')
@@ -33,6 +32,9 @@ def run(emailconf, message_processor, schema, ftpconf):
     msglimit = emailconf.get('limit')
     if msglimit is not None:
         msglimit = int(msglimit)
+    message_processor = _resolve(emailconf['message_processor'])
+    schema_class = _resolve(emailconf['schema_class'])
+    schema = schema_class()
 
     # criteria for messages since yesterday, from the pstl message sender
     # XXX: this will probably have to be configurable and something more like:
@@ -43,27 +45,19 @@ def run(emailconf, message_processor, schema, ftpconf):
         date_gte = date.today() - timedelta(days=1), # yesterday
     )
 
-    ftphost = ftpconf['host']
-    ftpusername = ftpconf['username']
-    ftppassword = ftpconf['password']
-    pathfmt = ftpconf['pathfmt']
+    pathfmt = outputconf['pathfmt']
 
     logger.debug('mail host: %s', mailhost)
     logger.debug('mail username: %s', mailusername)
     logger.debug('mail password: %s', hide(mailpassword))
     logger.debug('mail fetch limit: %s', msglimit)
     logger.debug('mail fetch criteria: %s', since_yesterday_from)
-
-    logger.debug('ftp host: %s', ftphost)
-    logger.debug('ftp username: %s', ftpusername)
-    logger.debug('ftp password: %s', hide(ftppassword))
     logger.debug('message_processor: %r', message_processor)
     logger.debug('schema: %r', schema)
     logger.debug('pathfmt: %r', pathfmt)
 
-    logger.info('logging into email and ftp')
-    with MailBox(mailhost).login(mailusername, mailpassword) as mailbox, \
-            ftplib.FTP(ftphost, ftpusername, ftppassword) as ftp:
+    logger.info('logging into email')
+    with MailBox(mailhost).login(mailusername, mailpassword) as mailbox:
         logger.info('fetching messages')
         messages = mailbox.fetch(
             since_yesterday_from,
@@ -93,3 +87,7 @@ def run(emailconf, message_processor, schema, ftpconf):
             logger.info('uploading file to ftp: %r', path)
             ftp.storbinary('STOR ' + path, output_fp)
             logger.info('run done')
+
+def run(conf):
+    print(conf.source.itermessages())
+    # XXX: left off here liking this _resolve config thing
