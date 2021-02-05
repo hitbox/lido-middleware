@@ -1,6 +1,9 @@
 from utils import _resolve
 
 class Output:
+    """
+    Writes LIDO message to something.
+    """
 
     def write(self, lido_message):
         raise NotImplementedError
@@ -20,6 +23,9 @@ class FileOutput(Output):
 
 
 class Source:
+    """
+    Produce messages from something.
+    """
 
     def itermessage(self):
         raise NotImplementedError
@@ -38,19 +44,28 @@ class PickleSource(Source):
                 yield message
 
 
+class PickleGlobSource(Source):
+
+    def __init__(self, glob):
+        self.glob = glob
+
+    def itermessages(self):
+        import pickle
+        from glob import glob
+        for fn in glob(self.glob):
+            with open(fn, 'rb') as fp:
+                message = pickle.load(fp)
+                message._fn = fn
+                yield message
+
+
 class MailBoxSource(Source):
 
     def __init__(self, host, username, password, fetch_criteria=None):
-        pass
-
-
-class MailConfig:
-
-    def __init__(self, host, username, password, fetch_config):
         self.host = host
         self.username = username
         self.password = password
-        self.fetch_config = fetch_config
+        self.fetch_criteria = fetch_criteria
 
 
 class FetchConfig:
@@ -93,20 +108,10 @@ def file_config(config_processor_or_file, defaults=None):
     run_section = cp['run']
 
     source_section = cp['source_' + run_section['source']]
-
     source_class = _resolve(source_section['class'])
     source_args = eval(source_section['args'])
     source = source_class(*source_args)
 
-    #mailconfig = MailConfig(
-    #    source_section['host'],
-    #    source_section['username'],
-    #    source_section['password'],
-    #    FetchConfig(
-    #        source_section['fetch_limit'],
-    #        source_section.get('mark_seen')
-    #    )
-    #)
     message_processor = _resolve(run_section['message_processor'])
     schema_class = _resolve(run_section['schema_class'])
     output_section = cp['output_' + run_section['output']]
@@ -120,4 +125,5 @@ def file_config(config_processor_or_file, defaults=None):
         schema_class = schema_class,
         output = output,
     )
+
     return runconfig

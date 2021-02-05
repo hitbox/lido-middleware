@@ -89,5 +89,15 @@ def run(emailconf, outputconf):
             logger.info('run done')
 
 def run(conf):
-    print(conf.source.itermessages())
-    # XXX: left off here liking this _resolve config thing
+    schema = conf.schema_class()
+    errors = set()
+
+    for msg in conf.source.itermessages():
+        data = conf.message_processor(msg)
+        try:
+            loadplan = schema.load(data)
+        except:
+            breakpoint()
+
+    # want to iterate over the pickle files and capture all the flight numbers
+    # that are breaking the > 5 rule.

@@ -1,6 +1,7 @@
 from marshmallow import Schema
 from marshmallow import post_load
 from marshmallow import pre_load
+from marshmallow import validates
 from marshmallow.exceptions import ValidationError
 from marshmallow.fields import Constant
 from marshmallow.fields import DateTime
@@ -10,8 +11,11 @@ from marshmallow.fields import List
 from marshmallow.fields import Nested
 from marshmallow.fields import String
 from marshmallow.fields import Time
+from marshmallow.validate import Length
 from marshmallow.validate import OneOf
 from marshmallow.validate import Regexp
+
+from .regex import company_and_flight_number_re
 
 from extradata import airline_designators
 from extradata import stations
@@ -161,16 +165,27 @@ class LoadPlanSchema(Schema):
         company_and_flight_number = data['company_and_flight_number1']
         del data['company_and_flight_number1']
         del data['company_and_flight_number2']
-        if company_and_flight_number.startswith('ATIATN'):
-            data['company'] = 'ATI'
-            data['flight_number'] = company_and_flight_number[6:]
+
+        mapping = (
+            ('ATIATN', 'ATI'),
+            ('ABXABX', 'ABX'),
+            ('ATI8C', 'ATI'),
+            ('ABX', 'ABX'),
+            ('ATI', 'ATI'),
+        )
+        for prefix, company in mapping:
+            if company_and_flight_number.startswith(prefix):
+                flight_number = company_and_flight_number[len(prefix):]
+                break
         else:
-            data['company'] = company_and_flight_number[:3]
-            data['flight_number'] = company_and_flight_number[3:]
+            raise ValidationError(
+                'unable to split compand and flight number, %r'
+                % company_and_flight_number)
+        data['company'] = company
+        data['flight_number'] = flight_number
 
         # Update airline designator from company value.
-        company = data['company']
-        data['airline_designator'] = airline_designators.by_company[company]
+        data['airline_designator'] = airline_designators.by_company[data['company']]
 
         return data
 
@@ -179,14 +194,14 @@ class LoadPlanSchema(Schema):
 
     load_planner = String()
     company = String()
-    airline_designator = String()
-    flight_number = String()
+    airline_designator = String(validate=Length(max=3))
+    flight_number = String(validate=Length(max=5))
     aircraft_registration = String()
     actual_departure_time = Time(allow_none=True, format='%H%M')
-    origin_icao = String(required=True)
-    origin_iata = String(required=True)
-    destination_icao = String(required=True)
-    destination_iata = String(required=True)
+    origin_icao = String(required=True, validate=Length(max=4))
+    origin_iata = String(required=True, validate=Length(max=3))
+    destination_icao = String(required=True, validate=Length(max=4))
+    destination_iata = String(required=True, validate=Length(max=3))
     day = Integer()
     souls_onboard = Integer()
     color_code = String()
@@ -210,7 +225,7 @@ class LoadPlanSchema(Schema):
     estimated_pax_class_two = Constant(None)
     estimated_pax_class_three = Constant(None)
 
-    positions = List(Nested(PositionSchema))
+    #positions = List(Nested(PositionSchema))
     weights = List(Nested(WeightSchema))
     aircraft_configurations = List(Nested(AircraftConfigSchema))
 

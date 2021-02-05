@@ -4,8 +4,8 @@ come out of here.
 """
 from .regex import ad_line_re
 from .regex import config_line_re
-from .regex import dense_line_re2
 from .regex import dense_line_re1
+from .regex import dense_line_re2
 from .regex import detail_weight_line_re
 from .regex import end_line_re
 from .regex import main_deck_header
@@ -17,7 +17,6 @@ from .regex import si_line_re
 from .regex import souls_onboard_re
 from .regex import space_run
 from .regex import tape_line_re
-from .regex import weight_and_unit_re
 
 class ExtractError(Exception):
     pass
@@ -75,20 +74,20 @@ def _weights_and_config_data(lines_iter, color_code):
         if main_deck_header.match(line):
             break
         other_weight_lines.append(line)
-    # parse detail weight lines
+    # pull detail weight lines data
     weights_data = []
     for weight_line in weight_lines:
         match = detail_weight_line_re.match(weight_line)
         if not match:
             raise ExtractError('Unable to parse detail weight line, %r' % weight_line)
         weights_data.append(match.groupdict())
-    # parse other weight lines
+    # pull other weight lines data
     for other_weight_line in other_weight_lines:
         match = other_weight_line_re.match(other_weight_line)
         if not match:
             raise ExtractError('Unable to parse other weight line, %r' % other_weight_line)
         weights_data.append(match.groupdict())
-    # parse config lines
+    # pull config lines data
     config_data = []
     for config_line in config_lines:
         match = config_line_re.match(config_line)
@@ -184,16 +183,18 @@ def loadplan_from_lines(lines):
     line = next(lines_iter)
     match = dense_line_re2.match(line)
     if not match:
-        raise ExtractError('no match dense line %r' % line)
+        raise ExtractError('no match second dense line %r' % line)
     loadplan_data.update(match.groupdict())
 
-    # list of positions and weights
-    loadplan_data['positions'] = []
+    # skip past the list of positions and weights
+    #-loadplan_data['positions'] = []
     for line in lines_iter:
         if not line.startswith('-'):
             break
-        position_data = _position(line)
-        loadplan_data['positions'].append(position_data)
+    # disabled as these aren't used by LIDO and these lines can be very sloppy.
+    # keeping in case they become required for LIDO
+    #-   position_data = _position(line)
+    #-   loadplan_data['positions'].append(position_data)
 
     # using line from loop above
     match = si_line_re.match(line)
