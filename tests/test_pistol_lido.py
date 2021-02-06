@@ -15,7 +15,7 @@ class TestLIDO(unittest.TestCase):
             wbmsg = lido.LIDOWeightBalanceMessage(loadplan)
             wbmsg_string = str(wbmsg)
             expects = (
-                'WAB09NOV2017002500COM  123 09NOV2017MIA  NGU  04100'
+                'WAB09NOV20170025008C   123 09NOV2017MIA  NGU  04100'
                 '      000000YYY 24.121487521783520000L     017986  '
                 '                            ')
             self.assertEqual(wbmsg_string, expects)
