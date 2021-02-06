@@ -55,9 +55,12 @@ class PickleGlobSource(Source):
         from glob import glob
         for fn in glob(self.pathname):
             with open(fn, 'rb') as fp:
-                message = pickle.load(fp)
-                message._filename = fn
-                yield message
+                messages = pickle.load(fp)
+                if not isinstance(messages, (list, tuple, set)):
+                    messages = [messages]
+                for message in messages:
+                    message._filename = fn
+                    yield message
 
 
 class MailBoxSource(Source):
