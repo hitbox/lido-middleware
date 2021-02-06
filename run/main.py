@@ -9,7 +9,7 @@ from .run import run
 
 def main(argv=None):
     """
-    Write LIDO weight and balance message file to FTP.
+    Download, parse/extract and write LIDO weight and balance message output.
     """
     parser = argparse.ArgumentParser(description=main.__doc__, prog='run')
     parser.add_argument('config', nargs='+', type=Path)
