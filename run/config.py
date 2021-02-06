@@ -1,17 +1,103 @@
+from abc import abstractmethod
+
 from utils import _resolve
+
+class Source:
+    """
+    Produce messages from something.
+    """
+
+    @abstractmethod
+    def itermessages(self):
+        """
+        Should generate iterable of load plan messages to extract from.
+        """
+        raise NotImplementedError
+
 
 class Output:
     """
     Writes LIDO message to something.
     """
 
+    @abstractmethod
     def write(self, lido_message):
         raise NotImplementedError
 
 
+class MessageFilter:
+    """
+    Decide if email message should be processed.
+    """
+
+    @abstractmethod
+    def filter(self, message):
+        raise NotImplementedError
+
+
+class MessageArchive:
+    """
+    Save a message so that it can be ignored next run.
+    """
+
+    @abstractmethod
+    def save(self, message):
+        raise NotImplementedError
+
+
+class PickleGlobSource(Source):
+
+    def __init__(self, pathname):
+        self.pathname = pathname
+
+    def itermessages(self):
+        import pickle
+        from glob import glob
+        for fn in glob(self.pathname):
+            with open(fn, 'rb') as fp:
+                message = pickle.load(fp)
+                message._filename = fn
+                yield message
+
+
+class MailBoxSource(Source):
+    """
+    Loadplan messages from email mailbox.
+    """
+
+    def __init__(self, host, username, password,
+            fetch_criteria=None,
+            fetch_limit=None
+        ):
+        self.host = host
+        self.username = username
+        self.password = password
+        self.fetch_criteria = fetch_criteria
+        self.fetch_limit = fetch_limit
+
+
+class ArchiveMessageFilter(MessageFilter):
+
+    def __init__(self, archive):
+        self.archive = archive
+
+    def filter(self, message):
+        import hashlib
+        with open(self.archive) as archive_file:
+            archived = set(archive_file.splitlines())
+            sha1 = hashlib.sha1(message.obj)
+            return sha1.hexdigest() not in archived
+
+
 class FileOutput(Output):
+    """
+    Write LIDO message string to file.
+    """
 
     def __init__(self, pathfmt, mode='w'):
+        """
+        :param pathfmt: format string, lidomsg=LIDOWeightBalanceMessage instance.
+        """
         self.pathfmt = pathfmt
         self.mode = mode
 
@@ -22,65 +108,16 @@ class FileOutput(Output):
             fp.write(str(lido_message))
 
 
-class Source:
-    """
-    Produce messages from something.
-    """
+class SHA1MessageArchive(MessageArchive):
 
-    def itermessage(self):
-        raise NotImplementedError
+    def __init__(self, archive):
+        self.archive = archive
 
-
-class PickleSource(Source):
-
-    def __init__(self, *filenames):
-        self.filenames = filenames
-
-    def itermessages(self):
-        import pickle
-        for fn in self.filenames:
-            with open(fn, 'rb') as fp:
-                message = pickle.load(fp)
-                yield message
-
-
-class PickleGlobSource(Source):
-
-    def __init__(self, glob):
-        self.glob = glob
-
-    def itermessages(self):
-        import pickle
-        from glob import glob
-        for fn in glob(self.glob):
-            with open(fn, 'rb') as fp:
-                message = pickle.load(fp)
-                message._fn = fn
-                yield message
-
-
-class MailBoxSource(Source):
-
-    def __init__(self, host, username, password, fetch_criteria=None):
-        self.host = host
-        self.username = username
-        self.password = password
-        self.fetch_criteria = fetch_criteria
-
-
-class FetchConfig:
-
-    def __init__(self, limit, mark_seen=None):
-        """
-        Arguments for MailBox.fetch
-        :param limit: number of messages to fetch
-        :param mark_seen: mark messages as seen. this changes MailBox.fetch to
-                          default False.
-        """
-        self.limit = limit
-        if mark_seen is None:
-            mark_seen = False
-        self.mark_seen = mark_seen
+    def save(self, message):
+        import hashlib
+        with open(self.archive, 'a') as archive_file:
+            sha1 = hashlib.sha1(message.obj)
+            archive_file.write(sha1.hexdigest())
 
 
 class RunConfig:
@@ -111,6 +148,8 @@ def file_config(config_processor_or_file, defaults=None):
     source_class = _resolve(source_section['class'])
     source_args = eval(source_section['args'])
     source = source_class(*source_args)
+
+    message_filter = run_section['']
 
     message_processor = _resolve(run_section['message_processor'])
     schema_class = _resolve(run_section['schema_class'])
