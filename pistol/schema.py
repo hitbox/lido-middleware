@@ -13,6 +13,7 @@ from marshmallow.fields import String
 from marshmallow.fields import Time
 from marshmallow.validate import Length
 from marshmallow.validate import OneOf
+from marshmallow.validate import Range
 from marshmallow.validate import Regexp
 
 from .regex import company_and_flight_number_re
@@ -25,6 +26,8 @@ from .regex import valid_config_name_pattern
 from .regex import valid_weight_name_pattern
 
 PRINT_DATETIME_FORMAT = '%m/%d/%y %H%M'
+
+_max_six_digits = 999_999
 
 class PositionSchema(Schema):
     """
@@ -211,14 +214,14 @@ class LoadPlanSchema(Schema):
     print_time_local = DateTime(format=PRINT_DATETIME_FORMAT)
     print_time_gmt = DateTime(format=PRINT_DATETIME_FORMAT)
 
-    planning_status = Constant('04')
-    duplicate_number = Constant('1')
-    revision_number = Constant('00')
-    operational_suffix = Constant(' ')
-    pax_baggage_indicator = Constant('Y')
-    cargo_mail_indicator = Constant('Y')
-    transit_load_indicator = Constant('Y')
-    tail_tank_indicator = Constant(' ')
+    planning_status = Constant('04', validate=Length(max=2))
+    duplicate_number = Constant('1', validate=Length(max=1))
+    revision_number = Constant('00', validate=Length(max=2))
+    operational_suffix = Constant(' ', validate=Length(max=1))
+    pax_baggage_indicator = Constant('Y', validate=OneOf('YN'))
+    cargo_mail_indicator = Constant('Y', validate=OneOf('YN'))
+    transit_load_indicator = Constant('Y', validate=OneOf('YN'))
+    tail_tank_indicator = Constant(' ', validate=Length(max=1))
     estimated_pax = Constant(0)
     dry_operating_index = Constant(None)
     estimated_pax_class_one = Constant(None)
@@ -229,7 +232,7 @@ class LoadPlanSchema(Schema):
     weights = List(Nested(WeightSchema))
     aircraft_configurations = List(Nested(AircraftConfigSchema))
 
-    actual_takeoff_fuel = Integer()
-    actual_zero_fuel_weight = Integer()
+    actual_takeoff_fuel = Integer(validate=Range(max=_max_six_digits))
+    actual_zero_fuel_weight = Integer(validate=Range(max=_max_six_digits))
     center_of_gravity = Float(data_key='cg_percent_mac')
-    dry_operating_weight = Integer()
+    dry_operating_weight = Integer(validate=Range(max=_max_six_digits))
