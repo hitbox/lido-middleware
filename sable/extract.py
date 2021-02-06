@@ -70,4 +70,4 @@ def from_text(text):
     return sable_data
 
 def loadplan_from_message(message):
-    return parse_from_text(message.attachments[0].payload.decode('utf8'))
+    return from_text(message.attachments[0].payload.decode('utf8'))
