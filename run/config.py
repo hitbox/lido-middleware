@@ -1,3 +1,5 @@
+import sys
+
 from abc import abstractmethod
 
 from utils import _resolve
@@ -90,6 +92,23 @@ class ArchiveMessageFilter(MessageFilter):
             archived = set(archive_file.splitlines())
             sha1 = hashlib.sha1(message.obj)
             return sha1.hexdigest() not in archived
+
+
+class StreamOutput(Output):
+
+    def __init__(self, stream=None):
+        if stream is None:
+            stream = sys.stderr
+        self.stream = stream
+
+    def write(self, lido_message):
+        self.stream.write(str(lido_message))
+
+
+class NullOutput(Output):
+
+    def write(self, lido_message):
+        pass
 
 
 class FileOutput(Output):
