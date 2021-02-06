@@ -50,12 +50,8 @@ def main(argv=None):
 
     if isinstance(config['bulk'], str):
         config['bulk'] = config['bulk'].lower().strip() in ('1', 'yes', 'y', 'true')
-    config['limit'] = int(config['limit'])
-
-    from pprint import pprint
-    pprint(criteria_kwargs)
-    pprint(config)
-    #return
+    if config['limit']:
+        config['limit'] = int(config['limit'])
 
     if args.subcommand == 'save':
         with MailBox(config['host']) as mailbox:
