@@ -43,9 +43,11 @@ class AirlineDesignators:
         matches = [code for code in self.all_codes if s.startswith(code)]
         nmatches = len(matches)
         if nmatches == 0:
-            raise ExtradataError('No matches for airline or company')
+            raise ExtradataError(
+                'No matches for airline or company, %r' % s)
         elif nmatches > 1:
-            raise ExtradataError('More than one match for airline or company')
+            raise ExtradataError(
+                'More than one match for airline or company, %r' % s)
         else:
             # one match, is it the company or airline?
             match = matches[0]
@@ -53,7 +55,7 @@ class AirlineDesignators:
             is_airline = match in self.airline_codes
             if is_company and is_airline:
                 raise ExtradataError(
-                    'code matches both company and airline, %r' % match)
+                    'Code matches both company and airline, %r' % match)
             data = {'flight_number': s[len(match):]}
             if is_company:
                 data['company'] = match
