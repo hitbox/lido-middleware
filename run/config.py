@@ -166,12 +166,17 @@ def file_config(config_processor_or_file, defaults=None):
 
     run_section = cp['run']
 
+    # source
     source_section = cp['source_' + run_section['source']]
     source_class = _resolve(source_section['class'])
     source_args = eval(source_section['args'])
     source = source_class(*source_args)
 
-    message_filter = run_section['']
+    # filter
+    message_filter = run_section['message_filter']
+    if message_filter != 'None':
+        message_filter_section = cp['message_filter_' + message_filter_]
+        raise NotImplementedError
 
     message_processor = _resolve(run_section['message_processor'])
     schema_class = _resolve(run_section['schema_class'])
