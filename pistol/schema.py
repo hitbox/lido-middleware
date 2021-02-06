@@ -20,6 +20,7 @@ from .regex import company_and_flight_number_re
 
 from extradata import airline_designators
 from extradata import stations
+from schema import CommonSchemaMixin
 from units import VALID_WEIGHT_UNITS
 
 from .regex import valid_config_name_pattern
@@ -100,7 +101,7 @@ class AircraftConfigSchema(Schema):
     value = String()
 
 
-class LoadPlanSchema(Schema):
+class LoadPlanSchema(CommonSchemaMixin, Schema):
     """
     Pistol Load Plan Schema
     """
@@ -182,7 +183,7 @@ class LoadPlanSchema(Schema):
                 break
         else:
             raise ValidationError(
-                'unable to split compand and flight number, %r'
+                'unable to split company and flight number, %r'
                 % company_and_flight_number)
         data['company'] = company
         data['flight_number'] = flight_number
@@ -213,20 +214,6 @@ class LoadPlanSchema(Schema):
     computer = String()
     print_time_local = DateTime(format=PRINT_DATETIME_FORMAT)
     print_time_gmt = DateTime(format=PRINT_DATETIME_FORMAT)
-
-    planning_status = Constant('04', validate=Length(max=2))
-    duplicate_number = Constant('1', validate=Length(max=1))
-    revision_number = Constant('00', validate=Length(max=2))
-    operational_suffix = Constant(' ', validate=Length(max=1))
-    pax_baggage_indicator = Constant('Y', validate=OneOf('YN'))
-    cargo_mail_indicator = Constant('Y', validate=OneOf('YN'))
-    transit_load_indicator = Constant('Y', validate=OneOf('YN'))
-    tail_tank_indicator = Constant(' ', validate=Length(max=1))
-    estimated_pax = Constant(0)
-    dry_operating_index = Constant(None)
-    estimated_pax_class_one = Constant(None)
-    estimated_pax_class_two = Constant(None)
-    estimated_pax_class_three = Constant(None)
 
     #positions = List(Nested(PositionSchema))
     weights = List(Nested(WeightSchema))

@@ -8,9 +8,11 @@ from marshmallow.fields import Integer
 from marshmallow.fields import List
 from marshmallow.fields import Nested
 from marshmallow.fields import String
+from marshmallow.validate import Length
 from marshmallow.validate import OneOf
 
 from extradata import airline_designators
+from schema import CommonSchemaMixin
 from units import VALID_WEIGHT_UNITS
 
 class PositionSchema(Schema):
@@ -34,7 +36,7 @@ class PositionSchema(Schema):
     volume = String(allow_none=True, data_key='VOL')
 
 
-class LoadPlanSchema(Schema):
+class LoadPlanSchema(CommonSchemaMixin, Schema):
     """
     Sable Load Plan Schema
     """
@@ -54,11 +56,11 @@ class LoadPlanSchema(Schema):
 
     flight_number = String(required=True)
     company = String(allow_none=True, required=True)
-    airline_designator = String(allow_none=True, required=True)
+    airline_designator = String(allow_none=True, required=True, validate=Length(max=3))
     day = Integer(required=True)
     tail = String()
-    origin_iata = String(required=True)
-    destination_iata = String(required=True)
+    origin_iata = String(required=True, validate=Length(max=3))
+    destination_iata = String(required=True, validate=Length(max=3))
     gross = Integer()
     net_weight = Integer()
     uload = Integer()
