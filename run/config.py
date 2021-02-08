@@ -107,8 +107,8 @@ class ArchiveMessageFilter(MessageFilter):
             return True
         else:
             with open(self.archive) as archive_file:
-                archived = set(archive_file.splitlines())
-                sha1 = hashlib.sha1(message.obj)
+                archived = set(line.strip() for line in archive_file.readlines())
+                sha1 = hashlib.sha1(bytes(message.obj))
                 return sha1.hexdigest() not in archived
 
 
@@ -160,8 +160,8 @@ class SHA1MessageArchive(MessageArchive):
         """
         import hashlib
         with open(self.archive, 'a') as archive_file:
-            sha1 = hashlib.sha1(message.obj)
-            archive_file.write(sha1.hexdigest())
+            sha1 = hashlib.sha1(bytes(message.obj))
+            archive_file.write(sha1.hexdigest() + '\n')
 
 
 class RunConfig:
