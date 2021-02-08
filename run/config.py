@@ -77,8 +77,29 @@ class MailBoxSource(Source):
         self.host = host
         self.username = username
         self.password = password
-        self.fetch_criteria = fetch_criteria
+        self.fetch_criteria = eval(fetch_criteria, self._criteria_context())
         self.fetch_limit = fetch_limit
+
+    def _criteria_context(self):
+        from datetime import date
+        from datetime import timedelta
+
+        from imap_tools import AND
+        return dict(
+            AND = AND,
+            date = date,
+            timedelta = timedelta,
+        )
+
+    def itermessages(self):
+        from imap_tools import MailBox
+        with MailBox(self.host) as mailbox:
+            mailbox.login(self.username, self.password)
+            messages = mailbox.fetch(
+                    self.fetch_criteria,
+                    limit=self.fetch_limit,
+                    mark_seen=False)
+            return messages
 
 
 class ArchiveMessageFilter(MessageFilter):
@@ -88,10 +109,17 @@ class ArchiveMessageFilter(MessageFilter):
 
     def filter(self, message):
         import hashlib
-        with open(self.archive) as archive_file:
-            archived = set(archive_file.splitlines())
-            sha1 = hashlib.sha1(message.obj)
-            return sha1.hexdigest() not in archived
+
+        from pathlib import Path
+
+        path = Path(self.archive)
+        if not path.exists():
+            return True
+        else:
+            with open(self.archive) as archive_file:
+                archived = set(archive_file.splitlines())
+                sha1 = hashlib.sha1(message.obj)
+                return sha1.hexdigest() not in archived
 
 
 class StreamOutput(Output):
@@ -136,6 +164,10 @@ class SHA1MessageArchive(MessageArchive):
         self.archive = archive
 
     def save(self, message):
+        """
+        Save the SHA1 hashed bytes of email message to line-based file.
+        :param message: imap_tools.message.MailMessage object.
+        """
         import hashlib
         with open(self.archive, 'a') as archive_file:
             sha1 = hashlib.sha1(message.obj)
@@ -170,7 +202,8 @@ def file_config(config_processor_or_file, defaults=None):
     source_section = cp['source_' + run_section['source']]
     source_class = _resolve(source_section['class'])
     source_args = eval(source_section['args'])
-    source = source_class(*source_args)
+    source_kwargs = source_section.get('kwargs', {})
+    source = source_class(*source_args, **source_kwargs)
 
     # filter
     message_filter = run_section['message_filter']
@@ -193,3 +226,6 @@ def file_config(config_processor_or_file, defaults=None):
     )
 
     return runconfig
+
+def pyfile_config(path, defaults=None):
+    pass
