@@ -78,19 +78,8 @@ class MailBoxSource(Source):
         self.host = host
         self.username = username
         self.password = password
-        self.fetch_criteria = eval(fetch_criteria, self._criteria_context())
+        self.fetch_criteria = fetch_criteria
         self.fetch_limit = fetch_limit
-
-    def _criteria_context(self):
-        from datetime import date
-        from datetime import timedelta
-
-        from imap_tools import AND
-        return dict(
-            AND = AND,
-            date = date,
-            timedelta = timedelta,
-        )
 
     def itermessages(self):
         from imap_tools import MailBox
