@@ -87,9 +87,9 @@ class MailBoxSource(Source):
             mailbox.login(self.username, self.password)
             messages = mailbox.fetch(
                     self.fetch_criteria,
-                    limit=self.fetch_limit,
-                    mark_seen=False)
-            return messages
+                    limit = self.fetch_limit,
+                    mark_seen = False)
+            yield from messages
 
 
 class ArchiveMessageFilter(MessageFilter):
