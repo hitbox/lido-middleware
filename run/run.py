@@ -6,11 +6,16 @@ from lido import LIDOWeightBalanceMessage
 
 def run(conf):
     logger = logging.getLogger(__name__)
-    schema = conf.schema_class()
 
-    for msg in conf.source.itermessages():
+    source = conf['SOURCE']
+    schema_class = conf['SCHEMA_CLASS']
+    message_processor = conf['MESSAGE_PROCESSOR']
+    output = conf['OUTPUT']
+
+    schema = schema_class()
+    for msg in source.itermessages():
         try:
-            message_data = conf.message_processor(msg)
+            message_data = message_processor(msg)
         except Exception as e:
             logger.exception(e)
         else:
@@ -26,5 +31,4 @@ def run(conf):
                 logger.exception(e)
             else:
                 lido_message = LIDOWeightBalanceMessage(loadplan)
-                conf.output.write(lido_message)
-
+                output.write(lido_message)

@@ -5,6 +5,7 @@ import logging.config
 from pathlib import Path
 
 from .config import file_config
+from .config import pyfile_config
 from .run import run
 
 def main(argv=None):
@@ -12,21 +13,13 @@ def main(argv=None):
     Download, parse/extract and write LIDO weight and balance message output.
     """
     parser = argparse.ArgumentParser(description=main.__doc__, prog='run')
-    parser.add_argument('config', nargs='+', type=Path)
+    parser.add_argument('pyfile', type=Path)
     args = parser.parse_args(argv)
 
-    # RawConfigParser because format strings are expected
-    cp = configparser.RawConfigParser()
-    cp.read(args.config)
-
-    # logging
-    if all(section in cp for section in ['loggers', 'handlers', 'formatters']):
-        logging.config.fileConfig(cp)
-    else:
-        logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
-    conf = file_config(cp)
+    conf = pyfile_config(args.pyfile)
     # run logging exceptions
     try:
         return run(conf)

@@ -1,4 +1,5 @@
 import sys
+import types
 
 from abc import abstractmethod
 
@@ -227,5 +228,28 @@ def file_config(config_processor_or_file, defaults=None):
 
     return runconfig
 
-def pyfile_config(path, defaults=None):
-    pass
+def pyfile_config(path):
+    """Updates the values in the config from a Python file.  This function
+    behaves as if the file was imported as module with the
+    :meth:`from_object` function.
+
+    :param filename: the filename of the config.  This can either be an
+                     absolute filename or a filename relative to the
+                     root path.
+    :param silent: set to ``True`` if you want silent failure for missing
+                   files.
+
+    .. versionadded:: 0.7
+       `silent` parameter.
+    """
+    d = types.ModuleType("config")
+    d.__file__ = path
+    with open(path, mode="rb") as config_file:
+        exec(compile(config_file.read(), path, "exec"), d.__dict__)
+
+    config = {}
+    for key in dir(d):
+        if key.isupper():
+            config[key] = getattr(d, key)
+
+    return config
