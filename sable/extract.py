@@ -66,11 +66,11 @@ def from_text(text):
         # add header and make dict
         row = dict(zip(HEADER, row))
         positions.append(row)
-    sable_data['positions'] = positions
+    #sable_data['positions'] = positions
 
     return sable_data
 
 def loadplan_from_message(message):
     data = from_text(message.attachments[0].payload.decode('utf8'))
-    data['print_time_gmt'] = message.date.strftime(PRINT_DATETIME_FORMAT)
+    data['message_date'] = message.date.strftime(PRINT_DATETIME_FORMAT)
     return data

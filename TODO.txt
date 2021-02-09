@@ -3,9 +3,11 @@ Sable:
 * use email datetime for lido timestamp
 
 
-Active Sable questions to Paul P.
-* actual takeoff fuel
-* actual zero fuel weight
+Active Sable questions to Paul P. for sable.schema.LoadPlanSchema
+* actual_takeoff_fuel
+* actual_zero_fuel_weight
+* center_of_gravity
+* dry_operating_weight
 
 NOTES
 

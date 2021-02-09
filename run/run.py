@@ -19,18 +19,20 @@ def run(config):
     output = config['OUTPUT']
     message_archive = config['MESSAGE_ARCHIVE']
 
+    message_fmt = '{0.date:%Y-%m-%d %H:%M:%S} {0.text!r}'.format
+
     schema = schema_class()
     for message in source.itermessages():
         if not message_filter.filter(message):
-            logger.info('message filter rejected %r', message)
+            logger.info(
+                'message filter rejected ' + message_fmt(message))
             continue
-        logger.info('message %r', message)
+        logger.info('processing message ' + message_fmt(message))
         try:
             message_data = message_processor(message)
         except Exception as e:
             logger.exception(e)
         else:
-            logger.info('message_data %r', message_data)
             try:
                 loadplan = schema.load(message_data)
             except ValidationError as error:
@@ -42,9 +44,10 @@ def run(config):
             except Exception as e:
                 logger.exception(e)
             else:
-                logger.info('loadplan %r', loadplan)
+                logger.info('loadplan loaded from schema')
                 lido_message = LIDOWeightBalanceMessage(loadplan)
-                logger.info('lido_message %r', lido_message)
+                logger.info('lido_message created')
                 output.write(lido_message)
                 message_archive.save(message)
-                logger.info('saved %r', message)
+                logger.info('message archived')
+        break

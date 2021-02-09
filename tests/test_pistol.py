@@ -1,13 +1,20 @@
 import unittest
 
+from datetime import datetime
 from pathlib import Path
 
+import lido
 import pistol.extract
+import pistol.schema
+
+datadir = Path(__file__).parent / 'data'
 
 class TestPistolExtract(unittest.TestCase):
 
     def test_pistol_extract(self):
-        datadir = Path(__file__).parent / 'data'
+        """
+        Test extracting strings from pistol message.
+        """
         message_path = datadir / 'pistol_message.txt'
         expect_path = datadir / 'pistol_message.txt.extract-expect.py'
         with open(message_path) as pistol_message_file, \
@@ -56,6 +63,35 @@ class TestPistolExtract(unittest.TestCase):
         self.assertEqual(pistol.extract._flight_number_and_company('AAA100'), ('100', 'AAA'))
         # this is the current behavior, almost certainely not desired.
         self.assertEqual(pistol.extract._flight_number_and_company('ATIATN100'), ('100', 'ATI'))
+
+
+class TestPistolSchema(unittest.TestCase):
+
+    def test_pistol_schema_load(self):
+        extracted_path = datadir / 'pistol_message.txt.extract-expect.py'
+        expect_path = datadir / 'pistol_message.txt.schema-load-expect.py'
+        with open(extracted_path) as extracted_file, \
+                open(expect_path) as expected_file:
+            extracted_data = eval(extracted_file.read(), {'datetime': datetime})
+            expected = eval(expected_file.read())
+            loadplan = pistol.schema.LoadPlanSchema().load(extracted_data)
+            self.maxDiff = None
+            self.assertEqual(loadplan, expected)
+
+
+class TestPistolLIDO(unittest.TestCase):
+
+    def test_pistol_message_to_lido_string(self):
+        pistol_loadplan_path = datadir / 'pistol_message.txt.schema-load-expect.py'
+        with open(pistol_loadplan_path) as loadplan_file:
+            loadplan = eval(loadplan_file.read(), {'datetime': datetime})
+            wbmsg = lido.LIDOWeightBalanceMessage(loadplan)
+            wbmsg_string = str(wbmsg)
+            expects = (
+                'WAB09NOV20170025008C   123 09NOV2017MIA  NGU  04100'
+                '      000000YYY 24.121487521783520000L     017986  '
+                '                            ')
+            self.assertEqual(wbmsg_string, expects)
 
 
 if __name__ == '__main__':

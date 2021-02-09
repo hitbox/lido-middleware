@@ -27,17 +27,17 @@
     'estimated_pax_class_two': None,
     'estimated_pax_class_three': None,
 
-    'positions': [
-        {'destination_iata': 'BBB', 'flag': '*DGRORDGTWLATWPXNCYORGCG',
-         'net_weight': 1171, 'position': 'A1', 'tare': 111, 'total': 1282,
-         'unit_load_device': 'ABC0123ZZZ', 'volume': '100'},
-        {'destination_iata': None, 'flag': None, 'net_weight': 0, 'position': 'A2',
-         'tare': 0, 'total': 0, 'unit_load_device': 'VOID', 'volume': '0'},
-        {'destination_iata': None, 'flag': None, 'net_weight': None, 'position':
-         'A3', 'tare': None, 'total': None, 'unit_load_device': 'VOID',
-         'volume': None},
-        {'destination_iata': 'CCC', 'flag': 'CVGHUBMIPCNYORGBAH(SPX)',
-         'net_weight': 1234, 'position': '3L', 'tare': 258, 'total': 1492,
-         'unit_load_device': 'DEF4567ZZZ', 'volume': '100'}
-    ],
+    #'positions': [
+    #    {'destination_iata': 'BBB', 'flag': '*DGRORDGTWLATWPXNCYORGCG',
+    #     'net_weight': 1171, 'position': 'A1', 'tare': 111, 'total': 1282,
+    #     'unit_load_device': 'ABC0123ZZZ', 'volume': '100'},
+    #    {'destination_iata': None, 'flag': None, 'net_weight': 0, 'position': 'A2',
+    #     'tare': 0, 'total': 0, 'unit_load_device': 'VOID', 'volume': '0'},
+    #    {'destination_iata': None, 'flag': None, 'net_weight': None, 'position':
+    #     'A3', 'tare': None, 'total': None, 'unit_load_device': 'VOID',
+    #     'volume': None},
+    #    {'destination_iata': 'CCC', 'flag': 'CVGHUBMIPCNYORGBAH(SPX)',
+    #     'net_weight': 1234, 'position': '3L', 'tare': 258, 'total': 1492,
+    #     'unit_load_device': 'DEF4567ZZZ', 'volume': '100'}
+    #],
 }

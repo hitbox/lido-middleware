@@ -16,7 +16,7 @@ def main(argv=None):
     parser.add_argument('pyfile', type=Path)
     args = parser.parse_args(argv)
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, style='{')
     logger = logging.getLogger(__name__)
 
     conf = pyfile_config(args.pyfile)
