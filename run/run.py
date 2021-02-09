@@ -4,15 +4,20 @@ from marshmallow import ValidationError
 
 from lido import LIDOWeightBalanceMessage
 
-def run(conf):
+def run(config):
     logger = logging.getLogger(__name__)
 
-    source = conf['SOURCE']
-    schema_class = conf['SCHEMA_CLASS']
-    message_filter = conf['MESSAGE_FILTER']
-    message_processor = conf['MESSAGE_PROCESSOR']
-    output = conf['OUTPUT']
-    message_archive = conf['MESSAGE_ARCHIVE']
+    # optional config overrides aircraft registration to airline mapping
+    if 'AIRCRAFT_REGISTRATION_AIRLINE_MAPPING' in config:
+        import extradata
+        extradata.aircraftregistration = config['AIRCRAFT_REGISTRATION_AIRLINE_MAPPING']
+
+    source = config['SOURCE']
+    schema_class = config['SCHEMA_CLASS']
+    message_filter = config['MESSAGE_FILTER']
+    message_processor = config['MESSAGE_PROCESSOR']
+    output = config['OUTPUT']
+    message_archive = config['MESSAGE_ARCHIVE']
 
     schema = schema_class()
     for message in source.itermessages():

@@ -3,6 +3,7 @@ from marshmallow import post_load
 from marshmallow import pre_load
 from marshmallow.exceptions import ValidationError
 from marshmallow.fields import Constant
+from marshmallow.fields import DateTime
 from marshmallow.fields import Float
 from marshmallow.fields import Integer
 from marshmallow.fields import List
@@ -13,6 +14,7 @@ from marshmallow.validate import OneOf
 
 from extradata import airline_designators
 from schema import CommonSchemaMixin
+from schema import PRINT_DATETIME_FORMAT
 from units import VALID_WEIGHT_UNITS
 
 class PositionSchema(Schema):
@@ -69,6 +71,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         data_key = 'weights_unit',
         required = True,
         validate = OneOf(VALID_WEIGHT_UNITS))
+    print_time_gmt = DateTime(format=PRINT_DATETIME_FORMAT)
 
     planning_status = Constant('04')
     duplicate_number = Constant('1')
@@ -84,9 +87,9 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     estimated_pax_class_two = Constant(None)
     estimated_pax_class_three = Constant(None)
 
-    positions = List(Nested(PositionSchema))
+    #positions = List(Nested(PositionSchema))
 
-    # TODO: questions (see TODO.txt)
+    # TODO:
     #actual_takeoff_fuel = Integer(required=True)
     #actual_zero_fuel_weight = Integer(required=True)
     #center_of_gravity = Float(data_key='cg_percent_mac', required=True)

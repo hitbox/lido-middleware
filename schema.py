@@ -7,6 +7,8 @@ from marshmallow.fields import String
 from marshmallow.validate import Length
 from marshmallow.validate import OneOf
 
+PRINT_DATETIME_FORMAT = '%m/%d/%y %H%M'
+
 class CommonSchemaMixin:
 
     planning_status = Constant('04', validate=Length(max=2))

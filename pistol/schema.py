@@ -21,12 +21,11 @@ from .regex import company_and_flight_number_re
 from extradata import airline_designators
 from extradata import stations
 from schema import CommonSchemaMixin
+from schema import PRINT_DATETIME_FORMAT
 from units import VALID_WEIGHT_UNITS
 
 from .regex import valid_config_name_pattern
 from .regex import valid_weight_name_pattern
-
-PRINT_DATETIME_FORMAT = '%m/%d/%y %H%M'
 
 _max_six_digits = 999_999
 

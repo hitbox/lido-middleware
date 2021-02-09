@@ -6,6 +6,7 @@ from .regex import header_re
 from .regex import si_load_re
 
 from extradata import airline_designators
+from schema import PRINT_DATETIME_FORMAT
 
 HEADER = ['POS', 'DST', 'ULDNUMBER', 'TARE', 'NETT', 'TOTAL', 'FLAG', 'VOL']
 
@@ -70,4 +71,6 @@ def from_text(text):
     return sable_data
 
 def loadplan_from_message(message):
-    return from_text(message.attachments[0].payload.decode('utf8'))
+    data = from_text(message.attachments[0].payload.decode('utf8'))
+    data['print_time_gmt'] = message.date.strftime(PRINT_DATETIME_FORMAT)
+    return data
