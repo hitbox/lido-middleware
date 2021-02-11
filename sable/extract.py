@@ -1,12 +1,17 @@
 import re
 
-from .exceptions import SableParseError
+from run.exceptions import ExtractError
+
 from .regex import dense_data_line_re
 from .regex import header_re
 from .regex import si_load_re
 
 from extradata import airline_designators
 from schema import PRINT_DATETIME_FORMAT
+
+class SableExtractError(ExtractError):
+    pass
+
 
 HEADER = ['POS', 'DST', 'ULDNUMBER', 'TARE', 'NETT', 'TOTAL', 'FLAG', 'VOL']
 
@@ -37,14 +42,14 @@ def from_text(text):
             sable_data.update(match.groupdict())
             break
     else:
-        raise SableParseError(
+        raise SableExtractError(
             'Unable to find and parse dense data line, %r' % line)
 
     # SI LOAD information line
     line = next(lines)
     match = si_load_re.match(line)
     if not match:
-        raise SableParseError(
+        raise SableExtractError(
             'Unable to parse SI LOAD information line, %r' % line)
     sable_data.update(match.groupdict())
 
@@ -54,7 +59,7 @@ def from_text(text):
         if match:
             break
     else:
-        raise SableParseError('Positions data header line not found.')
+        raise SableExtractError('Positions data header line not found.')
 
     # scrape position data
     positions = []

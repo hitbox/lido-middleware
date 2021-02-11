@@ -4,10 +4,18 @@ from marshmallow import ValidationError
 
 from lido import LIDOWeightBalanceMessage
 
+from .exceptions import ExtractError
+
 def run(config):
+    """
+    A single run--download, filter, process and write (file) for the LIDO
+    messaging system to consume.
+    """
     logger = logging.getLogger(__name__)
 
     # optional config overrides aircraft registration to airline mapping
+    # this way, in configuration, one can hit a database for current data
+    # instead of relying on a file or some such.
     if 'AIRCRAFT_REGISTRATION_AIRLINE_MAPPING' in config:
         import extradata
         extradata.aircraftregistration = config['AIRCRAFT_REGISTRATION_AIRLINE_MAPPING']
@@ -19,7 +27,8 @@ def run(config):
     output = config['OUTPUT']
     message_archive = config['MESSAGE_ARCHIVE']
 
-    message_fmt = '{0.date:%Y-%m-%d %H:%M:%S} {0.text!r}'.format
+    # format for how messages get logged, nothing to do with processing or extracting.
+    message_fmt = '{0.date:%Y-%m-%d %H:%M:%S} {0.subject!r}'.format
 
     schema = schema_class()
     for message in source.itermessages():
@@ -29,20 +38,22 @@ def run(config):
             continue
         logger.info('processing message ' + message_fmt(message))
         try:
-            message_data = message_processor(message)
-        except Exception as e:
+            extract_data = message_processor(message)
+        except ExtractError as e:
             logger.exception(e)
         else:
             try:
-                loadplan = schema.load(message_data)
+                loadplan = schema.load(extract_data)
             except ValidationError as error:
+                # Prettier line-based output for marshmallow.ValidationError
+                # exceptions, with the data that failed.
+                # Print the original in case the prettier output loses something.
                 logger.exception(error)
-                for key, messages in error.messages.items():
-                    if not key.startswith('_'):
-                        for message in messages:
-                            logger.error(f'{key} {message} ({message_data[key]!r})')
-            except Exception as e:
-                logger.exception(e)
+                # key, [<validation error>, ...]
+                for key, error_messages in error.messages.items():
+                    if key in extract_data:
+                        for errmsg in error_messages:
+                            logger.error(f'{key} {errmsg} ({extract_data[key]!r})')
             else:
                 logger.info('loadplan loaded from schema')
                 lido_message = LIDOWeightBalanceMessage(loadplan)
@@ -50,4 +61,3 @@ def run(config):
                 output.write(lido_message)
                 message_archive.save(message)
                 logger.info('message archived')
-        break

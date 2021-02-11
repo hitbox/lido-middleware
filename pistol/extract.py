@@ -2,6 +2,8 @@
 Extract string data from Pistol message. Nothing but None and strings should
 come out of here.
 """
+from run.exceptions import ExtractError
+
 from .regex import ad_line_re
 from .regex import config_line_re
 from .regex import dense_line_re1
@@ -18,7 +20,7 @@ from .regex import souls_onboard_re
 from .regex import space_run
 from .regex import tape_line_re
 
-class ExtractError(Exception):
+class PistolExtractError(ExtractError):
     pass
 
 
@@ -31,7 +33,7 @@ def _position(line):
         if match:
             return match.groupdict()
     else:
-        raise ExtractError('error matching position line %r' % line)
+        raise PistolExtractError('error matching position line %r' % line)
 
 def _weights_and_config_data(lines_iter, color_code):
     """
@@ -49,7 +51,7 @@ def _weights_and_config_data(lines_iter, color_code):
             # found header for weights and other config info
             break
         elif tries == maxtries:
-            raise ExtractError('Unable to find weights header line')
+            raise PistolExtractError('Unable to find weights header line')
     # split on column index
     config_header_index = line.index('CONFIG  ')
     weight_lines = []
@@ -63,7 +65,7 @@ def _weights_and_config_data(lines_iter, color_code):
         weight_part = line[:config_header_index].strip()
         config_part = line[config_header_index:].strip()
         if not (weight_part or config_part):
-            raise ExtractError(
+            raise PistolExtractError(
                 'Unable to parse weight or config parts from line %r' % line)
         if weight_part:
             weight_lines.append(weight_part)
@@ -79,20 +81,20 @@ def _weights_and_config_data(lines_iter, color_code):
     for weight_line in weight_lines:
         match = detail_weight_line_re.match(weight_line)
         if not match:
-            raise ExtractError('Unable to parse detail weight line, %r' % weight_line)
+            raise PistolExtractError('Unable to parse detail weight line, %r' % weight_line)
         weights_data.append(match.groupdict())
     # pull other weight lines data
     for other_weight_line in other_weight_lines:
         match = other_weight_line_re.match(other_weight_line)
         if not match:
-            raise ExtractError('Unable to parse other weight line, %r' % other_weight_line)
+            raise PistolExtractError('Unable to parse other weight line, %r' % other_weight_line)
         weights_data.append(match.groupdict())
     # pull config lines data
     config_data = []
     for config_line in config_lines:
         match = config_line_re.match(config_line)
         if not match:
-            raise ExtractError('Unable to parse aircraft config line, %r' % config_line)
+            raise PistolExtractError('Unable to parse aircraft config line, %r' % config_line)
         config_data.append({k.strip(): v.strip() for k, v in match.groupdict().items()})
     return (weights_data, config_data)
 
@@ -111,7 +113,7 @@ def _flight_number_and_company(s):
 
 def _actual_departure_time(s):
     if not (s.isdigit() or s == 'Update'):
-        raise ExtractError('Invalid actual time of departure, got %r' % s)
+        raise PistolExtractError('Invalid actual time of departure, got %r' % s)
     # the ad_unknown1 has been observed as N/A. assume actual_departure_time
     # can be N/A too.
     if s in ('Update', 'N/A'):
@@ -131,7 +133,7 @@ def loadplan_from_lines(lines):
     # load planner
     line = next(lines_iter)
     if not line.startswith('LP '):
-        raise ExtractError('Expected LP (load planner) line not found')
+        raise PistolExtractError('Expected LP (load planner) line not found')
     #
     loadplan_data['load_planner'] = line[3:]
     # newlines can appear inside, what should be, the load planner line.
@@ -140,7 +142,7 @@ def loadplan_from_lines(lines):
         if line == 'MVT':
             break
         elif tries == maxtries:
-            raise ExtractError(
+            raise PistolExtractError(
                 'Unable to process LP line, failed looking for MVT line.'
                 % maxtries)
         loadplan_data['load_planner'] += line
@@ -148,7 +150,7 @@ def loadplan_from_lines(lines):
     line = next(lines_iter)
     match = dense_line_re1.match(line)
     if not match:
-        raise ExtractError('no match first dense line %r' % line)
+        raise PistolExtractError('no match first dense line %r' % line)
     loadplan_data.update(match.groupdict())
 
     # ATD: Actual Time of Departure
@@ -156,19 +158,19 @@ def loadplan_from_lines(lines):
     line = next(lines_iter)
     match = ad_line_re.match(line)
     if not match:
-        raise ExtractError('unmatched AD line %r' % line)
+        raise PistolExtractError('unmatched AD line %r' % line)
     loadplan_data.update(match.groupdict())
 
     # this seems to be a summary of total weight and number of ulds
     line = next(lines_iter)
     if not line.startswith('PL'):
-        raise ExtractError('Error, expected PL')
+        raise PistolExtractError('Error, expected PL')
 
     # Souls on Board
     line = next(lines_iter)
     match = souls_onboard_re.match(line)
     if not match:
-        raise ExtractError('unmatched SOB line %r' % line)
+        raise PistolExtractError('unmatched SOB line %r' % line)
     loadplan_data.update(match.groupdict())
 
     # NOTOC: optional line
@@ -177,13 +179,13 @@ def loadplan_from_lines(lines):
         line = next(lines_iter)
 
     if not line.startswith('CPM'):
-        raise ExtractError('Error, expected CPM')
+        raise PistolExtractError('Error, expected CPM')
 
     #  flight number, day, aircraft registration, color code
     line = next(lines_iter)
     match = dense_line_re2.match(line)
     if not match:
-        raise ExtractError('no match second dense line %r' % line)
+        raise PistolExtractError('no match second dense line %r' % line)
     loadplan_data.update(match.groupdict())
 
     # skip past the list of positions and weights
@@ -199,7 +201,7 @@ def loadplan_from_lines(lines):
     # using line from loop above
     match = si_line_re.match(line)
     if not match:
-        raise ExtractError('no match SI line %r' % line)
+        raise PistolExtractError('no match SI line %r' % line)
     loadplan_data.update(match.groupdict())
 
     # find tape line
@@ -208,20 +210,20 @@ def loadplan_from_lines(lines):
         if tape_line_re.match(line):
             break
         elif tries == maxtries:
-            raise ExtractError('Unable to find tape line after %s attempts' % maxtries)
+            raise PistolExtractError('Unable to find tape line after %s attempts' % maxtries)
 
     # pistol and print meta data
     line = next(lines_iter)
     match = pistol_metadata_re.match(line)
     if not match:
-        raise ExtractError('Unable to parse pistol metadata line %r' % line)
+        raise PistolExtractError('Unable to parse pistol metadata line %r' % line)
     # pistol_version, computer, print_time_local, print_time_gmt
     loadplan_data.update(match.groupdict())
 
     # redundant info of flight, tail and station
     line = next(lines_iter)
     if not line.startswith('Load Plan '):
-        raise ExtractError('Expected "Load Plan " line')
+        raise PistolExtractError('Expected "Load Plan " line')
 
     weights_data, config_data = _weights_and_config_data(lines_iter, loadplan_data['color_code'])
     loadplan_data['weights'] = weights_data
@@ -234,7 +236,7 @@ def loadplan_from_lines(lines):
             # good, we are done.
             break
         elif tries == maxtries:
-            raise ExtractError('Unable to find end line after %s attempts' % maxtries)
+            raise PistolExtractError('Unable to find end line after %s attempts' % maxtries)
 
     return loadplan_data
 
