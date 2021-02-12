@@ -37,6 +37,13 @@ class TestAmazonLSH(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(result, expect.data)
 
+    @unittest.skip('not ready yet')
+    def test_lido(self):
+        source_path = datadir / 'amazon_lsh.py.schema-expect.py'
+        source = from_pyfile(source_path)
+        result = str(lido.LIDOWeightBalanceMessage(source.data))
+        print(result)
+
 
 if __name__ == '__main__':
     unittest.main()

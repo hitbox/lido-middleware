@@ -44,3 +44,6 @@ weight_with_max_re = re.compile(
     _weight_name_and_kg_pattern
     + ' {2,}'
     'MAX (?P<max_kg>\d{3,})')
+
+weight_position_re = re.compile(
+    '(?P<weight>\d+)(?P<position>\.[A-Z0-9]+)?')

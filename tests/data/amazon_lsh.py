@@ -1,8 +1,8 @@
 data = (
     'QN AMZSITA\n'
     '.AMZSITA 111752\n'
-    + 'LDS/N449AZ/ATN3425\n'.strip('') +
-    'LOADSHEET                      FINAL 01\n'
+    + 'LDS/N449AZ/ATN3425\n'.strip('')
+    + 'LOADSHEET                      FINAL 01\n'
     'AFW ABE      ATN3425/11        N449AZ\n'
     'F0Y0J0             0/0/0        11FEB21\n'
     '\n'

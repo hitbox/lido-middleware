@@ -4,6 +4,7 @@ from .regex import dense1_re
 from .regex import dense2_re
 from .regex import dense3_re
 from .regex import loadsheet_re
+from .regex import weight_position_re
 from .regex import weight_re
 from .regex import weight_with_max_re
 
@@ -81,6 +82,32 @@ def from_text(text):
         data[name1] = weight1
         data[name2] = weight2
 
-    # ignore remaining
+    _raise_for_startswith('STAB TO', next(lines))
+    _raise_for_startswith('', next(lines))
+
+    position_lines = next(lines)
+    _raise_for_startswith('T', position_lines)
+    # strip leading T, no idea what it means
+    position_lines = position_lines[1:]
+    for n, line in enumerate(lines, start=1):
+        if n > 20:
+            raise AmazonLSHExtractError(
+                'More position lines than expected')
+        if line == '':
+            break
+        position_lines += line
+
+    positions = []
+    for substr in position_lines.split('/'):
+        match = weight_position_re.match(substr)
+        if not match:
+            raise AmazonLSHExtractError('Unable to match %r on %r' % (weight_position_re, substr))
+        position_data = match.groupdict()
+        if position_data['position']:
+            position_data['position'] = position_data['position'].lstrip('.')
+        positions.append(position_data)
+    data['positions'] = positions
+
+    #print(sum(int(data['weight']) for data in positions if data['position'] != 'A1'))
 
     return data
