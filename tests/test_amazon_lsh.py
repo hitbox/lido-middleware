@@ -28,7 +28,7 @@ class TestAmazonLSH(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(result, expect.data)
 
-    def text_schema(self):
+    def test_schema(self):
         source_path = datadir / 'amazon_lsh.py.extract-expect.py'
         expect_path = datadir / 'amazon_lsh.py.schema-expect.py'
         source = from_pyfile(source_path)
