@@ -1,7 +1,5 @@
-flask
+cx_oracle
 imap_tools
 jinja2
 marshmallow
-sqlalchemy
-cx_oracle
 sqlalchemy
