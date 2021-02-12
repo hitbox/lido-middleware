@@ -259,10 +259,16 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:24
         {:0<6} if available else BLANK*6.
         """
-        for acconfig in self.loadplan['aircraft_configurations']:
-            if acconfig['name'] == 'Cargo Wt':
-                value = int(acconfig['value'])
-                return '{:0>6}'.format(value)
+        fmt = '{:0>6}'.format
+        if 'cargo_weight' in self.loadplan:
+            return fmt(self.loadplan['cargo_weight'])
+
+        elif 'aircraft_configurations' in self.loadplan:
+            for acconfig in self.loadplan['aircraft_configurations']:
+                if acconfig['name'] == 'Cargo Wt':
+                    value = int(acconfig['value'])
+                    return fmt(value)
+
         raise LIDOError('Unable to find cargo weight.')
 
     @property

@@ -19,7 +19,7 @@ def from_pyfile(filename):
 
 class TestAmazonLSH(unittest.TestCase):
 
-    def test_expect(self):
+    def test_amazon_lsh_expect(self):
         email_text_path = datadir / 'amazon_lsh.py'
         expect_path = datadir / 'amazon_lsh.py.extract-expect.py'
         source = from_pyfile(email_text_path)
@@ -37,12 +37,14 @@ class TestAmazonLSH(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(result, expect.data)
 
-    @unittest.skip('not ready yet')
-    def test_lido(self):
+    def test_amazon_lsh_lido(self):
         source_path = datadir / 'amazon_lsh.py.schema-expect.py'
         source = from_pyfile(source_path)
         result = str(lido.LIDOWeightBalanceMessage(source.data))
-        print(result)
+        expect = (
+            'WAB11FEB20210000008C  3425 11FEB2021AFW  ABE  04100      000000YYY'
+            ' 12.831239220190510000K13.29080612                              ')
+        self.assertEqual(result, expect)
 
 
 if __name__ == '__main__':

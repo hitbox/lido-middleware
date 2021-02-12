@@ -17,6 +17,12 @@ from schema import CommonSchemaMixin
 from schema import PRINT_DATETIME_FORMAT
 from units import VALID_WEIGHT_UNITS
 
+class PositionSchema(Schema):
+
+    position = String(allow_none=True)
+    weight = Integer()
+
+
 class LoadPlanSchema(CommonSchemaMixin, Schema):
 
     @pre_load
@@ -65,12 +71,15 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     destination_iata = String(required=True, validate=Length(max=3))
     origin_iata = String(required=True, validate=Length(max=3))
 
-    #positions = List(Nested(PositionSchema))
+    positions = List(Nested(PositionSchema))
 
     actual_takeoff_fuel = Integer(required=True)
     actual_zero_fuel_weight = Integer(required=True)
     center_of_gravity = Float(data_key='MACZFW', required=True)
     dry_operating_weight = Integer(data_key='DOW', required=True)
+
+    # post_load:
+    cargo_weight = Integer()
 
     # unused
     bi = Float(data_key='BI')
@@ -88,4 +97,5 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         """
         if not (data.get('company') or data.get('airline_designator')):
             raise ValidationError('company or airline_designator must exist')
+        data['cargo_weight'] = sum(item['weight'] for item in data['positions'])
         return data
