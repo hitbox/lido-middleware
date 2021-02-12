@@ -1,0 +1,42 @@
+data = {
+    'BI': '13.29',
+    'BW': '83618',
+    'DOI': '13.29',
+    'DOW': '83618',
+    'LILAW': '8.87',
+    'LITOW': '8.59',
+    'LIZFW': '10.13',
+    'MACLAW': '12.57',
+    'MACTOW': '13.24',
+    'MACZFW': '12.83',
+    'aircraft_registration': 'N449AZ',
+    'aircraft_registration2': 'N449AZ',
+    'airline_and_flight_number': 'ATN3425',
+    'airline_and_flight_number2': 'ATN3425',
+    'date': '11FEB21',
+    'day': '11',
+    'destination_iata': 'ABE',
+    'loadsheet_final_number': '01',
+    'origin_iata': 'AFW',
+    'unknown1': 'LDS',
+    'unknown2': 'F0Y0J0',
+    'unknown3': '0/0/0',
+    'ZFW ACT': {
+        'weight_kg': '123922',
+        'max_kg': '140160',
+    },
+    'TO FUEL': {
+        'weight_kg': '19051',
+    },
+    'TOW ACT': {
+        'weight_kg': '142973',
+        'max_kg': '186880',
+    },
+    'TRIP FUEL': {
+        'weight_kg': '10916',
+    },
+    'LAW ACT': {
+        'weight_kg': '132057',
+        'max_kg': '147871',
+    },
+}
