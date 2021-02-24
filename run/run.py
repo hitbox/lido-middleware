@@ -59,5 +59,6 @@ def run(config):
                 lido_message = LIDOWeightBalanceMessage(loadplan)
                 logger.info('lido_message created')
                 output.write(lido_message)
+            finally:
                 message_archive.save(message)
                 logger.info('message archived')
