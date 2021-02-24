@@ -1,4 +1,5 @@
 import argparse
+import code
 import configparser
 import pickle
 import sys
@@ -23,12 +24,17 @@ def criteria_from_section(section):
 
 def main(argv=None):
     """
-    Small utility to save mailboxes.
+    Small utility to save and browse mailboxes.
     """
     parser = argparse.ArgumentParser(description=main.__doc__, prog='mailbox')
     subparsers = parser.add_subparsers(dest='subcommand', required=True)
+    # save
     save_parser = subparsers.add_parser('save', help='Save/download a mailbox.')
     save_parser.add_argument('config', nargs='+')
+    # browse
+    browse_parser = subparsers.add_parser('browse', help='Browse mailbox in interactive interpreter.')
+    browse_parser.add_argument('config', nargs='+')
+    #
     args = parser.parse_args(argv)
 
     cp = configparser.RawConfigParser()
@@ -63,6 +69,10 @@ def main(argv=None):
                 bulk = config['bulk'])
             with open(config['output'], 'wb') as output_file:
                 pickle.dump(list(messages), output_file)
+    elif args.subcommand == 'browse':
+        mailbox = MailBox(config['host'])
+        mailbox.login(config['username'], config['password'])
+        code.interact()
 
 if __name__ == '__main__':
     main()
