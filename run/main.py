@@ -34,7 +34,7 @@ def main(argv=None):
             if args.watch is None:
                 break
             else:
-                logger.info('sleeping %s', args.watch)
+                logger.debug('sleeping %s', args.watch)
                 time.sleep(args.watch)
     except KeyboardInterrupt:
         pass

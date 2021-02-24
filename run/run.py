@@ -33,10 +33,10 @@ def run(config):
     schema = schema_class()
     for message in source.itermessages():
         if not message_filter.filter(message):
-            logger.info(
+            logger.debug(
                 'message filter rejected ' + message_fmt(message))
             continue
-        logger.info('processing message ' + message_fmt(message))
+        logger.debug('processing message ' + message_fmt(message))
         try:
             extract_data = message_processor(message)
         except ExtractError as e:
@@ -55,10 +55,10 @@ def run(config):
                         for errmsg in error_messages:
                             logger.error(f'{key} {errmsg} ({extract_data[key]!r})')
             else:
-                logger.info('loadplan loaded from schema')
+                logger.debug('loadplan loaded from schema')
                 lido_message = LIDOWeightBalanceMessage(loadplan)
-                logger.info('lido_message created')
+                logger.debug('lido_message created')
                 output.write(lido_message)
             finally:
                 message_archive.save(message)
-                logger.info('message archived')
+                logger.info('message processed and archived ' + message_fmt(message))
