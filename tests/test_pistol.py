@@ -11,6 +11,18 @@ datadir = Path(__file__).parent / 'data'
 
 class TestPistolExtract(unittest.TestCase):
 
+    def test_pistol_schema_funcs(self):
+        self.assertEqual(
+            pistol.schema.split_company_and_flight_number('ABX1234'),
+            ('ABX', '1234'))
+        self.assertEqual(
+            pistol.schema.split_company_and_flight_number('ABX_TAKELASTFOUR_1234'),
+            ('ABX', '1234'))
+        # this one below will change, this is not what they want
+        self.assertEqual(
+            pistol.schema.split_company_and_flight_number('ABXCMBDQ1'),
+            ('ABX', 'BDQ1'))
+
     def test_pistol_extract(self):
         """
         Test extracting strings from pistol message.

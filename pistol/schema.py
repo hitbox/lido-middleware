@@ -169,21 +169,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         del data['company_and_flight_number1']
         del data['company_and_flight_number2']
 
-        mapping = (
-            ('ATIATN', 'ATI'),
-            ('ABXABX', 'ABX'),
-            ('ATI8C', 'ATI'),
-            ('ABX', 'ABX'),
-            ('ATI', 'ATI'),
-        )
-        for prefix, company in mapping:
-            if company_and_flight_number.startswith(prefix):
-                flight_number = company_and_flight_number[len(prefix):]
-                break
-        else:
-            raise ValidationError(
-                'unable to split company and flight number, %r'
-                % company_and_flight_number)
+        company, flight_number = split_company_and_flight_number(company_and_flight_number)
         data['company'] = company
         data['flight_number'] = flight_number
 
@@ -222,3 +208,22 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     actual_zero_fuel_weight = Integer(validate=Range(max=_max_six_digits))
     center_of_gravity = Float(data_key='cg_percent_mac')
     dry_operating_weight = Integer(validate=Range(max=_max_six_digits))
+
+
+def split_company_and_flight_number(company_and_flight_number):
+    mapping = (
+        ('ATIATN', 'ATI'),
+        ('ABXABX', 'ABX'),
+        ('ATI8C', 'ATI'),
+        ('ABX', 'ABX'),
+        ('ATI', 'ATI'),
+    )
+    for prefix, company in mapping:
+        if company_and_flight_number.startswith(prefix):
+            flight_number = company_and_flight_number[len(prefix):][-4:]
+            break
+    else:
+        raise ValidationError(
+            'unable to split company and flight number, %r'
+            % company_and_flight_number)
+    return company, flight_number
