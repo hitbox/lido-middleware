@@ -1,4 +1,7 @@
 data = (
+    # this is what is considered data from Sable
+    # it came from:
+    # amazon-sable@amazon-wb.com
     'QN AMZSITA\n'
     '.AMZSITA 111752\n'
     + 'LDS/N449AZ/ATN3425\n'.strip('')
