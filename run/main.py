@@ -1,11 +1,9 @@
 import argparse
-import configparser
 import logging.config
 import time
 
 from pathlib import Path
 
-from .config import file_config
 from .config import pyfile_config
 from .run import run
 

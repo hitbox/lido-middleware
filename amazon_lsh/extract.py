@@ -108,6 +108,4 @@ def from_text(text):
         positions.append(position_data)
     data['positions'] = positions
 
-    #print(sum(int(data['weight']) for data in positions if data['position'] != 'A1'))
-
     return data
