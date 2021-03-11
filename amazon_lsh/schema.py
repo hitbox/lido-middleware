@@ -27,6 +27,8 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
 
     @pre_load
     def pre_load(self, data, **kwargs):
+        if data is None:
+            raise ValidationError('data is None')
         # the company or airline designator appears at the beginning of this string.
         if data['airline_and_flight_number'] != data['airline_and_flight_number2']:
             raise ValidationError('Flight number do not match')
