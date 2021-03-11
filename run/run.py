@@ -51,9 +51,13 @@ def run(config):
                 logger.exception(error)
                 # key, [<validation error>, ...]
                 for key, error_messages in error.messages.items():
-                    if key in extract_data:
+                    if extract_data is not None:
+                        if key in extract_data:
+                            for errmsg in error_messages:
+                                logger.error(f'{key} {errmsg} ({extract_data[key]!r})')
+                    else:
                         for errmsg in error_messages:
-                            logger.error(f'{key} {errmsg} ({extract_data[key]!r})')
+                            logger.error(errmsg)
             else:
                 logger.debug('loadplan loaded from schema')
                 lido_message = LIDOWeightBalanceMessage(loadplan)
