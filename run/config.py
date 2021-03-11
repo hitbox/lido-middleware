@@ -92,12 +92,30 @@ class MailBoxSource(Source):
             yield from messages
 
 
+class PassMessageFilter(MessageFilter):
+    """
+
+    """
+
+    def __init__(self, archive):
+        pass
+
+    def filter(self, message):
+        """
+        Return True to process message. This always returns True.
+        """
+        return True
+
+
 class ArchiveMessageFilter(MessageFilter):
 
     def __init__(self, archive):
         self.archive = archive
 
     def filter(self, message):
+        """
+        Return True to process message
+        """
         import hashlib
 
         from pathlib import Path
@@ -146,6 +164,18 @@ class FileOutput(Output):
         path = self.pathfmt.format(**context)
         with open(path, self.mode) as fp:
             fp.write(str(lido_message))
+
+
+class PassMessageArchive(MessageFilter):
+    """
+    Empty do-nothing archiver to meet spec.
+    """
+
+    def __init__(self, archive):
+        pass
+
+    def save(self, message):
+        pass
 
 
 class SHA1MessageArchive(MessageArchive):
