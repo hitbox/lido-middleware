@@ -1,3 +1,5 @@
+import string
+
 from run.exceptions import ExtractError
 
 from .regex import dense1_re
@@ -26,9 +28,15 @@ def _raise_for_startswith(expect, line):
 
 def from_text(text):
     data = {}
+    text = ''.join(c for c in text if c in string.printable)
     lines = iter(text.splitlines())
 
-    _raise_for_startswith('QN AMZSITA', next(lines))
+    # skip empty lines in beginning
+    for line in lines:
+        if line:
+            break
+
+    _raise_for_startswith('QN AMZSITA', line)
     _raise_for_startswith('.AMZSITA', next(lines))
 
     # extract a bunch of title/header type stuff
