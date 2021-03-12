@@ -254,18 +254,10 @@ def file_config(config_processor_or_file, defaults=None):
     return runconfig
 
 def pyfile_config(path):
-    """Updates the values in the config from a Python file.  This function
-    behaves as if the file was imported as module with the
-    :meth:`from_object` function.
+    """
+    Return dict config from python file.
 
-    :param filename: the filename of the config.  This can either be an
-                     absolute filename or a filename relative to the
-                     root path.
-    :param silent: set to ``True`` if you want silent failure for missing
-                   files.
-
-    .. versionadded:: 0.7
-       `silent` parameter.
+    :param path: path to python file.
     """
     d = types.ModuleType("config")
     d.__file__ = path
