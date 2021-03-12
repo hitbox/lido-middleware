@@ -109,8 +109,9 @@ class PassMessageFilter(MessageFilter):
 
 class ArchiveMessageFilter(MessageFilter):
 
-    def __init__(self, archive):
+    def __init__(self, archive, subject=None):
         self.archive = archive
+        self.subject = subject
 
     def filter(self, message):
         """
@@ -120,6 +121,10 @@ class ArchiveMessageFilter(MessageFilter):
 
         from pathlib import Path
 
+        subject = self.subject
+        if subject is None:
+            subject = lambda s: True
+
         path = Path(self.archive)
         if not path.exists():
             return True
@@ -127,7 +132,8 @@ class ArchiveMessageFilter(MessageFilter):
             with open(self.archive) as archive_file:
                 archived = set(line.strip() for line in archive_file.readlines())
                 sha1 = hashlib.sha1(bytes(message.obj))
-                return sha1.hexdigest() not in archived
+                not_in_archive = sha1.hexdigest() not in archived
+                return not_in_archive and subject(message.subject)
 
 
 class StreamOutput(Output):
