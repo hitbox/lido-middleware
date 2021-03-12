@@ -94,7 +94,7 @@ class MailBoxSource(Source):
 
 class PassMessageFilter(MessageFilter):
     """
-
+    Always true message filter.
     """
 
     def __init__(self, archive):
