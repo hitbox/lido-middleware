@@ -115,7 +115,7 @@ class ArchiveMessageFilter(MessageFilter):
 
     def filter(self, message):
         """
-        Return True to process message
+        Returns True if message does not exist in archive.
         """
         import hashlib
 
