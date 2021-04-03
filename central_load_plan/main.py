@@ -22,6 +22,8 @@ def main(argv=None):
             root = tree.getroot()
 
             data = pluck.fromxml(root)
+            # TODO
+            # download crewmember from Netline/Crew Database
             # patch in temp data
             data['crewmembers'] = [
                 dict(
