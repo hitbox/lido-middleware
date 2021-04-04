@@ -3,7 +3,13 @@ import textwrap
 def render(data):
     """
     Render the central load plan email.
+
+    :param data: fully marshalled into Python data types, data.
     """
+    # Tried using a jinja template for this. It worked well. The document was
+    # apparent at a glance. Not using it because Vim (nvim) refused to
+    # cooperate in NOT always reflowing my text. It was so aggravating that
+    # this build-by-lines in Python was chosen.
     lines = []
 
     dtfmt = '{d.day:0>2}/{d.hour:0>2}{d.minute:0>2} '
