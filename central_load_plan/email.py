@@ -80,10 +80,6 @@ def render(data):
 
     lines.append('')
     lines.append(
-        'Until further notice no inoperative or missing locks in ULD positions A7 thru K12.'
-    )
-    lines.append('')
-    lines.append(
         '--- A/C EQUIPMENT STATUS ---'
     )
     lines.append(
