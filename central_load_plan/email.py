@@ -24,7 +24,7 @@ def render(data):
         'FLT #   DEST    TAIL #  STE     STD     ETD     ETA     '
     )
     lines.append(
-        '%-8s' % data['flight']
+        '%-8s' % data['flight_number']
         + '%-8s' % data['destination_iata']
         + '%-8s' % data['aircraft_registration']
         + '{t.hour:0>2}:{t.minute:0>2}'.format(t=data['estimated_arrival_time'])
