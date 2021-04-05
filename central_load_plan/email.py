@@ -46,12 +46,16 @@ def render(data):
     lines.append(
         'PLND PAYLOAD    RAMP FUEL   FUEL BURN   TAXI FUEL   BALLAST FUEL'
     )
+    if data['ballast_fuel'] is None:
+        ballast_fuel = '00000'
+    else:
+        ballast_fuel = data['ballast_fuel']
     lines.append(
         '%-16s' % data['planned_payload']
         + '%-12s' % data['ramp_fuel']
         + '%-12s' % data['fuel_burn']
         + '%-12s' % data['taxi_fuel']
-        + '' if not data['ballast_fuel'] else '%-12s' % data['ballast_fuel']
+        + '%-12s' % ballast_fuel
     )
     lines.append('')
     lines.append(
