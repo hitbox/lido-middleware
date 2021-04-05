@@ -1,4 +1,10 @@
+import argparse
+import sys
 import textwrap
+import xml.etree.ElementTree as ET
+
+from . import pluck
+from . import schema
 
 def render(data):
     """
@@ -103,3 +109,21 @@ def render(data):
     )
 
     return '\n'.join(lines)
+
+def main(argv=None):
+    """
+    Produce email text from XML file minus the crewmembers.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('xmlfiles', nargs='+')
+    args = parser.parse_args(argv)
+
+    for xmlfile in args.xmlfiles:
+        tree = ET.parse(xmlfile)
+        root = tree.getroot()
+        data = pluck.fromxml(root)
+        data = schema.OperationalFlightPlanSchema().load(data)
+        print(email.render(data))
+
+if __name__ == '__main__':
+    sys.exit(main())
