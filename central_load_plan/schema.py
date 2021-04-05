@@ -1,3 +1,7 @@
+import argparse
+import sys
+import xml.etree.ElementTree as ET
+
 from datetime import timedelta
 
 from marshmallow import Schema
@@ -10,6 +14,8 @@ from marshmallow.fields import String
 from marshmallow.fields import Time
 from marshmallow.validate import OneOf
 from marshmallow.validate import ValidationError
+
+from . import pluck
 
 class MELCDLItemSchema(Schema):
 
@@ -107,3 +113,22 @@ class OperationalFlightPlanSchema(Schema):
         data['max_payload'] = min(calcs)
 
         return data
+
+
+def main(argv=None):
+    """
+    Convert XML to data.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('xmlfiles', nargs='+')
+    args = parser.parse_args(argv)
+
+    for xmlfile in args.xmlfiles:
+        print(xmlfile)
+        tree = ET.parse(xmlfile)
+        root = tree.getroot()
+        data = pluck.fromxml(root)
+        data = OperationalFlightPlanSchema().load(data)
+
+if __name__ == '__main__':
+    sys.exit(main())
