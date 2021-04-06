@@ -18,7 +18,7 @@ crewmember_config.read(os.environ['CREWMEMBER_CONFIG'])
 
 @app.route('/')
 def main():
-    return render_template('main.html', crewmember_config=crewmember_config)
+    return render_template('main.html')
 
 @app.route('/emailtext', methods=['POST'])
 def emailtext():
