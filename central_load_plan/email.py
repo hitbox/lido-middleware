@@ -123,11 +123,12 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     for xmlfile in args.xmlfiles:
+        print(xmlfile)
         tree = ET.parse(xmlfile)
         root = tree.getroot()
         data = pluck.fromxml(root)
         data = schema.OperationalFlightPlanSchema().load(data)
-        print(email.render(data))
+        print(render(data))
 
 if __name__ == '__main__':
     sys.exit(main())
