@@ -2,5 +2,7 @@
 
 {% block main %}<div>
     <div><a href="{{ url_for('main') }}">Process another XML file.</a></div>
+    {% if ignorecrew %}<p>Ignoring crew members</p>{% endif %}
+    <h2>Output</h2>
     <pre>{{ output }}</pre>
 </div>{% endblock %}

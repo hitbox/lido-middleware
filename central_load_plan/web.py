@@ -27,8 +27,10 @@ def emailtext():
     root = tree.getroot()
     data = pluck.fromxml(root)
     data = schema.OperationalFlightPlanSchema().load(data)
-    if 'ignorecrew' not in request.form:
+    ignorecrew = 'ignorecrew' in request.form
+    if not ignorecrew:
         # hit database for crew members
         data['crewmembers'] = crewmember.fromdata(crewmember_config, data)
     output = email.render(data)
-    return render_template('emailtext.html', output=output, form=request.form)
+    return render_template('emailtext.html', output=output, form=request.form,
+                           ignorecrew=ignorecrew)
