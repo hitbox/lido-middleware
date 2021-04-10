@@ -101,7 +101,9 @@ def render(data):
         line = '%-14s' % status['item']
         if status['description']:
             line += '\n'.join(
-                textwrap.wrap(status['description'], subsequent_indent=' ' * 14)
+                textwrap.wrap(status['description'],
+                              width=80-14,
+                              subsequent_indent=' ' * 14)
             )
         lines.append(line)
 
