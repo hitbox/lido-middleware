@@ -1,12 +1,5 @@
-import argparse
-import configparser
 import re
-import sys
 import textwrap
-import traceback
-import xml.etree.ElementTree as ET
-
-from pprint import pprint
 
 validity_line_re = re.compile('(?P<start_of_validity>\d{4})/(?P<end_of_validity>\d{4})')
 
@@ -40,6 +33,13 @@ def fromxml(root):
     return data
 
 def main(argv=None):
+    import argparse
+    import sys
+    import traceback
+    import xml.etree.ElementTree as ET
+
+    from pprint import pprint
+
     parser = argparse.ArgumentParser()
     parser.add_argument('xmlfiles', nargs='+')
     args = parser.parse_args(argv)
