@@ -1,0 +1,18 @@
+<!doctype html>
+<html translate="no">{% set title = 'Lido / WSI Weather Interface' %}
+    <head>
+        <title>{{ title }}</title>
+        <meta name=google content=notranslate>
+        <meta name=viewport content="width=device-width, initial-scale=1.0">
+        <link rel="icon" href="data:,">
+        <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    </head>
+    <body>
+        <div id="main">
+            <h1>{{ title }}</h1>
+            <h2>Middleware</h2>
+            <h3>Local Weather Input (WXL) Message</h3>
+            {% block main %}{% endblock %}
+        </div>
+    </body>
+</html>

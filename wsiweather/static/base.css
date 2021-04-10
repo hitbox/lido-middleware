@@ -1,0 +1,16 @@
+body {
+    font-family: arial;
+    display: flex;
+    justify-content: center;
+}
+#main {
+    width: 700px;
+}
+pre {
+    border: 1px solid black;
+    padding: 1rem;
+    font-size: 1rem;
+}
+.inputgroup {
+    margin-top: 1.5rem;
+}
