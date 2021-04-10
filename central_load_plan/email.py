@@ -18,8 +18,6 @@ def render(data):
     # this build-by-lines in Python was chosen.
     lines = []
 
-    dtfmt = '{d.day:0>2}/{d.hour:0>2}{d.minute:0>2} '
-
     lines.append('')
     lines.append(
         'LEG DEPARTURE DATE (UTC): '
@@ -29,15 +27,19 @@ def render(data):
     lines.append(
         'FLT #   DEST    TAIL #  STE     STD     ETD     ETA     '
     )
+    dtfmt = '%d/%H%M'
     lines.append(
         '%-8s' % data['flight_number']
         + '%-8s' % data['destination_iata']
         + '%-8s' % data['aircraft_registration']
-        + '{t.hour:0>2}:{t.minute:0>2}'.format(t=data['estimated_arrival_time'])
-        + '   '
-        + dtfmt.format(d=data['scheduled_departure_time'])
-        + dtfmt.format(d=data['estimated_departure_time'])
-        + dtfmt.format(d=data['estimated_arrival_time'])
+        # STE:
+        + data['estimated_block_time'].strftime('%H:%M')
+        + ' ' * 3
+        + data['scheduled_departure_time'].strftime(dtfmt)
+        + ' '
+        + data['estimated_departure_time'].strftime(dtfmt)
+        + ' '
+        + data['estimated_arrival_time'].strftime(dtfmt)
     )
 
     lines.append('')
