@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block main %}
+<p>Select a file and click Submit to produce WXL message text.</p>
+<form action="{{ url_for('output') }}" enctype="multipart/form-data" method="post">
+    <div class="inputgroup">
+        <label for="xmlfile">WSI S/WINDS XML File</label>
+        <input type="file" id="xmlfile" name="xmlfile" required>
+    </div>
+    <div class="inputgroup">
+        <input type="submit" value="Submit">
+    </div>
+</form>{% endblock %}

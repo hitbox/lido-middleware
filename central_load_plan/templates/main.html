@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block main %}
-<p>Select a file click Submit to produce email text.</p>
+<p>Select a file and click Submit to produce email text.</p>
 <p>The seat field for crew members will appear as "None".</p>
-<p>Ignoring crew members can avoid key errors, where the airline in the XML file is not configured.</p>
+<p>Ignoring crew members can avoid key errors, where the airline in the XML file is not configured for the database.</p>
 <form action="{{ url_for('emailtext') }}" enctype="multipart/form-data" method="post">
     <div class="inputgroup">
-        <label for="xmlfile" title="Operational Flight Plan XML file">XML</label>
+        <label for="xmlfile">Operational Flight Plan XML file</label>
         <input type="file" id="xmlfile" name="xmlfile" required>
     </div>
     <div class="inputgroup">
