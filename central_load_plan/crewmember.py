@@ -57,7 +57,11 @@ def fromdata(config, data):
                 (sa.and_(item_daily.c.type == 'L', duty.c.assigned_rank == 3), 'CP'),
                 (sa.and_(item_daily.c.type == 'L', duty.c.assigned_rank == 5), 'FA'),
                 (item_daily.c.type == 'F', 'ACM'),
-            ).label('seat')
+            ).label('seat'),
+            sa.case(
+                (item_daily.c.type == 'L', duty.c.assigned_rank),
+                (item_daily.c.type == 'F', 99),
+            ).label('seat_order')
         ])
         .select_from(item_daily)
         .join(chain_item_daily, chain_item_daily.c.item_daily_uno == item_daily.c.uno)
@@ -69,7 +73,9 @@ def fromdata(config, data):
                 item_daily.c.day_of_origin == data['flight_origin_date'],
                 item_daily.c.flight_no == data['flight_number'],
                 item_daily.c.airport_c_is_dep == data['origin_iata'],
-            )))
+            )
+        ).order_by('seat_order'))
+
     result = engine.execute(query)
     keys = ['last_name', 'first_name', 'employee_number', 'seat']
     crewmembers = [dict(zip_longest(keys, row)) for row in engine.execute(query)]
