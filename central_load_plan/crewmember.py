@@ -73,6 +73,8 @@ def fromdata(config, data):
                 item_daily.c.day_of_origin == data['flight_origin_date'],
                 item_daily.c.flight_no == data['flight_number'],
                 item_daily.c.airport_c_is_dep == data['origin_iata'],
+                item_daily.c.departure_date_scd == data['scheduled_departure_time'].date(),
+                item_daily.c.departure_time_scd == data['scheduled_departure_time'].strftime('%H%M'),
             )
         ).order_by('seat_order'))
 
