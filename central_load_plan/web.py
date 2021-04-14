@@ -1,5 +1,6 @@
 import configparser
 import os
+import textwrap
 import xml.etree.ElementTree as ET
 
 from flask import Flask
@@ -29,6 +30,13 @@ def emailtext():
     data = schema.OperationalFlightPlanSchema().load(data)
     if 'ignorecrew' not in request.form:
         # hit database for crew members
-        data['crewmembers'] = crewmember.fromdata(crewmember_config, data)
+        crewresult = crewmember.fromdata(crewmember_config, data)
+        data['crewmembers'] = crewresult.crewmembers
     output = email.render(data)
-    return render_template('emailtext.html', output=output, form=request.form)
+    context = dict(
+        output = output,
+        form = request.form,
+        crewresult = crewresult,
+        textwrap = textwrap,
+    )
+    return render_template('output.html', **context)

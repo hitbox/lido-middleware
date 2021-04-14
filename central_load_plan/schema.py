@@ -7,6 +7,7 @@ from datetime import timedelta
 from marshmallow import Schema
 from marshmallow import post_load
 from marshmallow.fields import DateTime
+from marshmallow.fields import Date
 from marshmallow.fields import Integer
 from marshmallow.fields import List
 from marshmallow.fields import Nested
@@ -36,10 +37,12 @@ class OperationalFlightPlanSchema(Schema):
     Marshal the Operational Flight Plan XML data.
     """
 
-    dtfmt = '%Y-%m-%dT%H:%M:%SZ'
+    date_format = '%Y-%m-%dZ'
+    datetime_format = '%Y-%m-%dT%H:%M:%SZ'
     units = ['kg', 'lb']
 
-    leg_departure_date_utc = DateTime(format=dtfmt)
+    leg_departure_date_utc = DateTime(format=datetime_format)
+    flight_origin_date = Date(format=date_format)
     version_number = Integer()
     flight_number = Integer()
     airline_iata_code = String()
@@ -50,8 +53,8 @@ class OperationalFlightPlanSchema(Schema):
     # ex: PT1H30M45S
     estimated_block_time = Time(format='PT%HH%MM%SS')
 
-    scheduled_departure_time = DateTime(format=dtfmt)
-    estimated_departure_time = DateTime(format=dtfmt)
+    scheduled_departure_time = DateTime(format=datetime_format)
+    estimated_departure_time = DateTime(format=datetime_format)
 
     planned_payload = Integer()
     planned_payload_unit = String(validate=OneOf(units))

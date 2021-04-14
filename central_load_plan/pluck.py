@@ -6,6 +6,7 @@ def fromxml(root):
     # leg departure date in UTC
     elem = root.find('./{*}M633SupplementaryHeader/{*}Flight')
     data['leg_departure_date_utc'] = elem.attrib['scheduledTimeOfDeparture']
+    data['flight_origin_date'] = elem.attrib['flightOriginDate']
 
     # version number
     elem = root.find('{*}M633Header')
