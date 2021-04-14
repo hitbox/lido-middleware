@@ -56,7 +56,7 @@ def fromdata(config, data):
                 (item_daily.c.type == 'L' and duty.c.assigned_rank == 2, 'IRO'),
                 (item_daily.c.type == 'L' and duty.c.assigned_rank == 3, 'CP'),
                 (item_daily.c.type == 'L' and duty.c.assigned_rank == 5, 'FA'),
-                (item_daily.c.type == 'F', 'DH'),
+                (item_daily.c.type == 'F', 'ACM'),
             ).label('seat')
         ])
         .select_from(item_daily)
