@@ -51,8 +51,12 @@ def fromdata(config, data):
             sa.func.trim(crew_member.c.first_name).label('first_name'),
             crew_member.c.employee_no,
             sa.case(
-                (duty.c.assigned_rank == 0, 'PIC'),
-                (duty.c.assigned_rank == 1, 'SIC'),
+                (item_daily.c.type == 'L' and duty.c.assigned_rank == 0, 'PIC'),
+                (item_daily.c.type == 'L' and duty.c.assigned_rank == 1, 'SIC'),
+                (item_daily.c.type == 'L' and duty.c.assigned_rank == 2, 'IRO'),
+                (item_daily.c.type == 'L' and duty.c.assigned_rank == 3, 'CP'),
+                (item_daily.c.type == 'L' and duty.c.assigned_rank == 5, 'FA'),
+                (item_daily.c.type == 'F', 'DH'),
             ).label('seat')
         ])
         .select_from(item_daily)
@@ -63,7 +67,9 @@ def fromdata(config, data):
             sa.and_(
                 item_daily.c.airline == data['airline_iata_code'],
                 item_daily.c.day_of_origin == data['flight_origin_date'],
-                item_daily.c.flight_no == data['flight_number'])))
+                item_daily.c.flight_no == data['flight_number'],
+                item_daily.c.airport_c_is_dep == data['origin_iata'],
+            )))
     result = engine.execute(query)
     keys = ['last_name', 'first_name', 'employee_number', 'seat']
     crewmembers = [dict(zip_longest(keys, row)) for row in engine.execute(query)]
