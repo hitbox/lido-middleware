@@ -1,5 +1,7 @@
 cx_oracle
+flask
 imap_tools
 jinja2
 marshmallow
 sqlalchemy
+sqlparse

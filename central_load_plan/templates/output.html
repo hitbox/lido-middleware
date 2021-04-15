@@ -6,7 +6,7 @@
     <pre>{{ output }}</pre>
     <h3>Crew Member SQL</h3>
     <p>The date literals are not what was actually used but this is the best that can be done to show them.</p>
-    <pre>{{ textwrap.wrap(crewresult.query.compile(engine, compile_kwargs={'literal_binds': True})|string)|join('\n') }}</pre>
+    <pre>{{ sqlparse.format(crewresult.query.compile(engine, compile_kwargs={'literal_binds': True})|string, reindent=True) }}</pre>
     <p>Connection string used.</p>
     <pre>{{ crewresult.engine.url.render_as_string() }}</pre>
 </div>{% endblock %}

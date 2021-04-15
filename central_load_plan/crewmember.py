@@ -46,10 +46,11 @@ def fromdata(config, data):
     duty = sa.Table('duty', metadata, autoload_with=engine)
     item_daily = sa.Table('item_daily', metadata, autoload_with=engine)
 
-    query = (sa.select([
+    query = (
+        sa.select([
             sa.func.trim(crew_member.c.name).label('last_name'),
             sa.func.trim(crew_member.c.first_name).label('first_name'),
-            crew_member.c.employee_no,
+            sa.func.trim(crew_member.c.employee_no).label('employee_number'),
             sa.case(
                 (sa.and_(item_daily.c.type == 'L', duty.c.assigned_rank == 0), 'PIC'),
                 (sa.and_(item_daily.c.type == 'L', duty.c.assigned_rank == 1), 'SIC'),
@@ -74,15 +75,16 @@ def fromdata(config, data):
                 item_daily.c.flight_no == data['flight_number'],
                 item_daily.c.airport_c_is_dep == data['origin_iata'],
                 item_daily.c.departure_date_scd == data['scheduled_departure_time'].date(),
+                # departure_time_scd is stored as CHAR(4)
                 item_daily.c.departure_time_scd == data['scheduled_departure_time'].strftime('%H%M'),
             )
         ).order_by('seat_order'))
 
-    result = engine.execute(query)
-    keys = ['last_name', 'first_name', 'employee_number', 'seat']
-    crewmembers = [dict(zip_longest(keys, row)) for row in engine.execute(query)]
-    result = CrewMemberResult(crewmembers, query, data, engine)
-    return result
+    with engine.connect() as conn:
+        result = conn.execute(query)
+        crewmembers = [dict(row) for row in result]
+        result = CrewMemberResult(crewmembers, query, data, engine)
+        return result
 
 def main(argv=None):
     parser = argparse.ArgumentParser()

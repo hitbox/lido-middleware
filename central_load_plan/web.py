@@ -3,6 +3,8 @@ import os
 import textwrap
 import xml.etree.ElementTree as ET
 
+import sqlparse
+
 from flask import Flask
 from flask import render_template
 from flask import request
@@ -39,5 +41,6 @@ def emailtext():
         form = request.form,
         crewresult = crewresult,
         textwrap = textwrap,
+        sqlparse = sqlparse,
     )
     return render_template('output.html', **context)
