@@ -4,7 +4,7 @@ def render(data):
     """
     items = []
     items.append(data['message_identifier'])
-    items.append('%03d' % data['number_of_messages'])
+    items.append('%04d' % data['number_of_messages'])
     items.append(data['separator'])
     items.append(data['icao_originator'])
     items.append(data['weather_identifier'])
