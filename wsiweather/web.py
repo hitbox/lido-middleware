@@ -24,8 +24,18 @@ wsischema = schema.WSIWeatherSchema()
 
 def get_output_path(data):
     output_format = current_app.config['OUTPUT_FORMAT']
-    output_path = output_format.format(**data)
-    output_path = Path(output_path)
+    check_until_unique = ''
+    while True:
+        output_path = output_format.format(
+            check_until_unique = check_until_unique,
+            **data)
+        output_path = Path(output_path)
+        if not output_path.exists():
+            break
+        try:
+            check_until_unique = '.' + str(int(check_until_unique.lstrip('.')) + 1)
+        except ValueError:
+            check_until_unique = '.0'
     return output_path
 
 @app.route('/')
