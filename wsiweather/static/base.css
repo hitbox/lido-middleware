@@ -14,3 +14,7 @@ pre {
 .inputgroup {
     margin-top: 1.5rem;
 }
+input {
+    min-width: 10rem;
+    min-height: 2.5rem;
+}
