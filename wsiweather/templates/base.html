@@ -8,11 +8,19 @@
         <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
     </head>
     <body>
-        <div id="main">
-            <h1>{{ title }}</h1>
-            <h2>Middleware</h2>
-            <h3>Local Weather Input (WXL) Message</h3>
-            {% block main %}{% endblock %}
+        <div>
+            {% with messages = get_flashed_messages() %}{% if messages %}
+            <h2>Messages</h2>
+            <ul class=flashes>{% for message in messages %}
+                <li>{{ message|safe }}</li>{% endfor %}
+            </ul>{% endif %}
+            {% endwith %}
+            <div id="main">
+                <h1>{{ title }}</h1>
+                <h2>Middleware</h2>
+                <h3>Local Weather Input (WXL) Message</h3>
+                {% block main %}{% endblock %}
+            </div>
         </div>
     </body>
 </html>

@@ -1,15 +1,32 @@
 import configparser
+import json
 import xml.etree.ElementTree as ET
 
+from pathlib import Path
+
 from flask import Flask
+from flask import current_app
+from flask import flash
+from flask import redirect
 from flask import render_template
 from flask import request
+from flask import url_for
 
 from . import pluck
 from . import schema
 from . import wxlmessage
 
 app = Flask(__name__)
+
+app.config.from_envvar('WSIWEATHER_CONFIG')
+
+wsischema = schema.WSIWeatherSchema()
+
+def get_output_path(data):
+    output_format = current_app.config['OUTPUT_FORMAT']
+    output_path = output_format.format(**data)
+    output_path = Path(output_path)
+    return output_path
 
 @app.route('/')
 def main():
@@ -27,6 +44,25 @@ def output():
     tree = ET.ElementTree(ET.fromstring(xmlfile.read()))
     root = tree.getroot()
     data = pluck.fromxml(root)
-    data = schema.WSIWeatherSchema().load(data)
-    output = wxlmessage.render(data)
-    return render_template('output.html', output=output, form=request.form)
+    data = wsischema.load(data)
+    message = wxlmessage.render(data)
+    output_path = get_output_path(data)
+    context = dict(
+        data = data,
+        data_json = wsischema.dumps(data),
+        message = message,
+        form = request.form,
+        output_path = output_path,
+    )
+    return render_template('output.html', **context)
+
+@app.route('/write', methods=['POST'])
+def write():
+    messagetext = request.form['messagetext']
+    data_json = request.form['data_json']
+    data = wsischema.loads(data_json)
+    output_path = get_output_path(data)
+    with open(output_path, 'w') as fp:
+        fp.write(messagetext)
+    flash(f'File written <pre>{output_path}</pre>')
+    return redirect(url_for('main'))
