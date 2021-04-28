@@ -1,3 +1,4 @@
+import datetime
 import sys
 import types
 
@@ -166,7 +167,10 @@ class FileOutput(Output):
         self.mode = mode
 
     def write(self, lido_message):
-        context = dict(lidomsg=lido_message)
+        context = dict(
+            lidomsg = lido_message,
+            now = datetime.datetime.now(),
+        )
         path = self.pathfmt.format(**context)
         with open(path, self.mode) as fp:
             fp.write(str(lido_message))
