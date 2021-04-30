@@ -174,6 +174,7 @@ class FileOutput(Output):
         path = self.pathfmt.format(**context)
         with open(path, self.mode) as fp:
             fp.write(str(lido_message))
+        return path
 
 
 class PassMessageArchive(MessageFilter):
