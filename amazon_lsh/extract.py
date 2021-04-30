@@ -120,8 +120,8 @@ def from_text(text):
 
 def loadplan_from_message(message):
     # have observed empty text in messages
-    if not message.subject.startswith('LSH'):
-        raise AmazonLSHExtractError('message subject does not start with LSH')
+    #if not message.subject.startswith('LSH'):
+    #    raise AmazonLSHExtractError('message subject does not start with LSH')
     if not message.text.strip():
         raise AmazonLSHExtractError('message text empty')
     return from_text(message.text)
