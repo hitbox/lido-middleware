@@ -62,7 +62,8 @@ def run(config):
                 logger.debug('loadplan loaded from schema')
                 lido_message = LIDOWeightBalanceMessage(loadplan)
                 logger.debug('lido_message created')
-                output.write(lido_message)
+                path = output.write(lido_message)
+                logger.debug(str(path))
             finally:
                 message_archive.save(message)
                 logger.info('message processed and archived ' + message_fmt(message))
