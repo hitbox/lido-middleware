@@ -1,4 +1,5 @@
 import argparse
+import code
 import logging.config
 import time
 
@@ -16,6 +17,7 @@ def main(argv=None):
     parser.add_argument(
         '-w', '--watch', type=int, metavar='N',
         help='Run repeatedly every %(metavar)s seconds.')
+    parser.add_argument('--shell', action='store_true')
     args = parser.parse_args(argv)
 
     # do logging in config or this takes over
@@ -24,16 +26,19 @@ def main(argv=None):
 
     conf = pyfile_config(args.pyfile)
 
-    exit_code = 1
-    try:
-        while True:
-            # run, logging exceptions
-            exit_code = run(conf)
-            if args.watch is None:
-                break
-            else:
-                logger.debug('sleeping %s', args.watch)
-                time.sleep(args.watch)
-    except KeyboardInterrupt:
-        pass
-    return exit_code
+    if args.shell:
+        code.interact(local=conf)
+    else:
+        exit_code = 1
+        try:
+            while True:
+                # run, logging exceptions
+                exit_code = run(conf)
+                if args.watch is None:
+                    break
+                else:
+                    logger.debug('sleeping %s', args.watch)
+                    time.sleep(args.watch)
+        except KeyboardInterrupt:
+            pass
+        return exit_code
