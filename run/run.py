@@ -64,6 +64,5 @@ def run(config):
                 logger.debug('lido_message created')
                 path = output.write(lido_message)
                 logger.debug(str(path))
-            finally:
                 message_archive.save(message)
                 logger.info('message processed and archived ' + message_fmt(message))
