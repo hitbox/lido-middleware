@@ -74,13 +74,15 @@ class MailBoxSource(Source):
 
     def __init__(self, host, username, password,
             fetch_criteria=None,
-            fetch_limit=None
+            fetch_limit=None,
+            reverse = True,
         ):
         self.host = host
         self.username = username
         self.password = password
         self.fetch_criteria = fetch_criteria
         self.fetch_limit = fetch_limit
+        self.reverse = reverse
 
     def itermessages(self):
         from imap_tools import MailBox
@@ -89,7 +91,8 @@ class MailBoxSource(Source):
             messages = mailbox.fetch(
                     self.fetch_criteria,
                     limit = self.fetch_limit,
-                    mark_seen = False)
+                    mark_seen = False,
+                    reverse = self.reverse)
             yield from messages
 
 
