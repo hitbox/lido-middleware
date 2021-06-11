@@ -1,6 +1,6 @@
 import logging
 
-from marshmallow import ValidationError
+from marshmallow.exceptions import MarshmallowError
 
 from lido import LIDOWeightBalanceMessage
 
@@ -44,7 +44,7 @@ def run(config):
         else:
             try:
                 loadplan = schema.load(extract_data)
-            except ValidationError as error:
+            except MarshmallowError as error:
                 # Prettier line-based output for marshmallow.ValidationError
                 # exceptions, with the data that failed.
                 # Print the original in case the prettier output loses something.

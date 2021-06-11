@@ -13,28 +13,14 @@ from flask import url_for
 from . import pluck
 from . import schema
 from . import wxlmessage
-
-app = Flask(__name__)
-
-app.config.from_envvar('WSIWEATHER_CONFIG')
+from .output import get_output_path
 
 wsischema = schema.WSIWeatherSchema()
 
-def get_output_path(data):
-    output_format = current_app.config['OUTPUT_FORMAT']
-    check_until_unique = ''
-    while True:
-        output_path = output_format.format(
-            check_until_unique = check_until_unique,
-            **data)
-        output_path = Path(output_path)
-        if not output_path.exists():
-            break
-        try:
-            check_until_unique = '.' + str(int(check_until_unique.lstrip('.')) + 1)
-        except ValueError:
-            check_until_unique = '.0'
-    return output_path
+def create_app():
+    app = Flask(__name__)
+    app.config.from_envvar('WSIWEATHER_CONFIG')
+    return app
 
 @app.route('/')
 def main():
@@ -54,7 +40,8 @@ def output():
     data = pluck.fromxml(root)
     data = wsischema.load(data)
     message = wxlmessage.render(data)
-    output_path = get_output_path(data)
+    output_format = current_app.config['OUTPUT_FORMAT']
+    output_path = get_output_path(data, output_format)
     context = dict(
         data = data,
         data_json = wsischema.dumps(data),
@@ -69,7 +56,8 @@ def write():
     messagetext = request.form['messagetext']
     data_json = request.form['data_json']
     data = wsischema.loads(data_json)
-    output_path = get_output_path(data)
+    output_format = current_app.config['OUTPUT_FORMAT']
+    output_path = get_output_path(data, output_format)
     with open(output_path, 'w') as fp:
         fp.write(messagetext)
     flash(f'File written <pre>{output_path}</pre>')

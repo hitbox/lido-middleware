@@ -49,15 +49,40 @@ class MessageArchive:
         raise NotImplementedError
 
 
-class PickleGlobSource(Source):
+class FakeMessage:
+
+    def __init__(self, subject, date, text):
+        self.subject = subject
+        self.date = date
+        self.text = text
+
+
+class GlobSource(Source):
 
     def __init__(self, pathname):
         self.pathname = pathname
 
-    def itermessages(self):
-        import pickle
+    def iterfilenames(self):
         from glob import glob
         for fn in glob(self.pathname):
+            yield fn
+
+    def itermessages(self):
+        import os
+        import datetime
+        for fn in self.iterfilenames():
+            with open(fn) as fp:
+                stat = os.stat(fn)
+                date = datetime.datetime.fromtimestamp(stat.st_mtime)
+                fakemsg = FakeMessage(fn, date, fp.read())
+                yield fakemsg
+
+
+class PickleGlobSource(GlobSource):
+
+    def itermessages(self):
+        import pickle
+        for fn in self.iterfilenames():
             with open(fn, 'rb') as fp:
                 messages = pickle.load(fp)
                 if not isinstance(messages, (list, tuple, set)):
@@ -74,13 +99,15 @@ class MailBoxSource(Source):
 
     def __init__(self, host, username, password,
             fetch_criteria=None,
-            fetch_limit=None
+            fetch_limit=None,
+            reverse = True,
         ):
         self.host = host
         self.username = username
         self.password = password
         self.fetch_criteria = fetch_criteria
         self.fetch_limit = fetch_limit
+        self.reverse = reverse
 
     def itermessages(self):
         from imap_tools import MailBox
@@ -89,7 +116,8 @@ class MailBoxSource(Source):
             messages = mailbox.fetch(
                     self.fetch_criteria,
                     limit = self.fetch_limit,
-                    mark_seen = False)
+                    mark_seen = False,
+                    reverse = self.reverse)
             yield from messages
 
 
@@ -106,6 +134,23 @@ class PassMessageFilter(MessageFilter):
         Return True to process message. This always returns True.
         """
         return True
+
+
+class SHA1HexArchiveFilter(MessageFilter):
+    """
+    Filter out SHA1 hex digests that exist in a file.
+    """
+
+    def __init__(self, path):
+        self.path = path
+
+    def filter(self, hexdigest):
+        from pathlib import Path
+        if not Path(self.path).exists():
+            return True
+        with open(self.path) as archive_file:
+            saved = archive_file.read().splitlines()
+            return hexdigest not in saved
 
 
 class ArchiveMessageFilter(MessageFilter):
@@ -177,7 +222,7 @@ class FileOutput(Output):
         return path
 
 
-class PassMessageArchive(MessageFilter):
+class PassMessageArchive(MessageArchive):
     """
     Empty do-nothing archiver to meet spec.
     """
@@ -189,10 +234,29 @@ class PassMessageArchive(MessageFilter):
         pass
 
 
-class SHA1MessageArchive(MessageArchive):
+class FileSystemArchive(MessageArchive):
 
-    def __init__(self, archive):
-        self.archive = archive
+    def __init__(self, path):
+        self.path = path
+
+    def write(self, payload):
+        with open(self.path, 'a') as archive_file:
+            archive_file.write(payload)
+
+
+class SHA1FakeMessageArchive(FileSystemArchive):
+
+    def save(self, message):
+        import hashlib
+        sha1 = haslib.sha1(message.text.encode('utf8'))
+        payload = sha1.hexdigest() + '\n'
+        self.write(payload)
+
+
+class SHA1MessageArchive(FileSystemArchive):
+    """
+    Archive an email message as SHA1 in a file.
+    """
 
     def save(self, message):
         """
@@ -200,9 +264,9 @@ class SHA1MessageArchive(MessageArchive):
         :param message: imap_tools.message.MailMessage object.
         """
         import hashlib
-        with open(self.archive, 'a') as archive_file:
-            sha1 = hashlib.sha1(bytes(message.obj))
-            archive_file.write(sha1.hexdigest() + '\n')
+        sha1 = hashlib.sha1(bytes(message.obj))
+        payload = sha1.hexdigest() + '\n'
+        self.write(payload)
 
 
 class RunConfig:
