@@ -3,8 +3,11 @@ import configparser
 import glob
 import hashlib
 import logging.config
+import shutil
 
 from pathlib import Path
+
+from fs import open_fs
 
 from . import pluck
 from . import wxlmessage
@@ -23,7 +26,14 @@ def hash1(path, text):
     sha1 = hashlib.sha1(string_bytes)
     return sha1.hexdigest()
 
-def realmain(patterns, output_template, copy_original, archive_path, uniquify_output):
+def realmain(
+    patterns,
+    schema,
+    filename_template,
+    output_fs,
+    copy_original,
+    archive_path,
+):
     logger = logging.getLogger(APPNAME)
     archive_path = Path(archive_path)
     if archive_path.exists():
@@ -34,31 +44,35 @@ def realmain(patterns, output_template, copy_original, archive_path, uniquify_ou
 
     for pattern in patterns:
         logger.debug('globbing pattern %r', pattern)
-        for path in glob.glob(pattern):
-            path = Path(path)
-            with open(path) as fp:
+        for source_path in glob.glob(pattern):
+            source_path = Path(source_path)
+            with open(source_path) as fp:
                 text = fp.read()
-                sha1hex = has1(path, text)
+                sha1hex = hash1(source_path, text)
                 if sha1hex in archived:
-                    logger.debug('hash of %r found in archive, skipping', path)
+                    logger.debug('hash of %r found in archive, skipping', source_path)
                     continue
 
-                logger.debug('processing %r', path)
-                logger.debug('plucking')
-                data = pluck.from_text(text)
-                logger.debug('schema.load')
-                data = schema.load(data)
-                logger.debug('rendering')
-                msg = wxlmessage.render(data)
-                outpath = output_template.format(**data)
-                logger.debug('writing rendered message to %r', outpath)
-                print(msg)
-                print(outpath)
-                raise NotImplementedError
+            logger.debug('processing %s', source_path)
+            logger.debug('plucking')
+            data = pluck.from_text(text)
+            logger.debug('schema.load')
+            data = schema.load(data)
+            logger.debug('rendering')
+            rendered_message = wxlmessage.render(data)
 
-                # TODO: login ftp
-                #       write archive
-                #       copy original
+            filename = filename_template.format(**data)
+
+            logger.debug('writing rendered message to %s, on %s', filename, output_fs)
+            with open_fs(output_fs) as fs:
+                fs.writetext(filename, rendered_message)
+
+            logger.debug('copying original file %s to %s', source_path, copy_original)
+            shutil.copy(source_path, copy_original)
+
+            logger.debug('appending hash to archive %s', archive_path)
+            with open(archive_path, 'a') as archive_file:
+                archive_file.write(sha1hex + '\n')
 
 def main(argv=None):
     """
@@ -78,15 +92,21 @@ def main(argv=None):
     appconf = cp[APPNAME]
     patterns = [appconf[key] for key in appconf if is_glob(key)]
     # rendered message output
-    output_template = appconf['output_template']
-    # TODO: move original destination
+    filename_template = appconf['filename_template']
+    output_fs = appconf['output_fs']
     copy_original = appconf['copy_original']
     archive_path = appconf['archive']
-    uniquify_output = appconf.getboolean('uniquify_output')
 
     logger = logging.getLogger(APPNAME)
     try:
-        realmain(patterns, output_template, copy_original, archive_path, uniquify_output)
+        realmain(
+            patterns,
+            schema,
+            filename_template,
+            output_fs,
+            copy_original,
+            archive_path,
+        )
     except:
         logger.exception('An exception occurred')
 
