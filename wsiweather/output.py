@@ -1,6 +1,7 @@
 from pathlib import Path
 
 def get_output_path(data, output_format):
+    # old, unused funtion to make path unique
     check_until_unique = ''
     while True:
         output_path = output_format.format(check_until_unique=check_until_unique, **data)

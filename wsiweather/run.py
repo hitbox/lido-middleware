@@ -20,6 +20,7 @@ def is_glob(key):
 def hash1(path, text):
     """
     """
+    # named with a one for future changes to hashing strategy
     string_bytes = str(path).encode('utf8') + str(text).encode('utf8')
     sha1 = hashlib.sha1(string_bytes)
     return sha1.hexdigest()
