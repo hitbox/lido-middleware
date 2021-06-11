@@ -2,6 +2,7 @@ import logging
 
 from marshmallow.exceptions import MarshmallowError
 
+from extradata import ExtradataError
 from lido import LIDOWeightBalanceMessage
 
 from .exceptions import ExtractError
@@ -58,6 +59,8 @@ def run(config):
                     else:
                         for errmsg in error_messages:
                             logger.error(errmsg)
+            except ExtradataError:
+                logger.exception('An exception occurred')
             else:
                 logger.debug('loadplan loaded from schema')
                 lido_message = LIDOWeightBalanceMessage(loadplan)
