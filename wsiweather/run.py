@@ -31,7 +31,7 @@ def realmain(
     schema,
     filename_template,
     output_fs,
-    copy_original,
+    move_original,
     archive_path,
 ):
     logger = logging.getLogger(APPNAME)
@@ -67,8 +67,8 @@ def realmain(
             with open_fs(output_fs) as fs:
                 fs.writetext(filename, rendered_message)
 
-            logger.debug('copying original file %s to %s', source_path, copy_original)
-            shutil.copy(source_path, copy_original)
+            logger.debug('mv %s %s', source_path, move_original)
+            shutil.move(source_path, move_original)
 
             logger.debug('appending hash to archive %s', archive_path)
             with open(archive_path, 'a') as archive_file:
@@ -94,7 +94,7 @@ def main(argv=None):
     # rendered message output
     filename_template = appconf['filename_template']
     output_fs = appconf['output_fs']
-    copy_original = appconf['copy_original']
+    move_original = appconf['move_original']
     archive_path = appconf['archive']
 
     logger = logging.getLogger(APPNAME)
@@ -104,7 +104,7 @@ def main(argv=None):
             schema,
             filename_template,
             output_fs,
-            copy_original,
+            move_original,
             archive_path,
         )
     except:
