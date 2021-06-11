@@ -17,7 +17,10 @@ def main(argv=None):
     parser.add_argument(
         '-w', '--watch', type=int, metavar='N',
         help='Run repeatedly every %(metavar)s seconds.')
-    parser.add_argument('--shell', action='store_true')
+    parser.add_argument(
+        '--shell',
+        action='store_true',
+        help='Interactive shell after configured.')
     args = parser.parse_args(argv)
 
     # do logging in config or this takes over

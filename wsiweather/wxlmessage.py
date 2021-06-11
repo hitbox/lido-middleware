@@ -1,5 +1,7 @@
 def render(data):
     """
+    Render a Lido WXL message from data.
+
     :param data: XML as processed through pluck.fromxml and WSIWeatherSchema.load
     """
     items = []

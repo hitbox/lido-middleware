@@ -1,5 +1,6 @@
 import re
 import textwrap
+import xml.etree.ElementTree as ET
 
 validity_line_re = re.compile('(?P<start_of_validity>\d{4})/(?P<end_of_validity>\d{4})')
 
@@ -32,11 +33,25 @@ def fromxml(root):
 
     return data
 
+def from_text(s):
+    tree = ET.ElementTree(ET.fromstring(s))
+    root = tree.getroot()
+    data = fromxml(root)
+    return data
+
+def from_message(msg):
+    return from_text(msg.text)
+
+def from_file(path):
+    tree = ET.parse(path)
+    root = tree.getroot()
+    data = fromxml(root)
+    return data
+
 def main(argv=None):
     import argparse
     import sys
     import traceback
-    import xml.etree.ElementTree as ET
 
     from pprint import pprint
 
