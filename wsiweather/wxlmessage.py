@@ -31,8 +31,6 @@ def main(argv=None):
     import argparse
     import xml.etree.ElementTree as ET
 
-    from pprint import pprint
-
     from . import pluck
     from . import schema
 
