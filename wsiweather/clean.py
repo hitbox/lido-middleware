@@ -1,5 +1,6 @@
 import argparse
 import configparser
+import glob
 import logging.config
 
 from pathlib import Path
@@ -18,7 +19,7 @@ def realmain(patterns):
         logger.debug('globbing pattern %r', pattern)
         for path in glob.glob(pattern):
             path = Path(path)
-            logger.debug('removing %r', path)
+            logger.debug('removing %s', path)
             path.unlink()
 
 def main(argv=None):
