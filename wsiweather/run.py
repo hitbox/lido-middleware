@@ -12,7 +12,7 @@ from .output import get_output_path
 from .schema import WSIWeatherSchema
 from .utils import is_glob
 
-APPNAME = Path(__file__).name
+APPNAME = 'wsiweather.run'
 LOGGING_SECTIONS = set(['loggers', 'handlers', 'formatters'])
 
 def hash1(path, text):

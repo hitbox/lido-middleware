@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .utils import is_glob
 
-APPNAME = Path(__file__).name
+APPNAME = 'wsiweather.clean'
 LOGGING_SECTIONS = set(['loggers', 'handlers', 'formatters'])
 
 def realmain(patterns):
