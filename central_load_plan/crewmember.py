@@ -28,7 +28,7 @@ class CrewMemberResult:
 
 def fromdata(config, data):
     airline_code = data['airline_iata_code']
-    airline_section = config['airline_' + airline_code]
+    airline_section = config[airline_code]
     url = sa.engine.url.URL.create(
         airline_section.get('drivername'),
         airline_section.get('username'),
