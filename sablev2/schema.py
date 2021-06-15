@@ -66,7 +66,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
 
     actual_takeoff_fuel = Integer(required=False)
     actual_zero_fuel_weight = Integer(required=False)
-    center_of_gravity = Float(data_key='cg_percent_mac', required=False)
+    center_of_gravity = Float(data_key='cg_percent_mac', missing=None)
     dry_operating_weight = Integer(required=False)
 
     estimated_total_traffic_load = Integer(data_key='gross')

@@ -216,7 +216,11 @@ class LIDOWeightBalanceMessage:
             value = self.loadplan['center_of_gravity']
         else:
             value = 0
-        return '{:0>5.2f}'.format(value)
+
+        if value is None:
+            return '0' * 5
+        else:
+            return '{:0>5.2f}'.format(value)
 
     @property
     def actual_zero_fuel_weight(self):
