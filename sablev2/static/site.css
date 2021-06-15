@@ -1,19 +1,45 @@
 body {
     font-family: arial;
-    display: flex;
-    justify-content: center;
 }
 
-#main {
-    width: 800px;
+#topwrap, #mainwrap {
+    display: flex;
+    justify-content: center;
 }
 
 pre {
     border: 1px solid black;
     padding: 1rem;
     font-size: 1rem;
+    white-space: pre-wrap;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th, td {
+    padding: .5rem;
+}
+
+td.data {
+    font-family: monospace;
+    font-size: 1rem;
 }
 
 .inputgroup {
     margin-top: 1.5rem;
+}
+
+.sideby {
+    display: flex;
+}
+
+.sideby > * {
+    width: 50%;
+    margin: .5rem;
 }

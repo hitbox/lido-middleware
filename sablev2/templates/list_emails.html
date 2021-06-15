@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block top %}
+{{ super() }}
+<p>Recently saved emails. Click "process" to create Lido message.</p>
+<p>The emails are loaded from a saved file and the processing is done each time it is clicked.</p>
+{% endblock top %}
+
 {% block main %}
 <table>
     <thead>
@@ -12,9 +18,9 @@
     </thead>
     <tbody>{% for email in messages %}
         <tr>
-            <td>{{ email.from_ }}</td>
-            <td>{{ email.subject }}</td>
-            <td>{{ email.date }}</td>
+            <td class=data>{{ email.from_ }}</td>
+            <td class=data>{{ email.subject }}</td>
+            <td class=data>{{ email.date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
             <td><a href="{{ url_for('demo.process', index=loop.index0) }}">process</a></td>
         </tr>{% endfor %}
     </tbody>

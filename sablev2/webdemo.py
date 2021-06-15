@@ -22,6 +22,7 @@ class Demo:
         self.lidomessage = None
 
     def build_from_email(self, email):
+        self.original_text = email.attachments[0].payload.decode('utf8', 'ignore')
         self.extracted = loadplan_from_message(email)
         schema = LoadPlanSchema()
         self.schemafied = schema.load(self.extracted)

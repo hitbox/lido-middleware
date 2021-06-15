@@ -8,10 +8,17 @@
         <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
     </head>
     <body>
-        <div id="main">
-            <h1>{{ title }}</h1>
-            <h2>Middleware</h2>
-            {% block main %}{% endblock %}
+        <div id="topwrap">
+            <div id="top">{% block top %}
+                <h1>{{ title }}</h1>
+                <h2>Lido Weight and Balance Middleware</h2>
+                <p>Sable to Lido message using LSH instead of LDM.</p>
+            {% endblock top %}</div>
+        </div>
+        <div id="mainwrap">
+            <div id="main">
+                {% block main %}{% endblock %}
+            </div>
         </div>
     </body>
 </html>
