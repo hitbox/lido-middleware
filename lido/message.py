@@ -152,7 +152,8 @@ class LIDOWeightBalanceMessage:
         Dry Operating Weight (DOW)
         depends on planning status.
         """
-        if self.planning_status in ('04', '95'):
+        if (self.planning_status in ('04', '95')
+                or 'dry_operating_weight' not in self.loadplan):
             return ' ' * 6
         else:
             return '{:0>6}'.format(self.loadplan['dry_operating_weight'])
@@ -166,8 +167,12 @@ class LIDOWeightBalanceMessage:
         """
         if self.planning_status in ('04', ):
             return '0' * 6
-        else:
-            raise NotImplementedError
+
+        value = self.loadplan.get('estimated_total_traffic_load')
+        if value is not None:
+            return '{:0>6}'.format(value)
+
+        raise NotImplementedError
 
     @property
     def pax_baggage_indicator(self):
@@ -207,7 +212,11 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:18
         00000; 09.23; 15.12
         """
-        return '{:0>5.2f}'.format(self.loadplan['center_of_gravity'])
+        if 'center_of_gravity' in self.loadplan:
+            value = self.loadplan['center_of_gravity']
+        else:
+            value = 0
+        return '{:0>5.2f}'.format(value)
 
     @property
     def actual_zero_fuel_weight(self):
@@ -215,7 +224,11 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:19
         depends on planning status.
         """
-        return '{:0>6}'.format(self.loadplan['actual_zero_fuel_weight'])
+        if self.planning_status == '05':
+            value = 0
+        else:
+            value = self.loadplan['actual_zero_fuel_weight']
+        return '{:0>6}'.format(value)
 
     @property
     def actual_takeoff_fuel(self):
@@ -224,7 +237,11 @@ class LIDOWeightBalanceMessage:
         actual_takeoff_fuel
         depends on planning status.
         """
-        return '{:0>6}'.format(self.loadplan['actual_takeoff_fuel'])
+        if self.planning_status == '05':
+            value = 0
+        else:
+            value = self.loadplan['actual_takeoff_fuel']
+        return '{:0>6}'.format(value)
 
     @property
     def estimated_pax(self):
@@ -269,7 +286,7 @@ class LIDOWeightBalanceMessage:
                     value = int(acconfig['value'])
                     return fmt(value)
 
-        raise LIDOError('Unable to find cargo weight.')
+        return ' ' * 6
 
     @property
     def separator(self):

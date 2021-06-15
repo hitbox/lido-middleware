@@ -1,0 +1,30 @@
+As you know, we’ve not yet been able to include the DHL Sable load plan in the
+Lido WAB interface, because the DHL LDM does not include actual values for zero
+fuel weight and takeoff fuel (which are required for the WAB Planning Status
+‘04’). And, DHL does not send an LSH like Amazon does.
+
+So, we asked LSY to provide further information on the Planning Status ‘05’,
+and we’ve decided to switch to this Planning Status and use the LDMs for the
+Sable data.
+
+Attached is the WAB Data Mapping document with the differences between the
+LDM/LSH and ‘04’/’05’ Planning Status field populations highlighted in yellow.
+The emails containing the Sable LDMs should follow the rules below.
+
+SABLE Data (Amazon)
+
+    Receiving Email Account: LoadManifest@atsginc.com
+    Sending Email Account:  amazon-sable@amazon-wb.com
+    Subject line beginning with ‘LDM’
+
+SABLE Data (DHL)
+
+    Receiving Email Account: LoadManifest@atsginc.com
+    Sending Email Account:  avibar@dhl.com
+    Subject line beginning with ‘LDM’
+
+I know this will be a significant change to your programming, but hopefully it
+will be straightforward and not be too time consuming.  Please leave the
+current Sable LSH processing in place until we’re ready to test the new
+version.  And save the current version, as we may find ourselves returning to
+it!

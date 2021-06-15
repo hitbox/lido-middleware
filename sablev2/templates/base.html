@@ -1,0 +1,17 @@
+<!doctype html>
+<html translate="no">{% set title = 'Sable v2 LDM' %}
+    <head>
+        <title>{{ title }}</title>
+        <meta name=google content=notranslate>
+        <meta name=viewport content="width=device-width, initial-scale=1.0">
+        <link rel="icon" href="data:,">
+        <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+    </head>
+    <body>
+        <div id="main">
+            <h1>{{ title }}</h1>
+            <h2>Middleware</h2>
+            {% block main %}{% endblock %}
+        </div>
+    </body>
+</html>

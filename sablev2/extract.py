@@ -1,0 +1,78 @@
+from run.exceptions import ExtractError
+
+from .regex import dense_data_line_re
+from .regex import header_re
+from .regex import si_load_re
+
+import chardet
+
+from extradata import airline_designators
+from schema import PRINT_DATETIME_FORMAT
+
+class SableExtractError(ExtractError):
+    pass
+
+
+def from_text(text):
+    """
+    Extract data from Sable load plan message. Does no data conversion,
+    everything is a string.
+    """
+    lines = iter(text.splitlines())
+    sable_data = {}
+    # find and parse a line of densely packed data.
+    for line in lines:
+        match = dense_data_line_re.match(line)
+        if match:
+            sable_data.update(match.groupdict())
+            break
+    else:
+        raise SableExtractError(
+            'Unable to find and parse dense data line, %r' % line)
+
+    # SI LOAD information line
+    line = next(lines)
+    match = si_load_re.match(line)
+    if not match:
+        raise SableExtractError(
+            'Unable to parse SI LOAD information line, %r' % line)
+    sable_data.update(match.groupdict())
+
+    # find position data header line
+    for line in lines:
+        match = header_re.match(line)
+        if match:
+            break
+    else:
+        raise SableExtractError('Positions data header line not found.')
+
+    return sable_data
+
+def loadplan_from_message(message):
+    first = message.attachments[0]
+    text = first.payload.decode('utf8', 'ignore')
+    data = from_text(text)
+    data['message_date'] = message.date.strftime(PRINT_DATETIME_FORMAT)
+    return data
+
+def main(argv=None):
+    """
+    """
+    import argparse
+    import pickle
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--source-pickle')
+    parser.add_argument('--index', type=int)
+    args = parser.parse_args(argv)
+
+    with open(args.source_pickle, 'rb') as fp:
+        messages = pickle.load(fp)
+
+    messages = [msg for msg in messages
+        if msg.subject.startswith('LDM')
+        and msg.from_ in ('avibar@dhl.com', 'amazon-sable@amazon-wb.com')]
+    result = loadplan_from_message(messages[args.index])
+
+if __name__ == '__main__':
+    main()

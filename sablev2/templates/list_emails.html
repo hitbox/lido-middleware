@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block main %}
+<table>
+    <thead>
+        <tr>
+            <th>From</th>
+            <th>Subject</th>
+            <th>Date</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>{% for email in messages %}
+        <tr>
+            <td>{{ email.from_ }}</td>
+            <td>{{ email.subject }}</td>
+            <td>{{ email.date }}</td>
+            <td><a href="{{ url_for('demo.process', index=loop.index0) }}">process</a></td>
+        </tr>{% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -63,6 +63,7 @@ time_format = '%H%M%S'
 
 #est_total_traffic_load
 | Plan Status Code | Estimated Total Traffic Load |
+|------------------+------------------------------|
 | 01               | {value}                      |
 | 02               | {value}                      |
 | 03               | {value}                      |
