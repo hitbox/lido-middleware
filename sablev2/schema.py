@@ -12,6 +12,9 @@ from marshmallow.fields import String
 from marshmallow.validate import Length
 from marshmallow.validate import OneOf
 
+from .message_to_airlinemap import airline_from_toaddr
+
+from extradata import ExtradataError
 from extradata import airline_designators
 from schema import CommonSchemaMixin
 from schema import PRINT_DATETIME_FORMAT
@@ -26,9 +29,18 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     def pre_load(self, data, **kwargs):
         # the company or airline designator appears at the beginning of this string.
         company_or_airline_and_flight_number = data['airline_and_flight_number']
-        data.update(
-            airline_designators.split_company_or_airline_and_flight_number(
-                company_or_airline_and_flight_number))
+
+        airline_company = airline_designators.split_company_or_airline_and_flight_number(
+                company_or_airline_and_flight_number)
+
+        # resolve AMZ (Amazon) using email to addresses
+        if airline_company['company'] == 'AMZ':
+            company = airline_from_toaddr(data['message_to'])
+            airline_company['airline_designator'] = company
+        else:
+            raise ValidationError('No company, %r' % airline_company)
+
+        data.update(airline_company)
         del data['airline_and_flight_number']
 
         return data
@@ -51,6 +63,8 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         required = True,
         validate = OneOf(VALID_WEIGHT_UNITS))
     print_time_gmt = DateTime(data_key='message_date', format=PRINT_DATETIME_FORMAT)
+    # to addresses from email:
+    message_to = List(String())
 
     actual_takeoff_fuel = Integer(required=False)
     actual_zero_fuel_weight = Integer(required=False)
@@ -66,4 +80,5 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         """
         if not (data.get('company') or data.get('airline_designator')):
             raise ValidationError('company or airline_designator must exist')
+
         return data

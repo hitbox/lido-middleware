@@ -29,10 +29,10 @@ class AirlineDesignators:
     def __init__(self):
         path = Path(__file__).parent / 'airline_designators.csv'
         with open(path, newline='') as fp:
-            self.by_company = dict(csv.reader(fp))
-            self.by_airline = {v: k for k, v in self.by_company.items()}
-            self.company_codes = list(self.by_company)
-            self.airline_codes = list(self.by_airline)
+            self.by_company = {k: v if v else None for k, v in csv.reader(fp) if k}
+            self.by_airline = {v: k if k else None for k, v in self.by_company.items() if v}
+            self.company_codes = [c for c in self.by_company if c]
+            self.airline_codes = [a for a in self.by_airline if a]
             self.all_codes = self.company_codes + self.airline_codes
 
     def split_company_or_airline_and_flight_number(self, s):
@@ -47,7 +47,7 @@ class AirlineDesignators:
                 'No matches for airline or company, %r' % s)
         elif nmatches > 1:
             raise ExtradataError(
-                'More than one match for airline or company, %r' % s)
+                'More than one match for airline or company, %r, %r' % (s, matches))
         else:
             # one match, is it the company or airline?
             match = matches[0]

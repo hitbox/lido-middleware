@@ -53,6 +53,7 @@ def loadplan_from_message(message):
     text = first.payload.decode('utf8', 'ignore')
     data = from_text(text)
     data['message_date'] = message.date.strftime(PRINT_DATETIME_FORMAT)
+    data['message_to'] = message.to
     return data
 
 def main(argv=None):

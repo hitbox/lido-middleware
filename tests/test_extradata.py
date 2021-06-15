@@ -16,6 +16,7 @@ class TestAirlineDesignators(unittest.TestCase):
 
     def test_by_company(self):
         self.assertEqual(airline_designators.by_company['ABX'], 'GB')
+        self.assertEqual(airline_designators.by_company['AMZ'], None)
 
     def test_by_airline(self):
         self.assertEqual(airline_designators.by_airline['GB'], 'ABX')
@@ -30,6 +31,10 @@ class TestAirlineDesignators(unittest.TestCase):
         self.assertEqual(
             _f('GB1234'),
             {'company': 'ABX', 'airline_designator': 'GB', 'flight_number': '1234'})
+        #
+        self.assertEqual(
+            _f('AMZ8888'),
+            {'company': 'AMZ', 'airline_designator': None, 'flight_number': '8888'})
         # not exists
         with self.assertRaises(ExtradataError):
             self.assertEqual(
