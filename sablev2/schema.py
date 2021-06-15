@@ -53,7 +53,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     origin_iata = String(required=True, validate=Length(max=3))
     destination_iata = String(required=True, validate=Length(max=3))
 
-    net_weight = Integer()
+    cargo_weight = Integer(data_key='net_weight')
     uload = Integer()
     souls_onboard = Integer()
     all_weights_unit = String(
