@@ -37,8 +37,6 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         if airline_company['company'] == 'AMZ':
             company = airline_from_toaddr(data['message_to'])
             airline_company['airline_designator'] = company
-        else:
-            raise ValidationError('No company, %r' % airline_company)
 
         data.update(airline_company)
         del data['airline_and_flight_number']
