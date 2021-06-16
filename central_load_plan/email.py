@@ -83,12 +83,13 @@ def render(data):
         '----    ----------      ---------       ----------'
     )
     for crew in data['crewmembers']:
-        lines.append(
-            '%-8s' % crew['seat']
-            + '%-16s' % crew['first_name']
-            + '%-16s' % crew['last_name']
-            + '%-12s' % crew['employee_number']
-        )
+        line = ''.join([
+            '%-8s' % crew['seat'],
+            '%-16s' % crew['first_name'],
+            '%-16s' % crew['last_name'],
+            '%-12s' % crew['employee_number'],
+        ])
+        lines.append(line)
 
     lines.append('')
     lines.append(
