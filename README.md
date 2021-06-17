@@ -25,3 +25,9 @@ python -m run path/to/config.py
   source for it would be. The initial sources were found deficient. An
   alternative was found and the `amazon_lsh` directory was created to extract
   and parse this new source.
+
+# Sable: Amazon LSH / LDM
+
+The directory `sable` was the original, intended Sable to LIDO middleware. The
+`amazon_lsh` directory is another implementation that lacks a few things. And,
+most recently, `sablev2` is intended as the full implementation.

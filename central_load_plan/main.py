@@ -70,8 +70,8 @@ def realmain(
     logger = logging.getLogger(appname)
     n = 0
     for source_path in glob.glob(source_glob):
-        logger.info(source_path)
         source_path = Path(source_path)
+        logger.info(source_path.resolve())
         if os.path.getsize(source_path) == 0:
             logger.info('skipping empty file')
             continue
@@ -95,7 +95,12 @@ def realmain(
                 email_message['To'] = send_to
                 # move source
                 if move_to is not None:
-                    logger.info('moving file to %s', move_to)
+                    move_to = Path(move_to)
+                    move_to_full = Path(move_to) / source_path.name
+                    if move_to_full.exists():
+                        logger.info('removing %s', move_to_full.resolve())
+                        move_to_full.unlink()
+                    logger.info('moving original to %s', move_to.resolve())
                     shutil.move(source_path, move_to)
                 # send email
                 logger.info('sending email to %r', send_to)
