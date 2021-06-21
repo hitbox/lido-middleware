@@ -6,6 +6,10 @@ validity_line_re = re.compile('(?P<start_of_validity>\d{4})/(?P<end_of_validity>
 
 def fromxml(root):
     data = {}
+
+    elem = root.find('.//{*}taf_reports/{*}forecaster_id')
+    data['forecaster_id'] = elem.text
+
     elem = root.find('.//{*}taf_reports/{*}icao_site_id')
     data['icao_originator'] = elem.text
 

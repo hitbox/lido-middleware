@@ -23,6 +23,7 @@ def render(data):
     items.append(data['end_of_validity'])
     items.append(data['weather_text'])
     # end of message
+    items.append(data['forecaster_id'])
     items.append('=')
     return ''.join(items)
 
