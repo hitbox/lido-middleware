@@ -17,6 +17,7 @@ class WSIWeatherSchema(Schema):
     start_of_validity = String(validate=Length(6, 6))
     end_of_validity = String(validate=Length(6, 6))
     weather_text = String(validate=Length(1, 999))
+    forecaster_id = String()
 
 
 def main(argv=None):
