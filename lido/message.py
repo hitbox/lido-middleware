@@ -48,8 +48,9 @@ class LIDOWeightBalanceMessage:
     # something is wrong if the final message is not this length:
     MESSAGELENGTH = 130
 
-    def __init__(self, loadplan):
+    def __init__(self, loadplan, bypass_length_check=False):
         self.loadplan = loadplan
+        self.bypass_length_check = bypass_length_check
 
     def get_context(self):
         """
@@ -65,7 +66,8 @@ class LIDOWeightBalanceMessage:
         context = self.get_context()
         msg = self.MESSAGE_FORMAT_STRING.format(**context)
         if len(msg) != self.MESSAGELENGTH:
-            raise LIDOError('LIDO message invalid length, %r' % len(msg))
+            if not self.bypass_length_check:
+                raise LIDOError('LIDO message invalid length, %r' % len(msg))
         return msg
 
     @property
@@ -165,14 +167,14 @@ class LIDOWeightBalanceMessage:
         Est. Total Traffic Load
         depends on planning status.
         """
-        if self.planning_status in ('04', ):
+        if self.planning_status == '04':
             return '0' * 6
 
         value = self.loadplan.get('estimated_total_traffic_load')
-        if value is not None:
+        if value is None:
+            return ' ' * 6
+        else:
             return '{:0>6}'.format(value)
-
-        raise NotImplementedError
 
     @property
     def pax_baggage_indicator(self):
@@ -267,7 +269,7 @@ class LIDOWeightBalanceMessage:
     def dry_operating_index(self):
         """
         WABFORMAT.txt:23
-        {:0<5} if available else BLANK*5.
+        {:0>5} if available else BLANK*5.
         """
         doi = self.loadplan['dry_operating_index']
         if doi is None:
@@ -278,19 +280,20 @@ class LIDOWeightBalanceMessage:
     def cargo_weight(self):
         """
         WABFORMAT.txt:24
-        {:0<6} if available else BLANK*6.
+        {:0>6} if available else BLANK*6.
         """
         fmt = '{:0>6}'.format
         if 'cargo_weight' in self.loadplan:
-            return fmt(self.loadplan['cargo_weight'])
-
+            value = self.loadplan['cargo_weight']
         elif 'aircraft_configurations' in self.loadplan:
             for acconfig in self.loadplan['aircraft_configurations']:
                 if acconfig['name'] == 'Cargo Wt':
                     value = int(acconfig['value'])
-                    return fmt(value)
 
-        return ' ' * 6
+        if value is None:
+            return ' ' * 6
+        else:
+            return fmt(value)
 
     @property
     def separator(self):
@@ -305,7 +308,7 @@ class LIDOWeightBalanceMessage:
     def estimated_pax_class_one(self):
         """
         WABFORMAT.txt:26
-        {:0<4} if available else BLANK*4 -#}
+        {:0>4} if available else BLANK*4 -#}
         """
         value = self.loadplan['estimated_pax_class_one']
         if value is None:
@@ -316,7 +319,7 @@ class LIDOWeightBalanceMessage:
     def estimated_pax_class_two(self):
         """
         WABFORMAT.txt:27
-        {:0<4} if available else BLANK*4 -#}
+        {:0>4} if available else BLANK*4 -#}
         """
         value = self.loadplan['estimated_pax_class_two']
         if value is None:
@@ -327,7 +330,7 @@ class LIDOWeightBalanceMessage:
     def estimated_pax_class_three(self):
         """
         WABFORMAT.txt:28
-        {:0<4} if available else BLANK*4 -#}
+        {:0>4} if available else BLANK*4 -#}
         """
         value = self.loadplan['estimated_pax_class_three']
         if value is None:
