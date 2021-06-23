@@ -110,7 +110,7 @@ def loadplan_from_lines(lines):
     # extract load planner
     line = next(lines_iter)
     if not line.startswith('LP '):
-        raise PistolExtractError('Expected LP (load planner) line not found')
+        raise PistolExtractError('Expected LP (load planner) line not found. %r' % line)
     loadplan_data['load_planner'] = line[3:]
 
     # newlines can appear inside, what should be, the load planner line.
@@ -223,6 +223,7 @@ def loadplan_from_message(message):
     """
     Loadplan data from email message. Adds message data too.
     """
+    #text = message.attachments[0].payload.decode()
     loadplan_data = loadplan_from_text(message.text)
     loadplan_data['message_to'] = message.to
     return loadplan_data

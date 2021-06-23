@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block main %}
+<table>
+    <thead>
+        <tr>
+            <th>From</th>
+            <th>Subject</th>
+            <th>Date</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>{% for email in messages %}
+        <tr>
+            <td class=data>{{ email.from_ }}</td>
+            <td class=data>{{ email.subject }}</td>
+            <td class=data>{{ email.date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td><a href="{{ url_for('demo.process', index=loop.index0) }}">process</a></td>
+        </tr>{% endfor %}
+    </tbody>
+</table>
+{% endblock %}

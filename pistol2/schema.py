@@ -98,8 +98,8 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         def _find(name, key=None):
             i = (item for item in data['weights'] if item['name'] == name)
             result = next(i, None)
-            if result is not None:
-                result = item[key]
+            if key is not None and result is not None:
+                result = result[key]
             return result
 
         # bring takeoff fuel weight out
@@ -127,6 +127,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
                 'Unable to split company and flight number in %r',
                 data['company_and_flight_number'])
         data.update(match.groupdict())
+        del data['company_and_flight_number']
 
         if data['company'] == 'AMZ':
             data['company'] = airline_from_toaddr(data['message_to'])
@@ -135,7 +136,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         data['airline_designator'] = airline_designators.by_company[data['company']]
 
         # TODO: calculation
-        data['estimated_total_traffic_load']
+        #data['estimated_total_traffic_load']
 
         return data
 
@@ -174,6 +175,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     actual_zero_fuel_weight = Integer(default=0, validate=Range(max=_max_six_digits))
     center_of_gravity = Float(data_key='cg_percent_mac')
     dry_operating_weight = Integer(validate=Range(max=_max_six_digits))
+    cargo_weight = Integer(allow_none=True)
 
     # to addresses from email:
     message_to = List(String())
