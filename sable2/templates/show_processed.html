@@ -43,21 +43,22 @@
         </ul>
     </div>
     <div>
+        <h2>Middleware Processing</h2>
         <div>
-            <h2>1. Extract</h2>
+            <h4>1. Extract</h4>
             <p>Text pulled from original message.</p>
             {% if extract_error %}<pre>{{ extract }}</pre>{% else %}
             <button class="toggle" data-target="extract">Toggle</button>
             <div id="extract" class="data" style="display: none">{{ render_dict(extract) }}</div>{% endif %}
         </div>
         <div>
-            <h2>2. Schema</h2>
+            <h4>2. Schema</h4>
             <p>Text to data types and other processing like ICAO/IATA conversion.</p>
             <button class="toggle" data-target="schema">Toggle</button>
             <div id="schema" class="data" style="display: none">{{ render_dict(schema) }}</div>
         </div>
         <div>
-            <h2>3. LIDO Message</h2>
+            <h4>3. LIDO Message</h4>
             <p>Data to Lido message. Length: {{ lido|string|length }}</p>
             <pre>{{ lido|string }}</pre>
         </div>
