@@ -223,7 +223,6 @@ def loadplan_from_message(message):
     """
     Loadplan data from email message. Adds message data too.
     """
-    #text = message.attachments[0].payload.decode()
     loadplan_data = loadplan_from_text(message.text)
     loadplan_data['message_to'] = message.to
     return loadplan_data
