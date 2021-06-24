@@ -60,5 +60,6 @@ def create_app():
     with open(app.config['MESSAGES_PICKLE'], 'rb') as fp:
         global messages
         messages = pickle.load(fp)
+        messages = [m for m in messages if m.subject.startswith('LDM')]
 
     return app
