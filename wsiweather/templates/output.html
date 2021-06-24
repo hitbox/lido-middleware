@@ -4,7 +4,7 @@
     <div><a href="{{ url_for('main') }}">Process another XML file.</a></div>
     <h2>Output</h2>
     <pre>{{ message }}</pre>
-    <form action="{{ url_for('write') }}" method="post">
+    <form action="{{ url_for('main.write') }}" method="post">
         <input type=hidden id=messagetext name=messagetext value="{{ message }}">
         <input type=hidden id=data_json name=data_json value="{{ data_json }}">
         <p>Write message to file.</p>

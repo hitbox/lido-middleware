@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 
 from pathlib import Path
 
+from flask import Blueprint
 from flask import Flask
 from flask import current_app
 from flask import flash
@@ -17,19 +18,22 @@ from .output import get_output_path
 
 wsischema = schema.WSIWeatherSchema()
 
+main_bp = Blueprint('main', __name__)
+
 def create_app():
     app = Flask(__name__)
     app.config.from_envvar('WSIWEATHER_CONFIG')
+    app.register_blueprint(main_bp)
     return app
 
-@app.route('/')
+@main_bp.route('/')
 def main():
     """
     Main form interface to get XML file.
     """
     return render_template('main.html')
 
-@app.route('/output', methods=['POST'])
+@main_bp.route('/output', methods=['POST'])
 def output():
     """
     Output result.
@@ -51,7 +55,7 @@ def output():
     )
     return render_template('output.html', **context)
 
-@app.route('/write', methods=['POST'])
+@main_bp.route('/write', methods=['POST'])
 def write():
     messagetext = request.form['messagetext']
     data_json = request.form['data_json']
