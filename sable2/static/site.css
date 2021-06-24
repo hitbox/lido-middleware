@@ -13,6 +13,7 @@ pre {
     padding: 1rem;
     font-size: 1rem;
     white-space: pre-wrap;
+    overflow-wrap: break-word;
 }
 
 table {
@@ -30,6 +31,28 @@ th, td {
 td.data {
     font-family: monospace;
     font-size: 1rem;
+}
+
+ul.nude {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+ul.data {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.data {
+    font-family: monospace;
+}
+
+.g2 {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    grid-gap: 4px;
 }
 
 .inputgroup {

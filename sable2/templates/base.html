@@ -6,13 +6,14 @@
         <meta name=viewport content="width=device-width, initial-scale=1.0">
         <link rel="icon" href="data:,">
         <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+        <script src="{{ url_for('static', filename='site.js') }}"></script>
     </head>
     <body>
         <div id="topwrap">
             <div id="top">{% block top %}
                 <h1>{{ title }}</h1>
                 <h2>Lido Weight and Balance Middleware</h2>
-                <p>Sable to Lido message using LSH instead of LDM.</p>
+                <p>Sable to Lido message using LDM instead of LSH.</p>
             {% endblock top %}</div>
         </div>
         <div id="mainwrap">
