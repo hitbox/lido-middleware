@@ -24,6 +24,19 @@
 {% endmacro %}
 
 
+{% macro render_step(has_error, error_text, value, id) %}
+<div class="step{% if has_error %} error{% endif %}">
+    {% if has_error %}
+        <pre>{{ error_text }}</pre>
+    {% else %}
+        {% if kwargs.toggle_button %}<button class="toggle" data-target="{{ id }}">Toggle</button>{% endif %}
+        <div id="{{ id }}" class="data"{% if kwargs.toggle_button %} style="display: none"{% endif %}>
+        <pre>{% if kwargs.render_dict %}{{ value|pformat }}{% else %}{{ value }}{% endif %}</div></pre>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
 {% block main %}
 <div class="sideby">
     <div>
@@ -32,7 +45,7 @@
         <pre>{{ message.date }}</pre>
         <h4>Subject</h4>
         <pre>{{ message.subject }}</pre>
-        <h4>Text</h4>
+        <h4>Body</h4>
         <pre>{{ message.text }}</pre>
         <h4>Attachments</h4>
         <ul class="nude">{% for attachment in message.attachments %}
@@ -47,20 +60,16 @@
         <div>
             <h4>1. Extract</h4>
             <p>Text pulled from original message.</p>
-            {% if extract_error %}<pre>{{ extract }}</pre>{% else %}
-            <button class="toggle" data-target="extract">Toggle</button>
-            <div id="extract" class="data" style="display: none">{{ render_dict(extract) }}</div>{% endif %}
+            {{ render_step(extract_error, extract, extract, "extract", render_dict=True, toggle_button=True) }}
         </div>
         <div>
             <h4>2. Schema</h4>
             <p>Text to data types and other processing like ICAO/IATA conversion.</p>
-            <button class="toggle" data-target="schema">Toggle</button>
-            <div id="schema" class="data" style="display: none">{{ render_dict(schema) }}</div>
+            {{ render_step(schema_error, schema, schema, "schema", render_dict=True, toggle_button=True) }}
         </div>
         <div>
             <h4>3. LIDO Message</h4>
-            <p>Data to Lido message. Length: {{ lido|string|length }}</p>
-            <pre>{{ lido|string }}</pre>
+            {{ render_step(render_lido_error, rendered_lido_message, lido, "lido") }}
         </div>
     </div>
 </div>

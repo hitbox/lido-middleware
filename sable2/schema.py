@@ -37,17 +37,18 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         if airline_company['company'] == 'AMZ':
             company = airline_from_toaddr(data['message_to'])
             airline_company['airline_designator'] = company
+        del data['message_to']
 
         data.update(airline_company)
         del data['airline_and_flight_number']
 
         return data
 
-    planning_status = Constant('05', validate=Length(max=2))
+    planning_status = Constant('55', validate=Length(max=2))
 
     flight_number = String(required=True)
-    company = String(allow_none=True, required=True)
-    airline_designator = String(allow_none=True, required=True, validate=Length(max=3))
+    company = String(required=True)
+    airline_designator = String(required=True, validate=Length(max=3))
     day = Integer(required=True)
     tail = String()
     origin_iata = String(required=True, validate=Length(max=3))
@@ -61,22 +62,23 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         required = True,
         validate = OneOf(VALID_WEIGHT_UNITS))
     print_time_gmt = DateTime(data_key='message_date', format=PRINT_DATETIME_FORMAT)
-    # to addresses from email:
-    message_to = List(String())
 
-    actual_takeoff_fuel = Integer(required=False)
-    actual_zero_fuel_weight = Integer(required=False)
+    actual_takeoff_fuel = Integer(missing=0)
+    actual_zero_fuel_weight = Integer(missing=0)
     center_of_gravity = Float(data_key='cg_percent_mac', missing=None)
-    dry_operating_weight = Integer(required=False)
+    dry_operating_weight = Integer(missing=None)
 
-    estimated_total_traffic_load = Integer(data_key='gross')
+    gross_weight = Integer(data_key='gross')
 
     @post_load
     def post_load(self, data, **kwargs):
-        """
-        Validate fields.
-        """
-        if not (data.get('company') or data.get('airline_designator')):
-            raise ValidationError('company or airline_designator must exist')
+
+        # estimated total traffic load calculation
+        if data['souls_onboard'] > 1:
+            # what is ACM?
+            acm = data['souls_onboard'] - 2
+        else:
+            acm = 0
+        data['estimated_total_traffic_load'] = data['gross_weight'] + (acm * 220)
 
         return data

@@ -4,9 +4,6 @@ from .regex import dense_data_line_re
 from .regex import header_re
 from .regex import si_load_re
 
-import chardet
-
-from extradata import airline_designators
 from schema import PRINT_DATETIME_FORMAT
 
 class SableExtractError(ExtractError):
