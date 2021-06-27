@@ -154,11 +154,10 @@ class LIDOWeightBalanceMessage:
         Dry Operating Weight (DOW)
         depends on planning status.
         """
-        if (self.planning_status in ('04', '95')
-                or 'dry_operating_weight' not in self.loadplan):
-            return ' ' * 6
-        else:
+        if self.planning_status in ('01', '02', '03'):
             return '{:0>6}'.format(self.loadplan['dry_operating_weight'])
+        else:
+            return ' ' * 6
 
     @property
     def estimated_total_traffic_load(self):
