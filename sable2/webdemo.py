@@ -14,22 +14,6 @@ demo_bp = Blueprint('demo', __name__)
 
 messages = None
 
-class Demo:
-
-    def __init__(self):
-        self.original_text = None
-        self.extracted = None
-        self.schemafied = None
-        self.lidomessage = None
-
-    def build_from_email(self, email):
-        self.original_text = email.attachments[0].payload.decode('utf8', 'ignore')
-        self.extracted = loadplan_from_message(email)
-        schema = LoadPlanSchema()
-        self.schemafied = schema.load(self.extracted)
-        self.lidomessage = LIDOWeightBalanceMessage(self.schemafied)
-
-
 @demo_bp.route('/')
 def index():
     template = 'list_emails.html'
