@@ -48,16 +48,16 @@
     <div>
         <h2>Email Source</h2>
         <h4>Date</h4>
-        <pre>{{ message.date }}</pre>
+        <pre class="value">{{ message.date }}</pre>
         <h4>Subject</h4>
-        <pre>{{ message.subject }}</pre>
+        <pre class="value">{{ message.subject }}</pre>
         <h4>Body</h4>
-        <pre>{{ message.text }}</pre>
+        <pre class="value">{{ message.text }}</pre>
         <h4>Attachments</h4>
         <ul class="nude">{% for attachment in message.attachments %}
             <li>
-                <pre>{{ attachment.filename }} </pre>
-                <pre>{{ attachment.payload.decode() }}</pre>
+                <pre class="value">{{ attachment.filename }} </pre>
+                <pre class="value">{{ attachment.payload.decode() }}</pre>
             </li>{% endfor %}
         </ul>
     </div>
