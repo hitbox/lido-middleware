@@ -15,7 +15,6 @@ window.addEventListener("DOMContentLoaded", function() {
     }
 
     let copyButtons = document.querySelectorAll("button.copy");
-    console.log(copyButtons);
     for (let i = 0; i < copyButtons.length; i++) {
         copyButtons[i].addEventListener("click", function() {
             let source = this.getAttribute("data-source");
