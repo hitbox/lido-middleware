@@ -1,4 +1,7 @@
+import string
+
 from marshmallow import Schema
+from marshmallow import post_load
 from marshmallow import pre_load
 from marshmallow.exceptions import ValidationError
 from marshmallow.fields import Constant
@@ -95,21 +98,21 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
             data[prefix + '_icao'] = full['icao']
 
         # plucking data out of the weights list
-        def _find(name, key=None):
-            i = (item for item in data['weights'] if item['name'] == name)
+        def _find(iter_, name, key=None):
+            i = (item for item in iter_ if item['name'] == name)
             result = next(i, None)
             if key is not None and result is not None:
                 result = result[key]
             return result
 
         # bring takeoff fuel weight out
-        data['actual_takeoff_fuel'] = _find('Takeoff', 'weight')
+        data['actual_takeoff_fuel'] = _find(data['weights'], 'Takeoff', 'weight')
 
         # bring actual zero fuel weight out
-        data['actual_zero_fuel_weight'] = _find('Zero Fuel', 'weight')
+        data['actual_zero_fuel_weight'] = _find(data['weights'], 'Zero Fuel', 'weight')
 
         # bring center of gravity percent mac and dry operating weight out
-        oew = _find('OEW')
+        oew = _find(data['weights'], 'OEW')
         if oew is None:
             data['cg_percent_mac'] = None
             data['dry_operating_weight'] = None
@@ -118,7 +121,11 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
             data['dry_operating_weight'] = oew['weight']
 
         # bring cargo weight
-        data['cargo_weight'] = _find('Cargo Wt', 'weight')
+        data['cargo_weight_for_estimated_total_traffic_load'] = _find(
+                data['aircraft_configurations'], 'Cargo Wt', 'value')
+
+        # bring revenue weight
+        data['revenue_weight'] = _find(data['aircraft_configurations'], 'Revenue Wt', 'value')
 
         # split company and flight number
         match = company_and_flight_number_re.match(data['company_and_flight_number'])
@@ -129,14 +136,21 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         data.update(match.groupdict())
         del data['company_and_flight_number']
 
+        data['company'] = data['company'][:3]
+
         if data['company'] == 'AMZ':
             data['company'] = airline_from_toaddr(data['message_to'])
 
         # Update airline designator from company value.
         data['airline_designator'] = airline_designators.by_company[data['company']]
 
-        # TODO: calculation
-        #data['estimated_total_traffic_load']
+        data['flight_number'] = data['flight_number'].replace('CMBDQ', '00')
+
+        if data['flight_number'][-1] in string.ascii_uppercase:
+            # optional operational_suffix is present at end of flight_number,
+            # strip it off and put it where it belongs
+            data['operational_suffix'] = data['flight_number'][-1]
+            data['flight_number'] = data['flight_number'][:-1]
 
         return data
 
@@ -150,6 +164,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     company = String()
     airline_designator = String(validate=Length(max=3))
     flight_number = String(validate=Length(max=5))
+    operational_suffix = String(missing='', validate=OneOf(string.ascii_uppercase))
     aircraft_registration = String()
     actual_departure_time = Time(allow_none=True, format='%H%M')
 
@@ -173,12 +188,26 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
 
     actual_takeoff_fuel = Integer(default=0, validate=Range(max=_max_six_digits))
     actual_zero_fuel_weight = Integer(default=0, validate=Range(max=_max_six_digits))
-    center_of_gravity = Float(data_key='cg_percent_mac')
+    center_of_gravity = Float(data_key='cg_percent_mac', missing=None)
     dry_operating_weight = Integer(validate=Range(max=_max_six_digits))
-    cargo_weight = Integer(allow_none=True)
+    cargo_weight = Integer(data_key='revenue_weight')
+    cargo_weight_for_estimated_total_traffic_load = Integer()
 
     # to addresses from email:
     message_to = List(String())
+
+    @post_load
+    def post_load(self, data, **kwargs):
+        # estimated total traffic load calculation
+        if data['souls_onboard'] > 1:
+            # what is ACM?
+            acm = data['souls_onboard'] - 2
+        else:
+            acm = 0
+        cargo_weight = data['cargo_weight_for_estimated_total_traffic_load']
+        data['estimated_total_traffic_load'] = cargo_weight + acm
+
+        return data
 
 
 def main(argv=None):

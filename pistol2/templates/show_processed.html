@@ -9,21 +9,6 @@
 {% endblock top %}
 
 
-{% macro render_list(l) %}
-<span>[</span><ul class="data">{% for item in l %}<li>{{ item|repr }},</li>{% endfor %}</ul><span>]</span>
-{% endmacro %}
-
-
-{% macro render_dict(d) %}
-<span>{</span>
-<div class="g2">{% for key in d|sort %}
-    <div>{{ key|repr }}:</div>{% set value = d[key] %}
-    <div>{% if value is iterable and value is not string and value is not mapping  %}{{ render_list(value) }}{% else %}{{ value|repr }}{% endif %},</div>{% endfor %}
-</div>
-<span>}</span>
-{% endmacro %}
-
-
 {% block main %}
 <div class="sideby">
     <div>
@@ -38,29 +23,16 @@
         <ul class="nude">{% for attachment in message.attachments %}
             <li>
                 <pre>{{ attachment.filename }} </pre>
-                <pre>{{ attachment.payload.decode() }}</pre>
             </li>{% endfor %}
         </ul>
     </div>
     <div>
+        <h2>Lido Processing</h2>
+        {% for step in steps %}
         <div>
-            <h2>1. Extract</h2>
-            <p>Text pulled from original message.</p>
-            {% if extract_error %}<pre>{{ extract }}</pre>{% else %}
-            <button class="toggle" data-target="extract">Toggle</button>
-            <div id="extract" class="data" style="display: none">{{ render_dict(extract) }}</div>{% endif %}
+            <h2>{{ loop.index }}. {{ step.name }}</h2>
+            <pre id="{{ step.name|lower }}" class="value">{% if step.is_error %}{{ step.traceback_message }}{% else %}{{ step.html_text }}{% endif %}</pre>
         </div>
-        <div>
-            <h2>2. Schema</h2>
-            <p>Text to data types and other processing like ICAO/IATA conversion.</p>
-            <button class="toggle" data-target="schema">Toggle</button>
-            <div id="schema" class="data" style="display: none">{{ render_dict(schema) }}</div>
-        </div>
-        <div>
-            <h2>3. LIDO Message</h2>
-            <p>Data to Lido message. Length: {{ lido|string|length }}</p>
-            <pre>{{ lido|string }}</pre>
-        </div>
-    </div>
+    {% endfor %}</div>
 </div>
 {% endblock %}

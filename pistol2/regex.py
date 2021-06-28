@@ -35,7 +35,7 @@ ad_line_re = re.compile(
 # (1) Have observed missing destinations. Since this is required by the LIDO
 #     message, let the regex blow up if it is not present.
 
-souls_onboard_re = re.compile('^SOB \d{1,}$')
+souls_onboard_re = re.compile('^SOB (?P<souls_onboard>\d{1,})$')
 
 # dense lines patterns are the same with different group names and one unique
 # name each.
@@ -102,5 +102,6 @@ other_weight_line_re = re.compile(
     % valid_other_weight_names_pattern)
 
 # split the company and flight number apart with regex
+# NOTE: keep longest company strings at front of capture
 company_and_flight_number_re = re.compile(
-    '^(?P<company>ABX|ATI|AMZ|ATIATN|ABXABX|ATI8C)(?P<flight_number>\S+)')
+    '^(?P<company>ATIATN|ABXABX|ATI8C|ABX|ATI|ATN|AMZ)(?P<flight_number>\S+)')

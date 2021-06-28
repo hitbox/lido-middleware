@@ -68,3 +68,7 @@ ul.data {
     width: 50%;
     margin: .5rem;
 }
+
+.value {
+    overflow-wrap: break-word;
+}
