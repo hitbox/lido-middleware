@@ -9,7 +9,7 @@ body {
 }
 
 pre {
-    border: 1px solid black;
+    /*border: 1px solid black;*/
     padding: 1rem;
     font-size: 1rem;
     white-space: pre-wrap;
@@ -73,6 +73,28 @@ ul.data {
     padding: .25rem;
 }
 
+.value {
+    padding: .5rem;
+    border: 1px solid black;
+}
+
 .step.error {
     border: 4px solid red;
+}
+
+.char {
+    /* aborted this attempt to highlight each car */
+    border: 1px solid black;
+    padding: 2px 4px;
+    white-space: pre-wrap;
+    /*overflow-wrap: break-word;*/
+}
+
+button {
+    padding: .5rem .3rem;
+    min-width: 8rem;
+    margin: 1rem 0;
+}
+
+button.copy {
 }
