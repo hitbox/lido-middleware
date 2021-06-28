@@ -9,6 +9,13 @@
 {% endblock top %}
 
 
+{% macro render_step(step) %}<div>
+{% set id = step.name.lower() %}
+{% if kwargs.toggle_button %}<button data-target="{{ id }}">Toggle</button>{% endif %}
+<pre id="{{ id }}" class="value"{% if kwargs.toggle_button %} style="display: none;"{% endif %}>{% if step.is_error %}{{ step.traceback_message }}{% else %}{{ step.html_text }}{% endif %}</pre>
+</div>{% endmacro %}
+
+
 {% block main %}
 <div class="sideby">
     <div>
@@ -31,7 +38,7 @@
         {% for step in steps %}
         <div>
             <h2>{{ loop.index }}. {{ step.name }}</h2>
-            <pre id="{{ step.name|lower }}" class="value">{% if step.is_error %}{{ step.traceback_message }}{% else %}{{ step.html_text }}{% endif %}</pre>
+            {{ render_step(step, toggle_button=not loop.last) }}
         </div>
     {% endfor %}</div>
 </div>
