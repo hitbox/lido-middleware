@@ -1,3 +1,5 @@
+import string
+
 from marshmallow import Schema
 from marshmallow import post_load
 from marshmallow import pre_load
@@ -42,6 +44,12 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         data.update(airline_company)
         del data['airline_and_flight_number']
 
+        if data['flight_number'][-1] in string.ascii_uppercase:
+            # optional operational_suffix is present at end of flight_number,
+            # strip it off and put it where it belongs
+            data['operational_suffix'] = data['flight_number'][-1]
+            data['flight_number'] = data['flight_number'][:-1]
+
         return data
 
     planning_status = Constant('55', validate=Length(max=2))
@@ -53,6 +61,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     tail = String()
     origin_iata = String(required=True, validate=Length(max=3))
     destination_iata = String(required=True, validate=Length(max=3))
+    operational_suffix = String(missing='', validate=OneOf(string.ascii_uppercase))
 
     cargo_weight = Integer(data_key='net_weight')
     uload = Integer()

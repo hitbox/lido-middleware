@@ -98,7 +98,8 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:5
         A-Z or BLANK
         """
-        return'{: >1}'.format(self.loadplan['operational_suffix'])
+        value = self.loadplan['operational_suffix']
+        return'{: >1}'.format(value)
 
     @property
     def date_of_origin(self):
