@@ -186,8 +186,8 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     weights = List(Nested(WeightSchema))
     aircraft_configurations = List(Nested(AircraftConfigSchema))
 
-    actual_takeoff_fuel = Integer(default=0, validate=Range(max=_max_six_digits))
-    actual_zero_fuel_weight = Integer(default=0, validate=Range(max=_max_six_digits))
+    actual_takeoff_fuel = Integer(missing=0, validate=Range(max=_max_six_digits))
+    actual_zero_fuel_weight = Integer(missing=0, validate=Range(max=_max_six_digits))
     center_of_gravity = Float(data_key='cg_percent_mac', missing=None)
     dry_operating_weight = Integer(validate=Range(max=_max_six_digits))
     cargo_weight = Integer(data_key='revenue_weight')
@@ -205,7 +205,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         else:
             acm = 0
         cargo_weight = data['cargo_weight_for_estimated_total_traffic_load']
-        data['estimated_total_traffic_load'] = cargo_weight + acm
+        data['estimated_total_traffic_load'] = cargo_weight + (acm * 220)
 
         return data
 
