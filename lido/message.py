@@ -219,7 +219,8 @@ class LIDOWeightBalanceMessage:
         else:
             value = 0
 
-        if value is None:
+        if value is None or self.planning_status == '55':
+            # avoid having a period
             return '0' * 5
         else:
             return '{:0>5.2f}'.format(value)
@@ -230,7 +231,7 @@ class LIDOWeightBalanceMessage:
         WABFORMAT.txt:19
         depends on planning status.
         """
-        if self.planning_status == '05':
+        if self.planning_status in ('05', '55'):
             value = 0
         else:
             value = self.loadplan['actual_zero_fuel_weight']
@@ -243,7 +244,7 @@ class LIDOWeightBalanceMessage:
         actual_takeoff_fuel
         depends on planning status.
         """
-        if self.planning_status == '05':
+        if self.planning_status in ('05', '55'):
             value = 0
         else:
             value = self.loadplan['actual_takeoff_fuel']
