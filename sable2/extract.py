@@ -1,8 +1,9 @@
 from run.exceptions import ExtractError
 
 from .regex import dense_data_line_re
-from .regex import header_re
+from .regex import positions_header_re
 from .regex import si_load_re
+from .regex import si_load_uld_count_re
 
 from schema import PRINT_DATETIME_FORMAT
 
@@ -35,13 +36,30 @@ def from_text(text):
             'Unable to parse SI LOAD information line, %r' % line)
     sable_data.update(match.groupdict())
 
+    # optional uld count parse
+    match = si_load_uld_count_re.match(line)
+    if match:
+        sable_data.update(match.groupdict())
+
     # find position data header line
     for line in lines:
-        match = header_re.match(line)
+        match = positions_header_re.match(line)
         if match:
             break
     else:
         raise SableExtractError('Positions data header line not found.')
+
+    # positions rows
+    fieldnames = [group.strip() for group in match.groups()]
+    spans = []
+    for index, group in enumerate(match.groups(), start=1):
+        spans.append(match.span(index))
+    sable_data['positions'] = positions = []
+    for line in lines:
+        if line.strip() == '':
+            break
+        data = {fieldname: line[start:end].strip() for (start, end), fieldname in zip(spans, fieldnames)}
+        positions.append(data)
 
     return sable_data
 

@@ -192,6 +192,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     center_of_gravity = Float(data_key='cg_percent_mac', missing=None)
     dry_operating_weight = Integer(validate=Range(max=_max_six_digits))
     cargo_weight = Integer(data_key='revenue_weight')
+    revenue_weight = Integer()
     cargo_weight_for_estimated_total_traffic_load = Integer()
 
     # to addresses from email:
@@ -214,6 +215,13 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
             cargo_weight = data['cargo_weight_for_estimated_total_traffic_load']
             estimated_total_traffic_load = cargo_weight + (acm * 220)
         data['estimated_total_traffic_load'] = estimated_total_traffic_load
+
+        if data['all_weights_unit'] in ('LB', '#'):
+            data['payload_kg'] = data['payload'] / 2.2045
+            data['revenue_weight_kg'] = data['revenue_weight'] / 2.2045
+        else:
+            data['payload_kg'] = float(data['payload'])
+            data['revenue_weight_kg'] = float(data['revenue_weight'])
 
         return data
 

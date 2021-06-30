@@ -22,6 +22,18 @@ from schema import CommonSchemaMixin
 from schema import PRINT_DATETIME_FORMAT
 from units import VALID_WEIGHT_UNITS
 
+class Position(Schema):
+
+    position = String(data_key='POS')
+    destination = String(data_key='DST')
+    uldnumber = String(data_key='ULDNUMBER')
+    tare = Integer(data_key='TARE')
+    nett = Integer(data_key='NETT')
+    total = Integer(data_key='TOTAL')
+    flag = String(data_key='FLAG')
+    vol = Integer(data_key='VOL')
+
+
 class LoadPlanSchema(CommonSchemaMixin, Schema):
     """
     Sable Load Plan Schema using LDM (planning status 05).
@@ -50,10 +62,18 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
             data['operational_suffix'] = data['flight_number'][-1]
             data['flight_number'] = data['flight_number'][:-1]
 
+        data['cargo_weight'] = data['net_weight']
+
+        # uld count
+        if 'uld_count' not in data:
+            data['uld_count'] = sum(1 for row in data['positions']
+                                    if row['ULDNUMBER'].lower() not in ('void', 'loose'))
+
         return data
 
     planning_status = Constant('55', validate=Length(max=2))
 
+    payload = Integer()
     flight_number = String(required=True)
     company = String(required=True)
     airline_designator = String(required=True, validate=Length(max=3))
@@ -63,7 +83,10 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     destination_iata = String(required=True, validate=Length(max=3))
     operational_suffix = String(missing='', validate=OneOf(string.ascii_uppercase))
 
-    cargo_weight = Integer(data_key='net_weight')
+    net_weight = Integer()
+    uld_count = Integer()
+    cargo_weight = Integer()
+
     uload = Integer()
     souls_onboard = Integer()
     all_weights_unit = String(
@@ -77,6 +100,8 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     actual_zero_fuel_weight = Integer(missing=0)
     center_of_gravity = Float(data_key='cg_percent_mac', missing=None)
     dry_operating_weight = Integer(missing=None)
+    revenue_weight = Integer()
+    positions = List(Nested(Position))
 
     gross_weight = Integer(data_key='gross')
 
@@ -90,5 +115,12 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         else:
             acm = 0
         data['estimated_total_traffic_load'] = data['gross_weight'] + (acm * 220)
+
+        if data['all_weights_unit'] in ('LB', '#'):
+            data['gross_weight_kg'] = data['gross_weight'] / 2.2045
+            data['net_weight_kg'] = data['net_weight'] / 2.2045
+        else:
+            data['gross_weight_kg'] = float(data['gross_weight'])
+            data['net_weight_kg'] = float(data['net_weight'])
 
         return data

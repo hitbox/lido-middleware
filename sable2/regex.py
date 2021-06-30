@@ -27,14 +27,17 @@ si_load_re = re.compile(
      '\s+'
      'SOB:(?P<souls_onboard>\d+)'
      '\s+'
-    f'WT:(?P<weights_unit>{valid_weight_units_pattern})')
+     'WT:(?P<weights_unit>' + valid_weight_units_pattern + ')'
+)
 
-header_re = re.compile(
-    '(?P<position>\s+POS)'
-    '(?P<destination>\s+DST)'
-    '(?P<uldnumber>\s+ULDNUMBER)'
-    '(?P<tare>\s+TARE)'
-    '(?P<nett>\s+NETT)'
-    '(?P<total>\s+TOTAL)'
-    '(?P<flag>\s+FLAG)'
-    '(?P<vol>\s+VOL)$')
+si_load_uld_count_re = re.compile('.*#ULD:\s*(?P<uld_count>\d+)$')
+
+positions_header_re = re.compile(
+    '(?P<position>\s+POS\s+)'
+    '(?P<destination>DST\s+)'
+    '(?P<uldnumber>ULDNUMBER\s+)'
+    '(?P<tare>TARE\s+)'
+    '(?P<nett>NETT\s+)'
+    '(?P<total>TOTAL\s+)'
+    '(?P<flag>FLAG\s+)'
+    '(?P<vol>VOL\s*)$')

@@ -21,6 +21,11 @@ pre.value {
     padding: 4px 8px;
 }
 
+button {
+    min-width: 100px;
+    padding: 4px 6px;
+}
+
 table, th, td {
     border: 1px solid black;
 }
