@@ -12,6 +12,7 @@ from .regex import detail_weight_line_re
 from .regex import end_line_re
 from .regex import main_deck_header
 from .regex import other_weight_line_re
+from .regex import payload_line_re
 from .regex import pistol_metadata_re
 from .regex import position_line_nil_re
 from .regex import position_line_re
@@ -140,8 +141,10 @@ def loadplan_from_lines(lines):
 
     # this seems to be a summary of total weight and number of ulds
     line = next(lines_iter)
-    if not line.startswith('PL'):
-        raise PistolExtractError('Error, expected PL')
+    match = payload_line_re.match(line)
+    if not match:
+        raise PistolExtractError('unmatched PL line %r' % line)
+    loadplan_data.update(match.groupdict())
 
     # Souls on Board
     line = next(lines_iter)

@@ -159,6 +159,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
 
     planning_status = Constant('55')
     estimated_total_traffic_load = Integer()
+    payload = Integer()
 
     load_planner = String()
     company = String()
@@ -198,14 +199,20 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
 
     @post_load
     def post_load(self, data, **kwargs):
-        # estimated total traffic load calculation
-        if data['souls_onboard'] > 1:
-            # what is ACM?
-            acm = data['souls_onboard'] - 2
+        # estimated total traffic load extraction or calculation
+        is_combi = any(row for row in data['aircraft_configurations']
+                       if row['name'].lower().startswith('fwd acm'))
+        if is_combi:
+            estimated_total_traffic_load = data['payload']
         else:
-            acm = 0
-        cargo_weight = data['cargo_weight_for_estimated_total_traffic_load']
-        data['estimated_total_traffic_load'] = cargo_weight + (acm * 220)
+            if data['souls_onboard'] > 1:
+                # what is ACM?
+                acm = data['souls_onboard'] - 2
+            else:
+                acm = 0
+            cargo_weight = data['cargo_weight_for_estimated_total_traffic_load']
+            estimated_total_traffic_load = cargo_weight + (acm * 220)
+        data['estimated_total_traffic_load'] = estimated_total_traffic_load
 
         return data
 

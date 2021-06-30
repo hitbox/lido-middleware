@@ -6,6 +6,7 @@ from .const import VALID_CONFIG_NAME_PATTERNS
 from .const import VALID_DETAIL_WEIGHT_NAMES
 from .const import VALID_OTHER_WEIGHT_NAMES
 
+payload_line_re = re.compile('^PL (?P<payload>\d+).*')
 debrief_line_re = re.compile('^-------- Debrief --------')
 end_line_re = re.compile('^-------- end ---------')
 tape_line_re = re.compile('^-------- tape --------')
