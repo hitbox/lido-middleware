@@ -228,6 +228,7 @@ def loadplan_from_message(message):
     """
     loadplan_data = loadplan_from_text(message.text)
     loadplan_data['message_to'] = message.to
+    loadplan_data['message_from'] = message.from_
     return loadplan_data
 
 def main(argv=None):

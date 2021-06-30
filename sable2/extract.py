@@ -51,6 +51,7 @@ def loadplan_from_message(message):
     data = from_text(text)
     data['message_date'] = message.date.strftime(PRINT_DATETIME_FORMAT)
     data['message_to'] = message.to
+    data['message_from'] = message.from_
     return data
 
 def main(argv=None):

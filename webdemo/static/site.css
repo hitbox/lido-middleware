@@ -5,8 +5,19 @@ body {
     font-family: arial;
 }
 
+#topwrap {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
 pre {
     white-space: pre-wrap;
+}
+
+pre.value {
+    border: 1px solid black;
+    padding: 4px 8px;
 }
 
 table, th, td {
@@ -34,4 +45,9 @@ ul {
 .sideby {
     display: flex;
     flex-direction: row;
+}
+
+.sideby > * {
+    margin: 4px;
+    width: 50%;
 }

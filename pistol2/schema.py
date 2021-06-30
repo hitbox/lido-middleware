@@ -196,6 +196,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
 
     # to addresses from email:
     message_to = List(String())
+    message_from = String()
 
     @post_load
     def post_load(self, data, **kwargs):

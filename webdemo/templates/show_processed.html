@@ -1,6 +1,28 @@
 {% extends "base.html" %}
 
 
+{% block top %}
+{{ super() }}
+<a href="{{ url_for('demo.list') }}">Back to email listing</a>
+{% endblock top %}
+
+
+{% macro render_toggle_button(target_id) %}
+<button data-target="{{ target_id }}">Toggle</button>
+{% endmacro %}
+
+
+{% macro render_toggled_pre(id, data) %}
+<pre id="{{ id }}" class="value" style="display: none;">{{ data | pformat }}</pre>
+{% endmacro %}
+
+
+{% macro render_data(id, data) %}
+{{ render_toggle_button(id) }}
+{{ render_toggled_pre(id, data) }}
+{% endmacro %}
+
+
 {% block main %}
 <div class="sideby">
     <div>
@@ -23,13 +45,15 @@
         <h2>Middleware Processing</h2>
         <div>
             <h4>1. Extract</h4>
-            <pre>{{ result.extract_data | pformat }}</pre>
+            {{ render_data("extract", result.extract_data) }}
         </div>
         <div>
             <h4>2. Schema</h4>
+            {{ render_data("schema", result.schema_data) }}
         </div>
         <div>
             <h4>3. LIDO Message</h4>
+            <pre class="value">{{ result.lido_message | string }}</pre>
         </div>
     </div>
 </div>

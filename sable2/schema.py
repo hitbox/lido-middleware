@@ -71,6 +71,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         required = True,
         validate = OneOf(VALID_WEIGHT_UNITS))
     print_time_gmt = DateTime(data_key='message_date', format=PRINT_DATETIME_FORMAT)
+    message_from = String()
 
     actual_takeoff_fuel = Integer(missing=0)
     actual_zero_fuel_weight = Integer(missing=0)

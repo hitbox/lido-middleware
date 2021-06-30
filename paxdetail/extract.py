@@ -1,18 +1,23 @@
+import sable2.extract
+import pistol2.extract
 
+class Extract:
 
-def loadplan_from_message(message):
-    """
-    delegate extract to sable2, pistol2, etc.
-    """
-    import sable2.extract
-    import pistol2.extract
+    def __init__(self, sable_from, pistol_from):
+        self.sable_from = sable_from
+        self.pistol_from = pistol_from
 
-    from_ = message.from_.lower()
+    def __call__(self, message):
+        """
+        delegate extract to sable2, pistol2, etc.
+        """
 
-    if from_ in ('amazon-sable@amazon-wb.com', 'avibar@dhl.com'):
-        return sable2.extract.loadplan_from_message(message)
+        from_ = message.from_.lower()
 
-    elif from_ in ('pstl.data@atsg-inc.com', ):
-        return pistol2.extract.loadplan_from_message(message)
+        if from_ in self.sable_from:
+            return sable2.extract.loadplan_from_message(message)
 
-    raise ValueError
+        elif from_ in self.pistol_from:
+            return pistol2.extract.loadplan_from_message(message)
+
+        raise ValueError

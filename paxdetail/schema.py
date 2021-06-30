@@ -1,17 +1,23 @@
-from marshmallow import Schema
-from marshmallow import post_load
-from marshmallow import pre_load
-from marshmallow.exceptions import ValidationError
-from marshmallow.fields import Constant
-from marshmallow.fields import DateTime
-from marshmallow.fields import Float
-from marshmallow.fields import Integer
-from marshmallow.fields import List
-from marshmallow.fields import Nested
-from marshmallow.fields import String
-from marshmallow.validate import Length
-from marshmallow.validate import OneOf
+import sable2.schema
+import pistol2.schema
 
-class PaxDetailSchema(Schema):
+class SchemaDelegator:
 
-    sender = Constant('LDM2PAX')
+    def __init__(self, sable_from, pistol_from):
+        self.sable_from = sable_from
+        self.pistol_from = pistol_from
+
+    def __call__(self, data):
+        """
+        delegate schema to sable2, pistol2, etc.
+        """
+
+        from_ = data['message_from'].lower()
+
+        if from_ in self.sable_from:
+            schema = sable2.schema.LoadPlanSchema()
+        elif from_ in self.pistol_from:
+            schema = pistol2.schema.LoadPlanSchema()
+        else:
+            raise ValueError
+        return schema.load(data)
