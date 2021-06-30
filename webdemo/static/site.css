@@ -1,0 +1,37 @@
+body {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    font-family: arial;
+}
+
+pre {
+    white-space: pre-wrap;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th, td {
+    padding: 4px 8px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+td.data {
+    font-family: monospace;
+    font-size: 1rem;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.sideby {
+    display: flex;
+    flex-direction: row;
+}

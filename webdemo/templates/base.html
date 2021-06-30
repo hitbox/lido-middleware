@@ -1,0 +1,25 @@
+<!doctype html>
+<html translate="no">
+    <head>
+        <title>{{ config.TITLE }}</title>
+        <meta name=google content=notranslate>
+        <meta name=viewport content="width=device-width, initial-scale=1.0">
+        <link rel="icon" href="data:,">
+        <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+        <script src="{{ url_for('static', filename='site.js') }}"></script>
+    </head>
+    <body>
+        <div id="wrap">
+            <div id="topwrap">
+                <div id="top">{% block top %}
+                    <h1>{{ config.TITLE }}</h1>
+                {% endblock top %}</div>
+            </div>
+            <div id="mainwrap">
+                <div id="main">
+                    {% block main %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
