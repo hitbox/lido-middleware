@@ -14,7 +14,7 @@ xml_template = Template("""\
                     <fnCarrier>{{ airline_designator }}</fnCarrier>
                     <fnNumber>{{ flight_number }}</fnNumber>
                 </flight>
-                <dayOfOrigin>{{ print_time_gmt }}</dayOfOrigin>
+                <dayOfOrigin>{{ print_time_gmt.strftime('%Y-%m-%d') }}</dayOfOrigin>
                 <depApSched>{{ origin_iata }}</depApSched>
                 <counter>{{ counter }}</counter>
             </legId>
