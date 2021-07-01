@@ -33,13 +33,13 @@
         <pre class="value">{{ result.message.subject }}</pre>
         <h4>Body</h4>
         <pre class="value">{{ result.message.text }}</pre>
-        <h4>Attachments</h4>
+        {% if result.message.attachments %}<h4>Attachments</h4>
         <ul class="nude">{% for attachment in result.message.attachments %}
             <li>
                 <pre class="value">{{ attachment.filename }} </pre>
                 <pre class="value">{{ attachment.payload.decode() }}</pre>
             </li>{% endfor %}
-        </ul>
+        </ul>{% endif %}
     </div>
     <div>
         <h2>Middleware Processing</h2>
