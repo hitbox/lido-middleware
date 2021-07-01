@@ -145,7 +145,9 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         # Update airline designator from company value.
         data['airline_designator'] = airline_designators.by_company[data['company']]
 
-        data['flight_number'] = data['flight_number'].replace('CMBDQ', '00')
+        # military flight numbers
+        flight_number = data['flight_number'].replace('CMBDQ', '00').replace('CMB', '0')
+        data['flight_number'] = flight_number
 
         if data['flight_number'][-1] in string.ascii_uppercase:
             # optional operational_suffix is present at end of flight_number,
