@@ -63,9 +63,12 @@ class PaxDetailSchema:
             if old in result:
                 rename(old, new)
 
-        safe_rename('payload_kg', 'baggage_mass')
+        # sable
         safe_rename('net_weight_kg', 'baggage_mass')
         safe_rename('gross_weight_kg', 'cargo_mass')
-        safe_rename('revenue_weight_kg', 'cargo_mass')
+
+        # pstl
+        safe_rename('revenue_weight_kg', 'baggage_mass')
+        safe_rename('payload_kg', 'cargo_mass')
 
         return result
