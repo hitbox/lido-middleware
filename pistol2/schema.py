@@ -126,6 +126,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
 
         # bring revenue weight
         data['revenue_weight'] = _find(data['aircraft_configurations'], 'Revenue Wt', 'value')
+        data['cargo_weight'] = data['revenue_weight']
 
         # split company and flight number
         match = company_and_flight_number_re.match(data['company_and_flight_number'])
@@ -160,6 +161,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     planning_status = Constant('55')
     estimated_total_traffic_load = Integer()
     payload = Integer()
+    uld_count = Integer()
 
     load_planner = String()
     company = String()
@@ -191,7 +193,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     actual_zero_fuel_weight = Integer(missing=0, validate=Range(max=_max_six_digits))
     center_of_gravity = Float(data_key='cg_percent_mac', missing=None)
     dry_operating_weight = Integer(validate=Range(max=_max_six_digits))
-    cargo_weight = Integer(data_key='revenue_weight')
+    cargo_weight = Integer()
     revenue_weight = Integer()
     cargo_weight_for_estimated_total_traffic_load = Integer()
 
