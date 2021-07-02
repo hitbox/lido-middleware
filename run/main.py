@@ -13,7 +13,7 @@ def main(argv=None):
     Command line interface to `run.run`.
     """
     parser = argparse.ArgumentParser(description=run.__doc__, prog='run')
-    parser.add_argument('pyfile', type=Path)
+    parser.add_argument('config_pyfile', type=Path)
     parser.add_argument(
         '--shell',
         action='store_true',
@@ -24,7 +24,7 @@ def main(argv=None):
     logging.basicConfig(level=logging.INFO, style='{')
     logger = logging.getLogger(__name__)
 
-    conf = pyfile_config(args.pyfile)
+    conf = pyfile_config(args.config_pyfile)
 
     if args.shell:
         code.interact(local=conf)
