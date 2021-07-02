@@ -27,6 +27,7 @@ def run(config):
     message_processor = config['MESSAGE_PROCESSOR']
     output = config['OUTPUT']
     message_archive = config['MESSAGE_ARCHIVE']
+    message_class = config.get('MESSAGE_CLASS', LIDOWeightBalanceMessage)
 
     # format for how messages get logged, nothing to do with processing or extracting.
     message_fmt = '{0.date:%Y-%m-%d %H:%M:%S} {0.subject!r}'.format
@@ -63,7 +64,7 @@ def run(config):
                 logger.exception('An exception occurred')
             else:
                 logger.debug('loadplan loaded from schema')
-                lido_message = LIDOWeightBalanceMessage(loadplan)
+                lido_message = message_class(loadplan)
                 logger.debug('lido_message created')
                 path = output.write(lido_message)
                 logger.debug(str(path))
