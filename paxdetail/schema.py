@@ -24,7 +24,9 @@ class PaxDetailSchema:
         self.sable_from = sable_from
         self.pistol_from = pistol_from
 
-    def __call__(self, extract_data):
+    def load(self, extract_data):
+        # NOTE: this is faking a marshmallow Schema to make things work with
+        #       the current design.
         from_ = extract_data['message_from'].lower()
 
         if from_ in self.sable_from:
