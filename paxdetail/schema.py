@@ -3,6 +3,21 @@ from datetime import datetime
 import sable2.schema
 import pistol2.schema
 
+class TempPaxDetailSchema:
+    """
+    This exists to make things work with the current design where a class is
+    passed to the run.run func. It just instantiates the "schema" class and
+    then calls .load
+    """
+
+    def __init__(self, sable_from, pistol_from):
+        self.sable_from = sable_from
+        self.pistol_from = pistol_from
+
+    def __call__(self):
+        return PaxDetailSchema(self.sable_from, self.pistol_from)
+
+
 class PaxDetailSchema:
 
     def __init__(self, sable_from, pistol_from):
