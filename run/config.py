@@ -121,6 +121,22 @@ class MailBoxSource(Source):
             yield from messages
 
 
+class MultipleMailBoxSource(Source):
+    """
+    Loadplan messages from multiple mailboxes.
+    """
+
+    def __init__(self, sources):
+        """
+        :param sources: container of MailBoxSource objects
+        """
+        self.sources = sources
+
+    def itermessages(self):
+        for source in self.sources:
+            yield from source.itermessages()
+
+
 class PassMessageFilter(MessageFilter):
     """
     Always true message filter.
