@@ -220,12 +220,13 @@ class FileOutput(Output):
     Write LIDO message string to file.
     """
 
-    def __init__(self, pathfmt, mode='w'):
+    def __init__(self, pathfmt, mode='w', preprocessor=str):
         """
         :param pathfmt: format string, lidomsg=LIDOWeightBalanceMessage instance.
         """
         self.pathfmt = pathfmt
         self.mode = mode
+        self.preprocessor = preprocessor
 
     def write(self, lido_message):
         context = dict(
@@ -234,7 +235,7 @@ class FileOutput(Output):
         )
         path = self.pathfmt.format(**context)
         with open(path, self.mode) as fp:
-            fp.write(str(lido_message))
+            fp.write(self.preprocessor(lido_message))
         return path
 
 
