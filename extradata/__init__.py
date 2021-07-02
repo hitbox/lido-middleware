@@ -108,6 +108,46 @@ class Stations:
             return {'iata': self.icao2iata[station], 'icao': station}
 
 
+class NetlineAircraftRegistrationAirlineMapping:
+    """
+    Get aircraft registration from Netline database
+    """
+
+    def __init__(self, drivername, host, username, password, database, port=None):
+        self.drivername = drivername
+        self.host = host
+        self.username = username
+        self.password = password
+        self.database = database
+        self.port = port
+        self._airline = None
+
+    def _init_airline(self):
+        import sqlalchemy as sa
+        url = sa.engine.url.URL(
+            drivername = self.drivername,
+            host = self.host,
+            username = self.username,
+            password = self.password,
+            database = self.database,
+            port = self.port)
+        engine = sa.create_engine(url, max_identifier_length=128)
+        conn = engine.connect()
+        metadata = sa.MetaData()
+        # see: NetLine_Crew Core Data Model 2020.2.pdf
+        aircraft = sa.Table('aircraft', metadata, autoload_with=engine)
+        columns = [aircraft.c.registration, aircraft.c.ac_owner, aircraft.c.ac_operator]
+        query = sa.sql.select(columns)
+        result = {registration: operator for registration, owner, operator in conn.execute(query)}
+        self._airline = result
+
+    @property
+    def airline(self):
+        if self._airline is None:
+            self._init_airline()
+        return self._airline
+
+
 aircraftregistration = AircraftRegistrationAirlineMapping()
 airline_designators = AirlineDesignators()
 stations = Stations()
