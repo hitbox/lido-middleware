@@ -19,8 +19,8 @@ xml_template = Template("""\
                 <counter>{{ counter }}</counter>
             </legId>
             <deadloadFlown>
-                <baggageMass>{{ "%.1f" | format(baggage_mass) }}</baggageMass>
-                <cargoMass>{{ "%.1f" | format(cargo_mass) }}</cargoMass>
+                <baggageMass>{{ "%d" | format(baggage_mass) }}</baggageMass>
+                <cargoMass>{{ "%d" | format(cargo_mass) }}</cargoMass>
                 <baggagePieces>{{ uld_count }}</baggagePieces>
             </deadloadFlown>
         </paxDetail>
