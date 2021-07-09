@@ -220,9 +220,10 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
             estimated_total_traffic_load = cargo_weight + (acm * 220)
         data['estimated_total_traffic_load'] = estimated_total_traffic_load
 
+        fac = 2.20462
         if data['all_weights_unit'] in ('LB', '#'):
-            data['payload_kg'] = data['payload'] / 2.2045
-            data['revenue_weight_kg'] = data['revenue_weight'] / 2.2045
+            data['payload_kg'] = data['payload'] / fac
+            data['revenue_weight_kg'] = data['revenue_weight'] / fac
         else:
             data['payload_kg'] = float(data['payload'])
             data['revenue_weight_kg'] = float(data['revenue_weight'])

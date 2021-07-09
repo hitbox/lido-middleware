@@ -116,9 +116,10 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
             acm = 0
         data['estimated_total_traffic_load'] = data['gross_weight'] + (acm * 220)
 
+        fac = 2.20462
         if data['all_weights_unit'] in ('LB', '#'):
-            data['gross_weight_kg'] = data['gross_weight'] / 2.2045
-            data['net_weight_kg'] = data['net_weight'] / 2.2045
+            data['gross_weight_kg'] = data['gross_weight'] / fac
+            data['net_weight_kg'] = data['net_weight'] / fac
         else:
             data['gross_weight_kg'] = float(data['gross_weight'])
             data['net_weight_kg'] = float(data['net_weight'])
