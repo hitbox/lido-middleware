@@ -36,7 +36,7 @@ class PAXDetailOutput:
         self.schema_data = schema_data
 
     def __str__(self):
-        return xml_template.render(**self.schema_data)
+        return self.xml_template.render(**self.schema_data)
 
 
 def make_xml(schema_data):
