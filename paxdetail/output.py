@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from jinja2 import Template
 
 class PAXDetailOutput:
@@ -7,7 +9,7 @@ class PAXDetailOutput:
     the `schema_data` dict to the filenaming function.
     """
 
-    xml_template = Template("""\
+    xml_template = Template(dedent("""\
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <transaction>
         <sender>{{ sender }}</sender>
@@ -30,7 +32,7 @@ class PAXDetailOutput:
                 </deadloadFlown>
             </paxDetail>
         </messages>
-    </transaction>""")
+    </transaction>"""))
 
     def __init__(self, schema_data):
         self.schema_data = schema_data
