@@ -12,6 +12,8 @@ import xml.etree.ElementTree as ET
 from email.message import EmailMessage
 from pathlib import Path
 
+import cx_Oracle
+
 from . import crewmember
 from . import email
 from . import pluck
@@ -159,6 +161,9 @@ def main(argv=None):
         limit = args.limit
 
     raise_on_error = appconfig.getboolean('raise')
+
+    if 'oracle_lib_dir' in appconfig:
+        cx_Oracle.init_oracle_client(lib_dir=appconfig['oracle_lib_dir'])
 
     if move_to is not None:
         raise_for_path(move_to)
