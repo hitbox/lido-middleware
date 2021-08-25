@@ -16,12 +16,9 @@ from . import crewmember
 from . import email
 from . import pluck
 from . import schema
+from .exception import CentralLoadPlanError
 
 appname = 'central_load_plan'
-
-class CentralLoadPlanError(Exception):
-    pass
-
 
 def raise_for_path(p):
     if not Path(p).exists():

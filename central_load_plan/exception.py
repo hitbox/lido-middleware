@@ -1,0 +1,2 @@
+class CentralLoadPlanError(Exception):
+    pass
