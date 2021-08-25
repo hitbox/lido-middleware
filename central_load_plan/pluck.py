@@ -151,3 +151,18 @@ def fromxml(root):
     #
     data['crewmembers'] = []
     return data
+
+def main(argv=None):
+    """
+    Process XML files into CLP email messages and send.
+    """
+    parser = argparse.ArgumentParser(description=main.__doc__)
+    parser.add_argument('xmlfile')
+    args = parser.parse_args(argv)
+    tree = ET.parse(args.xmlfile)
+    root = tree.getroot()
+    data = fromxml(root)
+    pprint(data)
+
+if __name__ == '__main__':
+    main()
