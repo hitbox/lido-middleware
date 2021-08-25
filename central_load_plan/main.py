@@ -89,6 +89,7 @@ def realmain(
                 body = root2rendered(data, airline_dbconf)
                 email_message = EmailMessage()
                 email_message.set_content(body)
+                # FIXME: maybe, this should get the schema loaded data?
                 email_message['Subject'] = email_subject.format(**data)
                 email_message['From'] = from_addr
                 email_message['To'] = send_to
