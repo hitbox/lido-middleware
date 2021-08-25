@@ -40,16 +40,16 @@ def root2rendered(root, airline_dbconf):
     return body
 
 def realmain(
-        source_glob,
-        airline_dbconf,
-        smtp_host,
-        email_subject,
-        send_to,
-        from_addr,
-        raise_on_error,
-        move_to = None,
-        limit = None
-    ):
+    source_glob,
+    airline_dbconf,
+    smtp_host,
+    email_subject,
+    send_to,
+    from_addr,
+    raise_on_error,
+    move_to = None,
+    limit = None
+):
     """
     1. Process OFP XML files from `source_glob` into CLP email messages.
     2. Move the OFP XML file to `move_to`.
