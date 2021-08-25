@@ -43,7 +43,7 @@ class OperationalFlightPlanSchema(Schema):
 
     leg_departure_date_utc = DateTime(format=datetime_format)
     flight_origin_date = Date(format=date_format)
-    version_number = Integer()
+    version_number = String()
     flight_number = Integer()
     airline_iata_code = String()
     origin_iata = String()

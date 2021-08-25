@@ -16,8 +16,11 @@ def fromxml(root):
     data['flight_origin_date'] = elem.attrib['flightOriginDate']
 
     # version number
-    elem = root.find('{*}M633Header')
-    data['version_number'] = elem.attrib['versionNumber']
+    # NOTE: VER NO
+    # endswith to ignore namespace
+    if not root.tag.endswith('FlightPlan'):
+        raise CentralLoadPlanError('root tag is not FlightPlan')
+    data['version_number'] = root.attrib['flightPlanId']
 
     # flight
     elem = root.find(

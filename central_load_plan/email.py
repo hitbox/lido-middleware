@@ -22,7 +22,7 @@ def render(data):
     lines.append(
         'LEG DEPARTURE DATE (UTC): '
         + data['leg_departure_date_utc'].strftime('%d%b%y (%H%MZ)').upper()
-        + ' REV NO: %s' % data['version_number']
+        + ' VER NO: %s' % data['version_number']
     )
     lines.append(
         'FLT #   DEST    TAIL #  STE     STD     ETD     ETA     '

@@ -24,14 +24,13 @@ def raise_for_path(p):
     if not Path(p).exists():
         raise CentralLoadPlanError('%r does not exist')
 
-def root2rendered(root, airline_dbconf):
+def root2rendered(data, airline_dbconf):
     """
     Process XML root of OFP file into rendered email body text.
     """
     # NOTE: is this what OFP stands for?
     # https://www.quora.com/Do-you-know-a-source-with-good-explanation-to-all-abbreviations-used-in-an-OFP-Operational-Flight-Plan
     # OFP: Operational Flight Plan
-    data = pluck.fromxml(root)
     data = schema.OperationalFlightPlanSchema().load(data)
     # hit database for crew members
     data['crewmembers'] = crewmember.fromdata(airline_dbconf, data).crewmembers
