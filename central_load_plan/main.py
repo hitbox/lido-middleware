@@ -58,7 +58,8 @@ def realmain(
     :param source_glob: xml source glob.
     :param airline_dbconf: airline code to database connection info for crewmembers.
     :param smtp_host: smtp host to use.
-    :param email_subject: subject of email.
+    :param email_subject: format string for subject of email, gets the data
+                          dict from `pluck.fromxml`.
     :param send_to: deliver processed message to email address.
     :param from_addr: from address for email.
     :param move_to: destination directory to move after processing.
@@ -84,10 +85,12 @@ def realmain(
             try:
                 # parse XML and build CLP message
                 root = tree.getroot()
-                body = root2rendered(root, airline_dbconf)
+                data = pluck.fromxml(root)
+                # root2rendered modifies the dict, create subject line after
+                body = root2rendered(data, airline_dbconf)
                 email_message = EmailMessage()
                 email_message.set_content(body)
-                email_message['Subject'] = email_subject
+                email_message['Subject'] = email_subject.format(**data)
                 email_message['From'] = from_addr
                 email_message['To'] = send_to
                 # move source
@@ -136,7 +139,7 @@ def main(argv=None):
     parser.add_argument('config', nargs='+')
     args = parser.parse_args(argv)
 
-    cp = configparser.ConfigParser()
+    cp = configparser.RawConfigParser()
     cp.read(args.config)
 
     # NOTE: required logging config
