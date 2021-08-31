@@ -10,7 +10,7 @@ import traceback
 import xml.etree.ElementTree as ET
 
 from email.message import EmailMessage
-from email.message import MIMEMultipart
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 
@@ -31,26 +31,27 @@ def raise_for_path(p):
     if not Path(p).exists():
         raise CentralLoadPlanError('%r does not exist')
 
-def root2rendered(root, airline_dbconf):
+# NOTE: is this what OFP stands for?
+# https://www.quora.com/Do-you-know-a-source-with-good-explanation-to-all-abbreviations-used-in-an-OFP-Operational-Flight-Plan
+# OFP: Operational Flight Plan
+
+def delete_me_root2rendered(root, airline_dbconf):
     """
     Process XML root of OFP file into rendered email body text.
     """
-    # NOTE: is this what OFP stands for?
-    # https://www.quora.com/Do-you-know-a-source-with-good-explanation-to-all-abbreviations-used-in-an-OFP-Operational-Flight-Plan
-    # OFP: Operational Flight Plan
     data = pluck.fromxml(root)
     data = schema.OperationalFlightPlanSchema().load(data)
     # hit database for crew members
     data['crewmembers'] = crewmember.fromdata(airline_dbconf, data).crewmembers
     # build emails
-    body = email.render(data)
+    body = email.render_text(data)
     return body
 
 def realmain(
         source_glob,
         airline_dbconf,
         smtp_host,
-        email_subject,
+        email_subject_fmt,
         send_to,
         from_addr,
         raise_on_error,
@@ -65,7 +66,7 @@ def realmain(
     :param source_glob: xml source glob.
     :param airline_dbconf: airline code to database connection info for crewmembers.
     :param smtp_host: smtp host to use.
-    :param email_subject: subject of email.
+    :param email_subject_fmt: subject of email.
     :param send_to: deliver processed message to email address.
     :param from_addr: from address for email.
     :param move_to: destination directory to move after processing.
@@ -91,14 +92,20 @@ def realmain(
             try:
                 # parse XML and build CLP message
                 root = tree.getroot()
-                body = root2rendered(root, airline_dbconf)
+                data = pluck.fromxml(root)
+                data = schema.OperationalFlightPlanSchema().load(data)
+                # hit database for crew members
+                data['crewmembers'] = crewmember.fromdata(airline_dbconf, data).crewmembers
+                # build emails
+                body = email.render_text(data)
+                #
                 html = f'<pre>{ body }</pre>'
-                email_message = MIMEMultipart()
-                email_message.attach(body, 'plain')
-                email_message.attach(html, 'html')
-                email_message['Subject'] = email_subject
+                email_message = EmailMessage()
+                email_message['Subject'] = email_subject_fmt.format(**data)
                 email_message['From'] = from_addr
                 email_message['To'] = send_to
+                email_message.set_content(body)
+                email_message.add_alternative(html, subtype='html')
                 # move source
                 if move_to is not None:
                     move_to = Path(move_to)
@@ -145,7 +152,7 @@ def main(argv=None):
     parser.add_argument('config', nargs='+')
     args = parser.parse_args(argv)
 
-    cp = configparser.ConfigParser()
+    cp = configparser.RawConfigParser()
     cp.read(args.config)
 
     # NOTE: required logging config
@@ -155,7 +162,7 @@ def main(argv=None):
 
     source_glob = appconfig['source_glob']
     smtp_host = appconfig['smtp_host']
-    email_subject = appconfig['email_subject']
+    email_subject_fmt = appconfig['email_subject']
     send_to = appconfig['send_to']
     from_addr = appconfig['from_addr']
 
@@ -178,7 +185,7 @@ def main(argv=None):
             source_glob,
             airline_dbconf,
             smtp_host,
-            email_subject,
+            email_subject_fmt,
             send_to,
             from_addr,
             raise_on_error,
