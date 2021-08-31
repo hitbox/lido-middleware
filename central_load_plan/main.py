@@ -35,18 +35,6 @@ def raise_for_path(p):
 # https://www.quora.com/Do-you-know-a-source-with-good-explanation-to-all-abbreviations-used-in-an-OFP-Operational-Flight-Plan
 # OFP: Operational Flight Plan
 
-def delete_me_root2rendered(root, airline_dbconf):
-    """
-    Process XML root of OFP file into rendered email body text.
-    """
-    data = pluck.fromxml(root)
-    data = schema.OperationalFlightPlanSchema().load(data)
-    # hit database for crew members
-    data['crewmembers'] = crewmember.fromdata(airline_dbconf, data).crewmembers
-    # build emails
-    body = email.render_text(data)
-    return body
-
 def realmain(
         source_glob,
         airline_dbconf,
