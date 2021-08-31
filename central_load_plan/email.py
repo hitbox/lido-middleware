@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from . import pluck
 from . import schema
 
-def render(data):
+def render_text(data):
     """
     Render the central load plan email.
 
@@ -129,7 +129,7 @@ def main(argv=None):
         root = tree.getroot()
         data = pluck.fromxml(root)
         data = schema.OperationalFlightPlanSchema().load(data)
-        print(render(data))
+        print(render_text(data))
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -10,6 +10,8 @@ import traceback
 import xml.etree.ElementTree as ET
 
 from email.message import EmailMessage
+from email.message import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
 
 import cx_Oracle
@@ -90,8 +92,10 @@ def realmain(
                 # parse XML and build CLP message
                 root = tree.getroot()
                 body = root2rendered(root, airline_dbconf)
-                email_message = EmailMessage()
-                email_message.set_content(body)
+                html = f'<pre>{ body }</pre>'
+                email_message = MIMEMultipart()
+                email_message.attach(body, 'plain')
+                email_message.attach(html, 'html')
                 email_message['Subject'] = email_subject
                 email_message['From'] = from_addr
                 email_message['To'] = send_to
