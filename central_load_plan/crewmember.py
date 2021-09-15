@@ -29,6 +29,12 @@ class CrewMemberResult:
 def fromdata(config, data):
     airline_code = data['airline_iata_code']
     airline_section = config[airline_code]
+    if 'oracle_lib_dir' in airline_section:
+        try:
+            oracle.init_oracle_client(lib_dir=airline_section['oracle_lib_dir'])
+        except oracle.ProgrammingError:
+            # already initialized
+            pass
     url = sa.engine.url.URL.create(
         airline_section.get('drivername'),
         airline_section.get('username'),
