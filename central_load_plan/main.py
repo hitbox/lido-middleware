@@ -10,7 +10,11 @@ import traceback
 import xml.etree.ElementTree as ET
 
 from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
+
+import cx_Oracle
 
 from . import crewmember
 from . import email
@@ -24,31 +28,21 @@ def raise_for_path(p):
     if not Path(p).exists():
         raise CentralLoadPlanError('%r does not exist')
 
-def root2rendered(data, airline_dbconf):
-    """
-    Process XML root of OFP file into rendered email body text.
-    """
-    # NOTE: is this what OFP stands for?
-    # https://www.quora.com/Do-you-know-a-source-with-good-explanation-to-all-abbreviations-used-in-an-OFP-Operational-Flight-Plan
-    # OFP: Operational Flight Plan
-    data = schema.OperationalFlightPlanSchema().load(data)
-    # hit database for crew members
-    data['crewmembers'] = crewmember.fromdata(airline_dbconf, data).crewmembers
-    # build emails
-    body = email.render(data)
-    return body
+# NOTE: is this what OFP stands for?
+# https://www.quora.com/Do-you-know-a-source-with-good-explanation-to-all-abbreviations-used-in-an-OFP-Operational-Flight-Plan
+# OFP: Operational Flight Plan
 
 def realmain(
-    source_glob,
-    airline_dbconf,
-    smtp_host,
-    email_subject,
-    send_to,
-    from_addr,
-    raise_on_error,
-    move_to = None,
-    limit = None
-):
+        source_glob,
+        airline_dbconf,
+        smtp_host,
+        email_subject_fmt,
+        send_to,
+        from_addr,
+        raise_on_error,
+        move_to = None,
+        limit = None
+    ):
     """
     1. Process OFP XML files from `source_glob` into CLP email messages.
     2. Move the OFP XML file to `move_to`.
@@ -57,8 +51,8 @@ def realmain(
     :param source_glob: xml source glob.
     :param airline_dbconf: airline code to database connection info for crewmembers.
     :param smtp_host: smtp host to use.
-    :param email_subject: format string for subject of email, gets the data
-                          dict from `pluck.fromxml`.
+    :param email_subject_fmt: format string for subject of email, gets the data
+                              dict from `pluck.fromxml`.
     :param send_to: deliver processed message to email address.
     :param from_addr: from address for email.
     :param move_to: destination directory to move after processing.
@@ -85,14 +79,19 @@ def realmain(
                 # parse XML and build CLP message
                 root = tree.getroot()
                 data = pluck.fromxml(root)
-                # root2rendered modifies the dict, create subject line after
-                body = root2rendered(data, airline_dbconf)
+                data = schema.OperationalFlightPlanSchema().load(data)
+                # hit database for crew members
+                data['crewmembers'] = crewmember.fromdata(airline_dbconf, data).crewmembers
+                # build emails
+                body = email.render_text(data)
+                #
+                html = f'<pre>{ body }</pre>'
                 email_message = EmailMessage()
-                email_message.set_content(body)
-                # FIXME: maybe, this should get the schema loaded data?
-                email_message['Subject'] = email_subject.format(**data)
+                email_message['Subject'] = email_subject_fmt.format(**data)
                 email_message['From'] = from_addr
                 email_message['To'] = send_to
+                email_message.set_content(body)
+                email_message.add_alternative(html, subtype='html')
                 # move source
                 if move_to is not None:
                     move_to = Path(move_to)
@@ -149,7 +148,7 @@ def main(argv=None):
 
     source_glob = appconfig['source_glob']
     smtp_host = appconfig['smtp_host']
-    email_subject = appconfig['email_subject']
+    email_subject_fmt = appconfig['email_subject']
     send_to = appconfig['send_to']
     from_addr = appconfig['from_addr']
 
@@ -160,6 +159,9 @@ def main(argv=None):
 
     raise_on_error = appconfig.getboolean('raise')
 
+    if 'oracle_lib_dir' in appconfig:
+        cx_Oracle.init_oracle_client(lib_dir=appconfig['oracle_lib_dir'])
+
     if move_to is not None:
         raise_for_path(move_to)
 
@@ -169,7 +171,7 @@ def main(argv=None):
             source_glob,
             airline_dbconf,
             smtp_host,
-            email_subject,
+            email_subject_fmt,
             send_to,
             from_addr,
             raise_on_error,
