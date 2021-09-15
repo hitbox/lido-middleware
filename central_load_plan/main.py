@@ -117,7 +117,7 @@ class CLPApp:
         for source in map(Path, glob.glob(self.source_glob)):
             # skip empty
             if source.stat().st_size == 0:
-                logger.info('skipping empty file')
+                logger.info('skipping empty file %s' % source.resolve())
                 continue
             self.parse_xml(source)
 
