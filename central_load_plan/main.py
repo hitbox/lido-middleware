@@ -131,6 +131,28 @@ def _get_airline_dbconf(cp):
             airline_dbconf[airline_code] = cp[section_name]
     return airline_dbconf
 
+def keyed_sections(cp, prefix, sep):
+    """
+    Loop configparser sections starting with `prefix + sep`, creating a dict
+    keyed on text after `sep` with values of dicts of that section.
+
+    (ignore spaces between in section names)
+    [prefix sep key1]
+    a = 1
+
+    [prefix sep key2]
+    b = 2
+
+    ...
+
+    {'key1': {'a': '1'}, 'key2': {'b': '2'}, ...}
+    """
+    return {
+        secname.partition(sep)[2]: dict(cp[secname].items())
+        for secname in cp
+        if secname.startswith(prefix + sep)
+    }
+
 def main(argv=None):
     """
     Process XML files into CLP email messages and send.
@@ -145,8 +167,16 @@ def main(argv=None):
 
     if all(key in cp for key in ['loggers', 'formatters', 'handlers']):
         logging.config.fileConfig(cp)
-    airline_dbconf = _get_airline_dbconf(cp)
-    appconfig = cp[appname]
+
+    smtpconf = dict(cp['smtp'].items())
+    emailconf = dict(cp['emailmessage'].items())
+    emailconf_company = keyed_sections(cp, 'emailmessage', '_')
+    airline_dbconf = keyed_sections(cp, 'airline', '_')
+
+    print(smtpconf)
+    print(emailconf)
+    print(emailconf_company)
+    return
 
     source_glob = appconfig['source_glob']
     smtp_host = appconfig['smtp_host']
