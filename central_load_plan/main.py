@@ -143,8 +143,8 @@ def main(argv=None):
     cp = configparser.RawConfigParser()
     cp.read(args.config)
 
-    # NOTE: required logging config
-    logging.config.fileConfig(cp)
+    if all(key in cp for key in ['loggers', 'formatters', 'handlers']):
+        logging.config.fileConfig(cp)
     airline_dbconf = _get_airline_dbconf(cp)
     appconfig = cp[appname]
 
