@@ -3,6 +3,10 @@ def fromxml(root):
     Pluck values from Operational Flight Plan XML file.
     """
     data = {}
+    # NOTE: root is <FlightPlan>
+    # flight plan id
+    data['flight_plan_id'] = root.attrib['flightPlanId']
+
     # leg departure date in UTC
     elem = root.find('./{*}M633SupplementaryHeader/{*}Flight')
     data['leg_departure_date_utc'] = elem.attrib['scheduledTimeOfDeparture']
