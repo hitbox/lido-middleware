@@ -126,8 +126,7 @@ class CLPApp:
         try:
             tree = ET.parse(source)
         except ET.ParseError:
-            logger.exception('An exception occurred parsing XML')
-            raise
+            logger.exception('An exception occurred parsing XML %s', source)
         else:
             self.final_process(source, tree)
 
@@ -168,7 +167,6 @@ class CLPApp:
         except:
             logger.exception(
                 'An exception occurred while plucking XML and email sending')
-            raise
 
 
 def main(argv=None):
@@ -200,4 +198,3 @@ def main(argv=None):
         clpapp.run()
     except:
         logger.exception('An exception occurred')
-        raise
