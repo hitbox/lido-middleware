@@ -41,6 +41,7 @@ class OperationalFlightPlanSchema(Schema):
     datetime_format = '%Y-%m-%dT%H:%M:%SZ'
     units = ['kg', 'lb']
 
+    flight_plan_id = String()
     leg_departure_date_utc = DateTime(format=datetime_format)
     flight_origin_date = Date(format=date_format)
     version_number = String()

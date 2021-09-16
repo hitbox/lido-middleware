@@ -9,12 +9,14 @@ import sys
 import traceback
 import xml.etree.ElementTree as ET
 
+from collections import ChainMap
 from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 
-import cx_Oracle
+from marshmallow import Schema
+from marshmallow import fields
 
 from . import crewmember
 from . import email
@@ -24,6 +26,29 @@ from .exception import CentralLoadPlanError
 
 appname = 'central_load_plan'
 
+class CentralLoadPlanError(Exception):
+    pass
+
+
+class SMTPConfSchema(Schema):
+    host = fields.String()
+    port = fields.Integer()
+
+
+class OracleConfSchema(Schema):
+    oracle_lib_dir = fields.String()
+    drivername = fields.String()
+    host = fields.String()
+    port = fields.Integer()
+    username = fields.String()
+    password = fields.String()
+    database = fields.String()
+
+
+smtpconfschema = SMTPConfSchema()
+oracleconfschema = OracleConfSchema()
+ofpschema = schema.OperationalFlightPlanSchema()
+
 def raise_for_path(p):
     if not Path(p).exists():
         raise CentralLoadPlanError('%r does not exist')
@@ -32,102 +57,120 @@ def raise_for_path(p):
 # https://www.quora.com/Do-you-know-a-source-with-good-explanation-to-all-abbreviations-used-in-an-OFP-Operational-Flight-Plan
 # OFP: Operational Flight Plan
 
-def realmain(
+def keyed_sections(cp, prefix, sep='_', func=None):
+    """
+    Loop configparser sections starting with `prefix + sep`, creating a dict
+    keyed on text after `sep` with values of dicts of that section. If a
+    section named `prefix` exists it will be used as a base dict for the more
+    specific keyed sections.
+
+    (ignore spaces between in section names)
+    [prefix]
+    c = 5
+
+    [prefix sep key1]
+    a = 1
+
+    [prefix sep key2]
+    b = 2
+
+    ...
+
+    {'key1': {'a': '1', 'c': '5'}, 'key2': {'b': '2', 'c': '5'}, ...}
+
+    :param cp: a ConfigParser instance
+    :param prefix: first part of section name
+    :param sep: separator string between first and last part
+    :param func: a callable called on the dict values, useful for coercing types
+    """
+    if prefix in cp:
+        base = cp[prefix]
+    else:
+        base = {}
+
+    if func is None:
+        func = lambda x: x
+
+    result = {
+        secname.partition(sep)[2]: func(dict(ChainMap(cp[secname], base)))
+        for secname in cp if secname.startswith(prefix + sep)
+    }
+    return result
+
+class CLPApp:
+
+    def __init__(
+        self,
         source_glob,
-        airline_dbconf,
-        smtp_host,
-        email_subject_fmt,
-        send_to,
-        from_addr,
-        raise_on_error,
-        move_to = None,
-        limit = None
+        move_to,
+        smtpconf,
+        emailconf,
+        oracleconf,
     ):
-    """
-    1. Process OFP XML files from `source_glob` into CLP email messages.
-    2. Move the OFP XML file to `move_to`.
-    3. Send CLP email.
+        self.source_glob = source_glob
+        self.move_to = Path(move_to)
+        self.smtpconf = smtpconf
+        self.emailconf = emailconf
+        self.oracleconf = oracleconf
 
-    :param source_glob: xml source glob.
-    :param airline_dbconf: airline code to database connection info for crewmembers.
-    :param smtp_host: smtp host to use.
-    :param email_subject_fmt: format string for subject of email, gets the data
-                              dict from `pluck.fromxml`.
-    :param send_to: deliver processed message to email address.
-    :param from_addr: from address for email.
-    :param move_to: destination directory to move after processing.
-    :param limit: limit number of files to process.
-    """
-    logger = logging.getLogger(appname)
-    n = 0
-    for source_path in glob.glob(source_glob):
-        source_path = Path(source_path)
-        logger.info(source_path.resolve())
-        if os.path.getsize(source_path) == 0:
-            logger.info('skipping empty file')
-            continue
+    def run(self):
+        logger = logging.getLogger(appname)
+        for source in map(Path, glob.glob(self.source_glob)):
+            # skip empty
+            if source.stat().st_size == 0:
+                logger.info('skipping empty file %s' % source.resolve())
+                continue
+            self.parse_xml(source)
+
+    def parse_xml(self, source):
+        logger = logging.getLogger(appname)
         try:
-            tree = ET.parse(source_path)
+            tree = ET.parse(source)
         except ET.ParseError:
-            if raise_on_error:
-                raise
-            else:
-                logger.exception('An exception occurred during XML parsing')
+            logger.exception('An exception occurred parsing XML')
+            raise
         else:
-            # catch and log exceptions here so that the other files may be processed.
-            try:
-                # parse XML and build CLP message
-                root = tree.getroot()
-                data = pluck.fromxml(root)
-                data = schema.OperationalFlightPlanSchema().load(data)
-                # hit database for crew members
-                data['crewmembers'] = crewmember.fromdata(airline_dbconf, data).crewmembers
-                # build emails
-                body = email.render_text(data)
-                #
-                html = f'<pre>{ body }</pre>'
-                email_message = EmailMessage()
-                email_message['Subject'] = email_subject_fmt.format(**data)
-                email_message['From'] = from_addr
-                email_message['To'] = send_to
-                email_message.set_content(body)
-                email_message.add_alternative(html, subtype='html')
-                # move source
-                if move_to is not None:
-                    move_to = Path(move_to)
-                    move_to_full = Path(move_to) / source_path.name
-                    if move_to_full.exists():
-                        logger.info('removing %s', move_to_full.resolve())
-                        move_to_full.unlink()
-                    logger.info('moving original to %s', move_to.resolve())
-                    shutil.move(source_path, move_to)
-                # send email
-                logger.info('sending email to %r', send_to)
-                with smtplib.SMTP(smtp_host) as smtp_server:
-                    smtp_server.send_message(email_message)
-                n += 1
-                if limit is not None and n == limit:
-                    break
-            except:
-                if raise_on_error:
-                    raise
-                else:
-                    logger.exception(
-                        'An exception occurred during XML processing'
-                        ' and email sending')
+            self.final_process(source, tree)
 
-def _get_airline_dbconf(cp):
-    """
-    Pluck the "airline_" prefixed sections out and return a dictionary lookup
-    table for database connections, for looking up crew members.
-    """
-    airline_dbconf = {}
-    prefix = 'airline_'
-    for section_name in cp:
-        if section_name.startswith(prefix):
-            airline_code = section_name[len(prefix):]
-            airline_dbconf[airline_code] = cp[section_name]
-    return airline_dbconf
+    def move_file(self, source, dest):
+        logger = logging.getLogger(appname)
+        move_to_full = dest / source.name
+        if move_to_full.exists():
+            logger.info('removing %s', move_to_full.resolve())
+            move_to_full.unlink()
+        logger.info('moving original to %s', dest.resolve())
+        shutil.move(source, dest)
+
+    def final_process(self, source, tree):
+        logger = logging.getLogger(appname)
+        try:
+            root = tree.getroot()
+            strdict = pluck.fromxml(root)
+            data = ofpschema.load(strdict)
+            # crew members
+            data['crewmembers'] = crewmember.fromdata(self.oracleconf, data).crewmembers
+            # build email
+            emailmessage = EmailMessage()
+            airline_iata_code = data['airline_iata_code']
+            emailconf = self.emailconf[airline_iata_code]
+            for key, value in emailconf.items():
+                emailmessage[key] = value.format(**data)
+            plaintext = email.render_text(data)
+            html = f'<pre>{ plaintext }</pre>'
+            emailmessage.set_content(plaintext)
+            emailmessage.add_alternative(html, subtype='html')
+            #
+            if self.move_to:
+                self.move_file(source, self.move_to)
+            # send email
+            logger.info('sending email to %r', emailmessage['to'])
+            with smtplib.SMTP(**self.smtpconf) as smtp:
+                smtp.send_message(emailmessage)
+        except:
+            logger.exception(
+                'An exception occurred while plucking XML and email sending')
+            raise
+
 
 def main(argv=None):
     """
@@ -141,47 +184,21 @@ def main(argv=None):
     cp = configparser.RawConfigParser()
     cp.read(args.config)
 
-    # NOTE: required logging config
-    logging.config.fileConfig(cp)
-    airline_dbconf = _get_airline_dbconf(cp)
-    appconfig = cp[appname]
+    if all(key in cp for key in ['loggers', 'formatters', 'handlers']):
+        logging.config.fileConfig(cp)
 
-    source_glob = appconfig['source_glob']
-    smtp_host = appconfig['smtp_host']
-    email_subject_fmt = appconfig['email_subject']
-    send_to = appconfig['send_to']
-    from_addr = appconfig['from_addr']
+    appconf = cp[appname]
+    source_glob = appconf['source_glob']
+    move_to = appconf['move_to'].strip()
+    smtpconf = smtpconfschema.load(cp['smtp'])
+    emailconf = keyed_sections(cp, 'emailmessage')
+    oracleconf = keyed_sections(cp, 'oracle', func=oracleconfschema.load)
 
-    move_to = appconfig.get('move_to')
-    limit = appconfig.getint('limit')
-    if args.limit is not None:
-        limit = args.limit
-
-    raise_on_error = appconfig.getboolean('raise')
-
-    if 'oracle_lib_dir' in appconfig:
-        cx_Oracle.init_oracle_client(lib_dir=appconfig['oracle_lib_dir'])
-
-    if move_to is not None:
-        raise_for_path(move_to)
+    clpapp = CLPApp(source_glob, move_to, smtpconf, emailconf, oracleconf)
 
     logger = logging.getLogger(appname)
     try:
-        realmain(
-            source_glob,
-            airline_dbconf,
-            smtp_host,
-            email_subject_fmt,
-            send_to,
-            from_addr,
-            raise_on_error,
-            move_to = move_to,
-            limit = limit,
-        )
-    except KeyboardInterrupt:
-        pass
+        clpapp.run()
     except:
-        if raise_on_error:
-            raise
-        else:
-            logger.exception('An exception occurred')
+        logger.exception('An exception occurred')
+        raise
