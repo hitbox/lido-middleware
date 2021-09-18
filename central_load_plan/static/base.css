@@ -3,14 +3,34 @@ body {
     display: flex;
     justify-content: center;
 }
+
 #main {
     width: 800px;
 }
+
 pre {
     border: 1px solid black;
     padding: 1rem;
     font-size: 1rem;
 }
+
+input[type=submit] {
+    padding: 4px 6px;
+    min-width: 100px;
+}
+
+.filelist {
+    font-family: monospace;
+    font-size: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.filelist > * {
+    padding: 8px;
+}
+
 .inputgroup {
     margin-top: 1.5rem;
 }

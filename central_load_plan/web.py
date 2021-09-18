@@ -1,31 +1,91 @@
 import configparser
+import glob
 import os
 import textwrap
 import xml.etree.ElementTree as ET
 
+from pathlib import Path
+
 import sqlparse
 
+from flask import Blueprint
 from flask import Flask
+from flask import current_app
 from flask import render_template
 from flask import request
+from wtforms import BooleanField
+from wtforms import FileField
+from wtforms import Form
+from wtforms import SelectField
+from wtforms import SubmitField
 
 from . import crewmember
 from . import email
 from . import pluck
 from . import schema
 
-app = Flask(__name__)
+app_bp = Blueprint('app', __name__)
 
-crewmember_config = configparser.ConfigParser()
-crewmember_config.read(os.environ['CREWMEMBER_CONFIG'])
+FILELIST = None
 
-@app.route('/')
-def main():
-    return render_template('main.html')
+class FormMixin:
+    ignorecrew = BooleanField(
+        label = 'Ignore Crew',
+        render_kw = dict(
+            title = 'Avoid hitting database to get crew members',
+        ),
+    )
+    submit = SubmitField('Submit')
 
-@app.route('/emailtext', methods=['POST'])
-def emailtext():
+class ClientSideXMLForm(Form, FormMixin):
+
+    xmlfile = FileField(
+        label = 'OFP XML',
+        render_kw = dict(
+            title = 'Operational Flight Plan XML file',
+        ),
+    )
+
+
+class ServerSideXMLForm(Form, FormMixin):
+
+    # choices added by view
+    index = SelectField('Select XML file', coerce=int)
+
+
+def pathcontext(path, level):
+    result = [path]
+    for _ in range(level):
+        path = path.parent
+        result.append(path)
+    result.reverse()
+    return result
+
+@app_bp.route('/')
+def index():
+    return render_template('index.html')
+
+@app_bp.route('/from-server', methods=['GET', 'POST'])
+def from_server():
+    form = ServerSideXMLForm(formdata=request.form)
+    form.index.choices = [
+        (index, '/'.join(path.name for path in pathcontext(path, 1)))
+        for index, path in enumerate(FILELIST)
+    ]
+    context = dict(
+        form = form,
+    )
+    if request.method == 'POST' and form.validate():
+        index = form.index.data
+        path = FILELIST[index]
+        with open(path) as xmlfile:
+            context['result'] = output(xmlfile, form.ignorecrew.data)
+    return render_template('from-server.html', **context)
+
+@app_bp.route('/from-client', methods=['GET', 'POST'])
+def from_client():
     xmlfile = request.files['xmlfile']
+
     tree = ET.ElementTree(ET.fromstring(xmlfile.read()))
     root = tree.getroot()
     data = pluck.fromxml(root)
@@ -35,12 +95,43 @@ def emailtext():
         # hit database for crew members
         crewresult = crewmember.fromdata(crewmember_config, data)
         data['crewmembers'] = crewresult.crewmembers
-    output = email.render(data)
+    output = email.render_text(data)
     context = dict(
         output = output,
-        form = request.form,
-        crewresult = crewresult,
-        textwrap = textwrap,
-        sqlparse = sqlparse,
     )
     return render_template('output.html', **context)
+
+def output(readable, ignorecrew):
+    tree = ET.ElementTree(ET.fromstring(readable.read()))
+    root = tree.getroot()
+    data = pluck.fromxml(root)
+    data = schema.OperationalFlightPlanSchema().load(data)
+    if not ignorecrew:
+        # hit database for crew members
+        crewresult = crewmember.fromdata(crewmember_config, data)
+        data['crewmembers'] = crewresult.crewmembers
+    result = dict(
+        data = data,
+        email_body = email.render_text(data),
+    )
+    return result
+
+def create_app():
+    app = Flask(__name__)
+    app.config.from_envvar('CENTRAL_LOAD_PLAN_CONFIG')
+    app.register_blueprint(app_bp)
+
+    if 'XMLGLOB' in app.config:
+        pathname = app.config['XMLGLOB']
+        recursive = '**' in pathname
+        global FILELIST
+        FILELIST = list(map(Path, glob.glob(pathname, recursive=recursive)))
+        if 'XMLGLOB_REVERSE' in app.config and app.config['XMLGLOB_REVERSE']:
+            FILELIST.reverse()
+        if 'XMLGLOB_LIMIT' in app.config:
+            FILELIST = FILELIST[:app.config['XMLGLOB_LIMIT']]
+
+    #crewmember_config = configparser.ConfigParser()
+    #crewmember_config.read(os.environ['CREWMEMBER_CONFIG'])
+    return app
+

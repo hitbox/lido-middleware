@@ -1,0 +1,27 @@
+
+{% macro render_field(field) %}
+<div class="inputgroup">
+{% if field.type == 'BooleanField' %}
+    {{ field }}
+    {{ field.label }}
+{% else %}
+    {{ field.label }}
+    {{ field }}
+{% endif %}
+    <div>{% if field.errors %}
+        <ul>{% for error in field.errors %}
+            <li>{{ error }}</li>
+        {% endfor %}</ul>
+    {% endif %}</div>
+</div>
+{% endmacro %}
+
+
+{% macro render_form(form) %}
+<form action="{{ kwargs.action or url_for(request.endpoint, **request.view_args) }}"{% if kwargs.enctype %} enctype="{{ kwargs.enctype }}"{% endif %} method="{{ kwargs.method or 'POST' }}">
+    {% for field in form|rejectattr('type', 'in', ['SubmitField']) %}{{ render_field(field) }}{% endfor %}
+    <div class="inputgroup">
+        {% for field in form|selectattr('type', 'in', ['SubmitField']) %}{{ field }}{% endfor %}
+    </div>
+</form>
+{% endmacro %}

@@ -1,9 +1,11 @@
+chardet
 cx_oracle
 flask
+flask-wtf
+fs
 imap_tools
 jinja2
 marshmallow
 sqlalchemy
 sqlparse
-fs
-chardet
+wtforms

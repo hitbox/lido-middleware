@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% from "render.html" import render_form %}
+
+{% block main %}
+<h2>Sample files</h2>
+{{ render_form(form) }}
+{% if result %}<div>
+    <pre>{{ result.email_body }}</pre>
+{% endif %}</div>
+{% endblock %}
