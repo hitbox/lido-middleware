@@ -26,32 +26,29 @@ class CrewMemberResult:
         return bool(self.crewmembers)
 
 
-def fromdata(config, data):
+def fromdata(dbconfig, data):
+    """
+    Return airline specific, object containing crewmembers in list.
+    """
     airline_code = data['airline_iata_code']
-    airline_section = config[airline_code]
-    if 'oracle_lib_dir' in airline_section:
+    airline_dbconfig = dbconfig[airline_code]
+    if 'oracle_lib_dir' in airline_dbconfig:
+        oracle_lib_dir = airline_dbconfig['oracle_lib_dir']
         try:
-            oracle.init_oracle_client(lib_dir=airline_section['oracle_lib_dir'])
+            oracle.init_oracle_client(lib_dir=oracle_lib_dir)
         except oracle.ProgrammingError:
             # already initialized
             pass
-    url = sa.engine.url.URL.create(
-        airline_section.get('drivername'),
-        airline_section.get('username'),
-        airline_section.get('password'),
-        airline_section.get('host'),
-        airline_section.get('port'),
-        airline_section.get('database'),
-    )
+    # connect
+    url = sa.engine.url.URL.create(**airline_dbconfig)
     engine = sa.create_engine(url, max_identifier_length=128)
-
+    # tables
     metadata = sa.MetaData()
-
     chain_item_daily = sa.Table('chain_item_daily', metadata, autoload_with=engine)
     crew_member = sa.Table('crew_member', metadata, autoload_with=engine)
     duty = sa.Table('duty', metadata, autoload_with=engine)
     item_daily = sa.Table('item_daily', metadata, autoload_with=engine)
-
+    # build query
     query = (
         sa.select([
             sa.func.trim(crew_member.c.name).label('last_name'),
@@ -85,10 +82,9 @@ def fromdata(config, data):
                 item_daily.c.departure_time_scd == data['scheduled_departure_time'].strftime('%H%M'),
             )
         ).order_by('seat_order'))
-
+    # run query and return result
     with engine.connect() as conn:
-        result = conn.execute(query)
-        crewmembers = [dict(row) for row in result]
+        crewmembers = list(map(dict, query))
         result = CrewMemberResult(crewmembers, query, data, engine)
         return result
 

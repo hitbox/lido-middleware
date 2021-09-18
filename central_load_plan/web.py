@@ -73,20 +73,17 @@ def from_server():
         (index, '/'.join(path.name for path in pathcontext(path, 1)))
         for index, path in enumerate(FILELIST)
     ]
-    context = dict(
-        form = form,
-    )
+    context = {'form': form}
     if request.method == 'POST' and form.validate():
         index = form.index.data
         path = FILELIST[index]
         with open(path) as xmlfile:
-            context['result'] = output(xmlfile, form.ignorecrew.data)
-    return render_template('from-server.html', **context)
+            context['result'] = get_output(xmlfile, form.ignorecrew.data)
+    return render_template('output.html', **context)
 
 @app_bp.route('/from-client', methods=['GET', 'POST'])
 def from_client():
     xmlfile = request.files['xmlfile']
-
     tree = ET.ElementTree(ET.fromstring(xmlfile.read()))
     root = tree.getroot()
     data = pluck.fromxml(root)
@@ -102,10 +99,13 @@ def from_client():
     )
     return render_template('output.html', **context)
 
-def output(readable, ignorecrew):
+def get_output(readable, ignorecrew):
     """
     Return a dict with useful things for displaying what would happen in a real run.
     """
+    # XXX: this source -> tree -> pluck -> string_data -> data process is
+    #      repeated all over the place because, for example, here, we want to
+    #      pass the intermediate steps to the template
     xmlstring = readable.read()
     tree = ET.ElementTree(ET.fromstring(xmlstring))
     root = tree.getroot()
@@ -115,10 +115,13 @@ def output(readable, ignorecrew):
         # hit database for crew members
         crewresult = crewmember.fromdata(crewmember_config, data)
         data['crewmembers'] = crewresult.crewmembers
+    airline_iata_code = data['airline_iata_code']
+    emailconf = current_app.config['EMAIL_TEMPLATES']
+    email_body = email.render(emailconf[airline_iata_code], data)
     result = dict(
         data = data,
         pprint_data = pprint.pformat(data),
-        email_body = email.render_text(data),
+        email_body = email_body,
         xmlstring = xmlstring,
     )
     return result

@@ -112,62 +112,92 @@ class CLPApp:
         self.smtpconf = smtpconf
         self.emailconf = emailconf
         self.oracleconf = oracleconf
+        self.logger = logging.getLogger(appname)
 
     def run(self):
-        logger = logging.getLogger(appname)
+        "Entry point for full run against configuration"
         for source in map(Path, glob.glob(self.source_glob)):
             # skip empty
             if source.stat().st_size == 0:
-                logger.info('skipping empty file %s' % source.resolve())
+                self.logger.info('skipping empty file %s' % source.resolve())
                 continue
             self.parse_xml(source)
 
     def parse_xml(self, source):
-        logger = logging.getLogger(appname)
+        "1. first step parse XML"
         try:
             tree = ET.parse(source)
         except ET.ParseError:
-            logger.exception('An exception occurred parsing XML %s', source)
+            self.logger.exception(
+                'Exception occurred parsing XML %s', source)
         else:
-            self.final_process(source, tree)
+            self.pluck(source, tree)
 
-    def move_file(self, source, dest):
-        logger = logging.getLogger(appname)
-        move_to_full = dest / source.name
-        if move_to_full.exists():
-            logger.info('removing %s', move_to_full.resolve())
-            move_to_full.unlink()
-        logger.info('moving original to %s', dest.resolve())
-        shutil.move(source, dest)
-
-    def final_process(self, source, tree):
-        logger = logging.getLogger(appname)
+    def pluck(self, source, tree):
+        "2. second step, pluck string values from XML"
         try:
             root = tree.getroot()
             strdict = pluck.fromxml(root)
+        except:
+            self.logger.exception(
+                'Exception occurred while plucking XML and email sending')
+        else:
+            self.schema(source, strdict)
+
+    def schema(self, source, strdict):
+        "3. third step, turn the pluck string values into Python types"
+        try:
             data = ofpschema.load(strdict)
+        except:
+            self.logger.exception('Exception occurred during schema')
+        else:
+            self.add_crew_members(data)
+            self.final(source, data)
+
+    def add_crew_members(self, data):
+        """
+        4. fourth step, add crew members from airline specific database configuration
+        """
+        try:
             # crew members
             data['crewmembers'] = crewmember.fromdata(self.oracleconf, data).crewmembers
+        except:
+            self.logger.exception('Exception occurred during add crew members')
+
+    def final(self, source, data):
+        """
+        5. build email from airline specific config, move the XML file and send email
+        """
+        try:
             # build email
             emailmessage = EmailMessage()
             airline_iata_code = data['airline_iata_code']
             emailconf = self.emailconf[airline_iata_code]
+            # set from, to, subject, ..., all option values get a chance at
+            # using the values from data to use in a format string
             for key, value in emailconf.items():
                 emailmessage[key] = value.format(**data)
-            plaintext = email.render_text(data)
+            plaintext = email.render(emailconf, data)
             html = f'<pre>{ plaintext }</pre>'
             emailmessage.set_content(plaintext)
             emailmessage.add_alternative(html, subtype='html')
-            #
+            # move
             if self.move_to:
                 self.move_file(source, self.move_to)
             # send email
-            logger.info('sending email to %r', emailmessage['to'])
             with smtplib.SMTP(**self.smtpconf) as smtp:
                 smtp.send_message(emailmessage)
+                self.logger.info('email sent to %r', emailmessage['to'])
         except:
-            logger.exception(
-                'An exception occurred while plucking XML and email sending')
+            self.logger.exception('Exception occurred during final process')
+
+    def move_file(self, source, dest):
+        move_to_full = dest / source.name
+        if move_to_full.exists():
+            self.logger.info('removing %s', move_to_full.resolve())
+            move_to_full.unlink()
+        self.logger.info('moving original to %s', dest.resolve())
+        shutil.move(source, dest)
 
 
 def main(argv=None):
@@ -198,4 +228,4 @@ def main(argv=None):
     try:
         clpapp.run()
     except:
-        logger.exception('An exception occurred')
+        logger.exception('Exception occurred during run')

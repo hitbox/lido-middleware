@@ -1,138 +1,15 @@
-import argparse
-import sys
 import textwrap
-import xml.etree.ElementTree as ET
 
-from . import pluck
-from . import schema
+from jinja2 import Template
 
-def render_text(data):
+def render(emailconf, data):
     """
-    Render the central load plan email.
-
-    :param data: fully marshalled into Python data types, data.
+    Render email body text from airline specific template.
     """
-    # Tried using a jinja template for this. It worked well. The document was
-    # apparent at a glance. Not using it because Vim (nvim) refused to
-    # cooperate in NOT always reflowing my text. It was so aggravating that
-    # this build-by-lines in Python was chosen.
-    lines = []
-
-    lines.append('')
-    lines.append(
-        'LEG DEPARTURE DATE (UTC): '
-        + data['leg_departure_date_utc'].strftime('%d%b%y (%H%MZ)').upper()
-        + ' VER NO: %s' % data['flight_plan_id']
-    )
-    lines.append(
-        'FLT #  ORIG  DEST  TAIL #  STE   STD      ETE    PLANNED BLOCK TIME'
-    )
-    dtfmt = '%d/%H%M'
-    lines.append(
-        '%-7s' % data['flight_number']
-        + '%-6s' % data['origin_iata']
-        + '%-6s' % data['destination_iata']
-        + '%-8s' % data['aircraft_registration']
-        # STE:
-        + data['estimated_block_time'].strftime('%H:%M')
-        + ' '
-        # STD
-        + '%-9s' % data['scheduled_departure_time'].strftime(dtfmt)
-        # ETE
-        + '%-7s' % data['estimated_time_enroute'].strftime('%H:%M')
-        + data['estimated_arrival_time'].strftime(dtfmt)
-    )
-
-    lines.append('')
-    lines.append(
-        '*** ALL PAYLOAD AND FUEL DATA BELOW IN {LBS} ***'
-    )
-    lines.append(
-        '*** BALLAST FUEL IS INCLUDED IN THE  RAMP FUEL VALUE ***'
-    )
-    lines.append('')
-
-    lines.append(
-        'PLND PAYLOAD    RAMP FUEL   FUEL BURN   TAXI FUEL   UNUSABLE FUEL'
-    )
-    if data['ballast_fuel'] is None:
-        ballast_fuel = '00000'
-    else:
-        ballast_fuel = data['ballast_fuel']
-    lines.append(
-        '%-16s' % data['planned_payload']
-        + '%-12s' % data['ramp_fuel']
-        + '%-12s' % data['fuel_burn']
-        + '%-12s' % data['taxi_fuel']
-        + '%-12s' % ballast_fuel
-    )
-    lines.append('')
-    lines.append(
-        'MAX PAYLOAD   MZFW      MTOW       MLDG      OEW/BOW'
-    )
-    lines.append(
-        '%-14s' % data['max_payload']
-        + '%-10s' % data['mzfw']
-        + '%-11s' % data['mtow']
-        + '%-10s' % data['mldg']
-        # dry operating weight
-        + '%s' % data['dow']
-    )
-    lines.append('')
-    lines.append(
-        'SEAT    FIRST NAME      LAST NAME       EMPLOYEE #'
-    )
-    lines.append(
-        '----    ----------      ---------       ----------'
-    )
-    for crew in data['crewmembers']:
-        line = ''.join([
-            '%-8s' % crew['seat'],
-            '%-16s' % crew['first_name'],
-            '%-16s' % crew['last_name'],
-            '%-12s' % crew['employee_number'],
-        ])
-        lines.append(line)
-
-    lines.append('')
-    lines.append(
-        '--- A/C EQUIPMENT STATUS ---'
-    )
-    lines.append(
-        'ITEM          DESCRIPTION'
-    )
-    for status in data['aircraft_equipment_status']:
-        line = '%-14s' % status['item']
-        if status['description']:
-            line += '\n'.join(
-                textwrap.wrap(status['description'],
-                              width=80-14,
-                              subsequent_indent=' ' * 14)
-            )
-        lines.append(line)
-
-    lines.append('')
-    lines.append(
-        '*** OFP IS THE CONTROLLING DOCUMENT FOR DATA PRODUCED FOR THIS MESSAGE. ***'
-    )
-
-    return '\n'.join(lines)
-
-def main(argv=None):
-    """
-    Produce email text from XML file minus the crewmembers.
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('xmlfiles', nargs='+')
-    args = parser.parse_args(argv)
-
-    for xmlfile in args.xmlfiles:
-        print(xmlfile)
-        tree = ET.parse(xmlfile)
-        root = tree.getroot()
-        data = pluck.fromxml(root)
-        data = schema.OperationalFlightPlanSchema().load(data)
-        print(render_text(data))
-
-if __name__ == '__main__':
-    sys.exit(main())
+    template_path = emailconf['template']
+    with open(template_path) as fp:
+        template_string = fp.read()
+        template = Template(template_string)
+        context = dict(textwrap=textwrap)
+        context.update(data)
+        return template.render(**context)
