@@ -25,20 +25,21 @@ def render_text(data):
         + ' VER NO: %s' % data['flight_plan_id']
     )
     lines.append(
-        'FLT #   DEST    TAIL #  STE     STD     ETD     ETA     '
+        'FLT #  ORIG  DEST  TAIL #  STE   STD      ETE    PLANNED BLOCK TIME'
     )
     dtfmt = '%d/%H%M'
     lines.append(
-        '%-8s' % data['flight_number']
-        + '%-8s' % data['destination_iata']
+        '%-7s' % data['flight_number']
+        + '%-6s' % data['origin_iata']
+        + '%-6s' % data['destination_iata']
         + '%-8s' % data['aircraft_registration']
         # STE:
         + data['estimated_block_time'].strftime('%H:%M')
-        + ' ' * 3
-        + data['scheduled_departure_time'].strftime(dtfmt)
         + ' '
-        + data['estimated_departure_time'].strftime(dtfmt)
-        + ' '
+        # STD
+        + '%-9s' % data['scheduled_departure_time'].strftime(dtfmt)
+        # ETE
+        + '%-7s' % data['estimated_time_enroute'].strftime('%H:%M')
         + data['estimated_arrival_time'].strftime(dtfmt)
     )
 
@@ -52,7 +53,7 @@ def render_text(data):
     lines.append('')
 
     lines.append(
-        'PLND PAYLOAD    RAMP FUEL   FUEL BURN   TAXI FUEL   BALLAST FUEL'
+        'PLND PAYLOAD    RAMP FUEL   FUEL BURN   TAXI FUEL   UNUSABLE FUEL'
     )
     if data['ballast_fuel'] is None:
         ballast_fuel = '00000'
@@ -67,13 +68,15 @@ def render_text(data):
     )
     lines.append('')
     lines.append(
-        'MAX PAYLOAD     MZFW        MTOW        MLDG'
+        'MAX PAYLOAD   MZFW      MTOW       MLDG      OEW/BOW'
     )
     lines.append(
-        '%-16s' % data['max_payload']
-        + '%-12s' % data['mzfw']
-        + '%-12s' % data['mtow']
-        + '%-12s' % data['mldg']
+        '%-14s' % data['max_payload']
+        + '%-10s' % data['mzfw']
+        + '%-11s' % data['mtow']
+        + '%-10s' % data['mldg']
+        # dry operating weight
+        + '%s' % data['dow']
     )
     lines.append('')
     lines.append(

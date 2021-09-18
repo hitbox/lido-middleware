@@ -12,6 +12,7 @@ pre {
     border: 1px solid black;
     padding: 1rem;
     font-size: 1rem;
+    white-space: pre-wrap;
 }
 
 input[type=submit] {

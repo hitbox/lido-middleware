@@ -70,6 +70,11 @@ def fromxml(root):
     elem = root.find('./{*}M633SupplementaryHeader/{*}Flight')
     data['estimated_departure_time'] = elem.attrib['scheduledTimeOfDeparture']
 
+    # estimated time enroute
+    elem = root.find(
+        './{*}FlightPlanSummary/{*}FlightTime/{*}EstimatedTime/{*}Value')
+    data['estimated_time_enroute'] = elem.text
+
     # planned payload
     elem = root.find('./{*}WeightHeader/{*}Load/{*}EstimatedWeight/{*}Value')
     data['planned_payload'] = elem.text

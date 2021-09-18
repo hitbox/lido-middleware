@@ -18,6 +18,9 @@ from marshmallow.validate import ValidationError
 
 from . import pluck
 
+# ex: PT1H30M45S
+DURATION_FMT = 'PT%HH%MM%SS'
+
 class MELCDLItemSchema(Schema):
 
     item = String()
@@ -51,8 +54,8 @@ class OperationalFlightPlanSchema(Schema):
     destination_iata = String()
     aircraft_registration = String()
 
-    # ex: PT1H30M45S
-    estimated_block_time = Time(format='PT%HH%MM%SS')
+    estimated_block_time = Time(format=DURATION_FMT)
+    estimated_time_enroute = Time(format=DURATION_FMT)
 
     scheduled_departure_time = DateTime(format=datetime_format)
     estimated_departure_time = DateTime(format=datetime_format)

@@ -6,6 +6,12 @@
 <h2>Sample files</h2>
 {{ render_form(form) }}
 {% if result %}<div>
+    <h1>Output</h1>
+    <h3>Email</h3>
     <pre>{{ result.email_body }}</pre>
+    <h3>Scraped Data</h3>
+    <pre>{{ result.pprint_data }}</pre>
+    <h3>XML</h3>
+    <pre>{{ result.xmlstring }}</pre>
 {% endif %}</div>
 {% endblock %}

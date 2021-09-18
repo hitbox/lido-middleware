@@ -1,6 +1,7 @@
 import configparser
 import glob
 import os
+import pprint
 import textwrap
 import xml.etree.ElementTree as ET
 
@@ -102,7 +103,11 @@ def from_client():
     return render_template('output.html', **context)
 
 def output(readable, ignorecrew):
-    tree = ET.ElementTree(ET.fromstring(readable.read()))
+    """
+    Return a dict with useful things for displaying what would happen in a real run.
+    """
+    xmlstring = readable.read()
+    tree = ET.ElementTree(ET.fromstring(xmlstring))
     root = tree.getroot()
     data = pluck.fromxml(root)
     data = schema.OperationalFlightPlanSchema().load(data)
@@ -112,7 +117,9 @@ def output(readable, ignorecrew):
         data['crewmembers'] = crewresult.crewmembers
     result = dict(
         data = data,
+        pprint_data = pprint.pformat(data),
         email_body = email.render_text(data),
+        xmlstring = xmlstring,
     )
     return result
 
