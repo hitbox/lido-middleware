@@ -12,6 +12,7 @@ import sqlparse
 from flask import Blueprint
 from flask import Flask
 from flask import current_app
+from flask import g
 from flask import render_template
 from flask import request
 from wtforms import BooleanField
@@ -24,6 +25,8 @@ from . import crewmember
 from . import email
 from . import pluck
 from . import schema
+from .utils import keyed_sections
+from .schema import oracleconfschema
 
 app_bp = Blueprint('app', __name__)
 
@@ -113,7 +116,7 @@ def get_output(readable, ignorecrew):
     data = schema.OperationalFlightPlanSchema().load(data)
     if not ignorecrew:
         # hit database for crew members
-        crewresult = crewmember.fromdata(crewmember_config, data)
+        crewresult = crewmember.fromdata(current_app.config['CREWMEMBER_CONFIG'], data)
         data['crewmembers'] = crewresult.crewmembers
     airline_iata_code = data['airline_iata_code']
     emailconf = current_app.config['EMAIL_TEMPLATES']
@@ -141,7 +144,10 @@ def create_app():
         if 'XMLGLOB_LIMIT' in app.config:
             FILELIST = FILELIST[:app.config['XMLGLOB_LIMIT']]
 
-    #crewmember_config = configparser.ConfigParser()
-    #crewmember_config.read(os.environ['CREWMEMBER_CONFIG'])
+    if 'CREWMEMBER_CONFIG' in app.config:
+        cp = configparser.ConfigParser()
+        cp.read(app.config['CREWMEMBER_CONFIG'])
+        app.config['CREWMEMBER_CONFIG'] = keyed_sections(cp, 'oracle', func=oracleconfschema.load)
+
     return app
 

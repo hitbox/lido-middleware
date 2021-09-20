@@ -122,6 +122,25 @@ class OperationalFlightPlanSchema(Schema):
         return data
 
 
+class SMTPConfSchema(Schema):
+    host = String()
+    port = Integer()
+
+
+class OracleConfSchema(Schema):
+    oracle_lib_dir = String()
+    drivername = String()
+    host = String()
+    port = Integer()
+    username = String()
+    password = String()
+    database = String()
+
+
+smtpconfschema = SMTPConfSchema()
+oracleconfschema = OracleConfSchema()
+ofpschema = OperationalFlightPlanSchema()
+
 def main(argv=None):
     """
     Convert XML to data.

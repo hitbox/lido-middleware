@@ -9,20 +9,19 @@ import sys
 import traceback
 import xml.etree.ElementTree as ET
 
-from collections import ChainMap
 from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 
-from marshmallow import Schema
-from marshmallow import fields
-
 from . import crewmember
 from . import email
 from . import pluck
-from . import schema
 from .exception import CentralLoadPlanError
+from .schema import ofpschema
+from .schema import oracleconfschema
+from .schema import smtpconfschema
+from .utils import keyed_sections
 
 appname = 'central_load_plan'
 
@@ -30,24 +29,6 @@ class CentralLoadPlanError(Exception):
     pass
 
 
-class SMTPConfSchema(Schema):
-    host = fields.String()
-    port = fields.Integer()
-
-
-class OracleConfSchema(Schema):
-    oracle_lib_dir = fields.String()
-    drivername = fields.String()
-    host = fields.String()
-    port = fields.Integer()
-    username = fields.String()
-    password = fields.String()
-    database = fields.String()
-
-
-smtpconfschema = SMTPConfSchema()
-oracleconfschema = OracleConfSchema()
-ofpschema = schema.OperationalFlightPlanSchema()
 
 def raise_for_path(p):
     if not Path(p).exists():
@@ -56,46 +37,6 @@ def raise_for_path(p):
 # NOTE: is this what OFP stands for?
 # https://www.quora.com/Do-you-know-a-source-with-good-explanation-to-all-abbreviations-used-in-an-OFP-Operational-Flight-Plan
 # OFP: Operational Flight Plan
-
-def keyed_sections(cp, prefix, sep='_', func=None):
-    """
-    Loop configparser sections starting with `prefix + sep`, creating a dict
-    keyed on text after `sep` with values of dicts of that section. If a
-    section named `prefix` exists it will be used as a base dict for the more
-    specific keyed sections.
-
-    (ignore spaces between in section names)
-    [prefix]
-    c = 5
-
-    [prefix sep key1]
-    a = 1
-
-    [prefix sep key2]
-    b = 2
-
-    ...
-
-    {'key1': {'a': '1', 'c': '5'}, 'key2': {'b': '2', 'c': '5'}, ...}
-
-    :param cp: a ConfigParser instance
-    :param prefix: first part of section name
-    :param sep: separator string between first and last part
-    :param func: a callable called on the dict values, useful for coercing types
-    """
-    if prefix in cp:
-        base = cp[prefix]
-    else:
-        base = {}
-
-    if func is None:
-        func = lambda x: x
-
-    result = {
-        secname.partition(sep)[2]: func(dict(ChainMap(cp[secname], base)))
-        for secname in cp if secname.startswith(prefix + sep)
-    }
-    return result
 
 class CLPApp:
 
