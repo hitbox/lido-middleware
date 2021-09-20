@@ -150,4 +150,3 @@ def create_app():
         app.config['CREWMEMBER_CONFIG'] = keyed_sections(cp, 'oracle', func=oracleconfschema.load)
 
     return app
-
