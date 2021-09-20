@@ -40,7 +40,9 @@ def fromdata(dbconfig, data):
             # already initialized
             pass
     # connect
-    url = sa.engine.url.URL.create(**airline_dbconfig)
+    keys = ['username', 'password', 'host', 'port', 'database', 'query']
+    connconf = {key: val for key,val in airline_dbconfig.items() if key in keys}
+    url = sa.engine.url.URL.create(airline_dbconfig['drivername'], **connconf)
     engine = sa.create_engine(url, max_identifier_length=128)
     # tables
     metadata = sa.MetaData()
@@ -84,7 +86,7 @@ def fromdata(dbconfig, data):
         ).order_by('seat_order'))
     # run query and return result
     with engine.connect() as conn:
-        crewmembers = list(map(dict, query))
+        crewmembers = list(map(dict, conn.execute(query)))
         result = CrewMemberResult(crewmembers, query, data, engine)
         return result
 
