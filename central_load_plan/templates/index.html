@@ -1,20 +1,6 @@
 {% extends "base.html" %}
 
 {% block main %}
-
 <h3><a href="">Upload XML</a></h3>
 <h3><a href="{{ url_for('app.from_server') }}">Select XML from list</a></h3>
-
-{#
-<p>Select a file and click Submit to produce email text.</p>
-<p>The seat field for crew members will appear as "None".</p>
-<p>Ignoring crew members can avoid key errors, where the airline in the XML file is not configured for the database.</p>
-
-<h2>Upload XML</h2>
-{{ render_form(clientsideform, action=url_for('app.from_client'), enctype='multipart/form-data') }}
-
-<h2>Sample files</h2>
-{{ render_form(serversideform, action=url_for('app.from_server')) }}
-#}
-
 {% endblock %}

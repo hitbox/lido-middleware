@@ -9,9 +9,9 @@ FLT #  ORIG  DEST  TAIL #  STE   STD      ETE    PLANNED BLOCK TIME
 {# ORIG #}{{ '%-6s'|format(origin_iata) -}}
 {# DEST #}{{ '%-6s'|format(destination_iata) -}}
 {# "TAIL #" #}{{ '%-8s'|format(aircraft_registration) -}}
-{# STE #}{{ '%-6s'|format(estimated_block_time.strftime(tmfmt)) -}}
+{# STE: scheduled time enroute #}{{ '%-6s'|format(estimated_block_time.strftime(tmfmt)) -}}
 {# STD #}{{ '%-9s'|format(scheduled_departure_time.strftime(dtfmt)) -}}
-{# ETE #}{{ '%-7s'|format(estimated_arrival_time.strftime(tmfmt)) -}}
+{# ETE #}{{ '%-7s'|format(estimated_time_enroute.strftime(tmfmt)) -}}
 {# "PLANNED BLOCK TIME" #}{{ estimated_block_time.strftime(dtfmt) }}
 
 *** ALL PAYLOAD AND FUEL DATA BELOW IN {LBS} ***
