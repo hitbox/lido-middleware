@@ -12,7 +12,7 @@ FLT #  ORIG  DEST  TAIL #  STE   STD      ETE    PLANNED BLOCK TIME
 {# STE: scheduled time enroute #}{{ '%-6s'|format(estimated_block_time.strftime(tmfmt)) -}}
 {# STD #}{{ '%-9s'|format(scheduled_departure_time.strftime(dtfmt)) -}}
 {# ETE #}{{ '%-7s'|format(estimated_time_enroute.strftime(tmfmt)) -}}
-{# "PLANNED BLOCK TIME" #}{{ estimated_block_time.strftime(dtfmt) }}
+{# "PLANNED BLOCK TIME" #}{{ estimated_block_time.strftime(tmfmt) }}
 
 *** ALL PAYLOAD AND FUEL DATA BELOW IN {LBS} ***
 *** BALLAST FUEL IS INCLUDED IN THE  RAMP FUEL VALUE ***
