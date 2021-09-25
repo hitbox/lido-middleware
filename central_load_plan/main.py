@@ -96,7 +96,7 @@ class CLPApp:
         # send email
         with smtplib.SMTP(**self.smtpconf) as smtp:
             smtp.send_message(emailmessage)
-            self.logger.info('email sent to %r', emailmessage['to'])
+            self.logger.info('email %r to %r', emailmessage['subject'], emailmessage['to'])
 
     def move_file(self, source, dest):
         move_to_full = dest / source.name
