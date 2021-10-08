@@ -113,8 +113,8 @@ class OperationalFlightPlanSchema(Schema):
 
         # calculate max payload
         calcs = [
-            data['mtow'] - data['takeoff_fuel'],
-            data['mldg'] - data['landing_fuel'],
+            data['mtow'] - data['takeoff_fuel'] - data['dow'],
+            data['mldg'] - data['landing_fuel'] - data['dow'],
             data['mzfw'] - data['dow'],
         ]
         data['max_payload'] = min(calcs)
