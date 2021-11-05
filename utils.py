@@ -26,3 +26,21 @@ def hide(s, char='*'):
     Hide/mask characters of string.
     """
     return ''.join(char for c in s)
+
+def sliding_match(substr, text):
+    """
+    Slide along `text` looking for the best match of `substr`.
+    """
+    best = 0
+    best_index = None
+    i = 0
+    while True:
+        look = text[i:i+len(substr)]
+        nmatch = sum(c1 == c2 for c1, c2 in zip(look, substr))
+        if nmatch > best:
+            best = nmatch
+            best_index = i
+        i += 1
+        if i + len(substr) >= len(text):
+            break
+    return best_index

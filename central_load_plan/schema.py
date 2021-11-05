@@ -26,6 +26,18 @@ class MELCDLItemSchema(Schema):
     item = String()
     description = String(allow_none=True)
 
+    @post_load
+    def post_load(self, data, **kwargs):
+        item = data['item']
+        if item.endswith('00-30-FAK'):
+            fak_status = 0
+        elif item.endswith('FAK'):
+            fak_status = 1
+        else:
+            fak_status = 99
+        data['fak_status'] = fak_status
+        return data
+
 
 class CrewSchema(Schema):
 

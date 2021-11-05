@@ -49,7 +49,7 @@ class CLPApp:
         dbconf,
     ):
         self.source_glob = source_glob
-        self.move_to = Path(move_to)
+        self.move_to = move_to
         self.smtpconf = smtpconf
         self.emailconf = emailconf
         self.dbconf = dbconf
