@@ -39,19 +39,25 @@ def fromdata(dbconfig, data):
         except oracle.ProgrammingError:
             # already initialized
             pass
+
     # connect
     keys = ['username', 'password', 'host', 'port', 'database', 'query']
     connconf = {key: val for key,val in airline_dbconfig.items() if key in keys}
     url = sa.engine.url.URL.create(airline_dbconfig['drivername'], **connconf)
     engine = sa.create_engine(url, max_identifier_length=128)
+
     # tables
     metadata = sa.MetaData()
     chain_item_daily = sa.Table('chain_item_daily', metadata, autoload_with=engine)
     crew_member = sa.Table('crew_member', metadata, autoload_with=engine)
+    non_crew_member = sa.Table('non_crew_member', metadata, autoload_with=engine)
     duty = sa.Table('duty', metadata, autoload_with=engine)
     item_daily = sa.Table('item_daily', metadata, autoload_with=engine)
+
+    remark_of_event = sa.Table('remark_of_event', metadata, autoload_with=engine)
+
     # build query
-    query = (
+    query_crew = (
         sa.select([
             sa.func.trim(crew_member.c.name).label('last_name'),
             sa.func.trim(crew_member.c.first_name).label('first_name'),
@@ -67,13 +73,19 @@ def fromdata(dbconfig, data):
             sa.case(
                 (item_daily.c.type == 'L', duty.c.assigned_rank),
                 (item_daily.c.type == 'F', 99),
-            ).label('seat_order')
+            ).label('seat_order'),
         ])
         .select_from(item_daily)
-        .join(chain_item_daily, chain_item_daily.c.item_daily_uno == item_daily.c.uno)
-        .join(duty, duty.c.chain_daily_uno == chain_item_daily.c.chain_daily_uno)
-        .join(crew_member, crew_member.c.tlc == duty.c.tlc)
-        .where(
+        .join(
+            chain_item_daily,
+            chain_item_daily.c.item_daily_uno == item_daily.c.uno
+        ).join(
+            duty,
+            duty.c.chain_daily_uno == chain_item_daily.c.chain_daily_uno
+        ).join(
+            crew_member,
+            crew_member.c.tlc == duty.c.tlc
+        ).where(
             sa.and_(
                 item_daily.c.airline == data['airline_iata_code'],
                 item_daily.c.day_of_origin == data['flight_origin_date'],
@@ -83,11 +95,60 @@ def fromdata(dbconfig, data):
                 # departure_time_scd is stored as CHAR(4)
                 item_daily.c.departure_time_scd == data['scheduled_departure_time'].strftime('%H%M'),
             )
-        ).order_by('seat_order'))
+        ).order_by('seat_order')
+    )
+
+    query_jumpseats = (
+        sa.select([
+            remark_of_event.c.remark,
+        ]).select_from(
+            item_daily
+        ).join(
+            remark_of_event,
+            remark_of_event.c.uno == item_daily.c.uno
+        ).where(
+            sa.and_(
+                item_daily.c.airline == data['airline_iata_code'],
+                item_daily.c.day_of_origin == data['flight_origin_date'],
+                item_daily.c.flight_no == data['flight_number'],
+                item_daily.c.airport_c_is_dep == data['origin_iata'],
+                item_daily.c.departure_date_scd == data['scheduled_departure_time'].date(),
+                # departure_time_scd is stored as CHAR(4)
+                item_daily.c.departure_time_scd == data['scheduled_departure_time'].strftime('%H%M'),
+                # is jumpseat remark
+                remark_of_event.c.type == 'J',
+            )
+        ))
+
     # run query and return result
+    person_tables = {
+        'C': (crew_member, crew_member.c.employee_no),
+        'N': (non_crew_member, non_crew_member.c.employee_id),
+    }
     with engine.connect() as conn:
-        crewmembers = list(map(dict, conn.execute(query)))
-        result = CrewMemberResult(crewmembers, query, data, engine)
+        crewmembers = list(map(dict, conn.execute(query_crew)))
+
+        # add jump seat people
+        jumpseats = [
+            (jumpseat_str[0], jumpseat_str[1:])
+            for result in conn.execute(query_jumpseats)
+            for jumpseat_str in result.remark.split('|')
+        ]
+        for person_type, person_id in jumpseats:
+            table, field = person_tables[person_type]
+            query = sa.select([
+                    sa.func.trim(table.c.name).label('last_name'),
+                    sa.func.trim(table.c.first_name).label('first_name'),
+                    sa.func.trim(field).label('employee_number'),
+                    sa.literal_column("'J'", type_=sa.String()).label('seat'),
+                    sa.literal_column('999', type_=sa.Integer()).label('seat_order'),
+                ]).where(
+                    field == person_id
+                )
+            for jumpseat in conn.execute(query):
+                crewmembers.append(jumpseat)
+
+        result = CrewMemberResult(crewmembers, query_crew, data, engine)
         return result
 
 def main(argv=None):
