@@ -2,37 +2,22 @@ import argparse
 import configparser
 import glob
 import logging.config
-import os
 import shutil
 import smtplib
-import sys
-import traceback
 import xml.etree.ElementTree as ET
 
 from email.message import EmailMessage
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from pathlib import Path
 
 from . import crewmember
 from . import email
 from . import pluck
-from .exception import CentralLoadPlanError
 from .schema import ofpschema
 from .schema import oracleconfschema
 from .schema import smtpconfschema
 from .utils import keyed_sections
 
 appname = 'central_load_plan'
-
-class CentralLoadPlanError(Exception):
-    pass
-
-
-
-def raise_for_path(p):
-    if not Path(p).exists():
-        raise CentralLoadPlanError('%r does not exist')
 
 # NOTE: is this what OFP stands for?
 # https://www.quora.com/Do-you-know-a-source-with-good-explanation-to-all-abbreviations-used-in-an-OFP-Operational-Flight-Plan
