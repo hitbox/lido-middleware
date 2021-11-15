@@ -140,7 +140,7 @@ def fromdata(dbconfig, data):
                     sa.func.trim(table.c.name).label('last_name'),
                     sa.func.trim(table.c.first_name).label('first_name'),
                     sa.func.trim(field).label('employee_number'),
-                    sa.literal_column("'J'", type_=sa.String()).label('seat'),
+                    sa.literal_column("'ACM'", type_=sa.String()).label('seat'),
                     sa.literal_column('999', type_=sa.Integer()).label('seat_order'),
                 ]).where(
                     field == person_id
