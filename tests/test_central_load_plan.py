@@ -47,6 +47,10 @@ TESTDATA = dict(
             item = 'GHI 123',
             description = 'GHI 123 A very short one. Expiration Date: 2021-11-13'
         ),
+        dict(
+            item = '12-34-56-78',
+            description = 'ATI-12-34-56-78 Aft cargo door stop fwd frame 4th from top missing    Expiration Date: 11/23/2021 11:59:59 PM',
+        ),
     ]
 )
 
@@ -82,11 +86,14 @@ J       F9              L9              EE9
 ITEM          DESCRIPTION
 ABC-123-456   Some text with sometimes  weird runs of whitespace.  And some text
               on the end we want put on a newline: Some filler
-              text.   
+              text.
               Expiration Date: 2021-11-13
 
-GHI 123       GHI 123 A very short one. 
+GHI 123       GHI 123 A very short one.
               Expiration Date: 2021-11-13
+
+12-34-56-78   Aft cargo door stop fwd frame 4th from top missing
+              Expiration Date: 11/23/2021 11:59:59 PM
 
 
 *** OFP IS THE CONTROLLING DOCUMENT FOR DATA PRODUCED FOR THIS MESSAGE. ***'''
@@ -126,6 +133,9 @@ ABC-123-456   DEF ABC-123-456  Some text with sometimes  weird runs of
               a newline: Some filler text.   Expiration Date:
               2021-11-13
 GHI 123       GHI 123 A very short one. Expiration Date: 2021-11-13
+12-34-56-78   ATI-12-34-56-78 Aft cargo door stop fwd frame 4th from top missing
+              Expiration Date: 11/23/2021 11:59:59 PM
+
 
 *** OFP IS THE CONTROLLING DOCUMENT FOR DATA PRODUCED FOR THIS MESSAGE. ***'''
 
@@ -135,7 +145,6 @@ class TestCentralLoadPlanEmail(unittest.TestCase):
         self.render = central_load_plan.email.render
 
     def test_render_template_ati(self):
-        self.maxDiff = None
         template = 'central_load_plan/templates/email_8C.txt'
         emailconf = dict(template=template)
         result = self.render(emailconf, TESTDATA)

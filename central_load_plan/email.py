@@ -36,6 +36,28 @@ def rfindinsert(substr, text, ins):
         return text
     return text[:i] + ins + text[i:]
 
+def fullv1(status, **textwrap_options):
+    """
+    De-duplicate the item number from the description. Look for an place on a
+    newline, the text "Expiration Date:" and everything after it.
+    """
+    description = clean_remove(status['item'], status['description'])
+
+    items = description.rpartition('Expiration Date:')
+    before, expdate, after = items
+    if before and expdate and after:
+        before = '\n'.join(textwrap.wrap(before, **textwrap_options))
+        after = '\n'.join(textwrap.wrap(expdate + after, **textwrap_options))
+
+        if 'subsequent_indent' in textwrap_options:
+            subsequent_indent = textwrap_options['subsequent_indent']
+        else:
+            subsequent_indent = ''
+
+        description = before + '\n' + subsequent_indent + after
+
+    return description
+
 def render(emailconf, data):
     """
     Render email body text from airline specific template.
@@ -48,6 +70,7 @@ def render(emailconf, data):
             textwrap = textwrap,
             clean_remove = clean_remove,
             rfindinsert = rfindinsert,
+            fullv1 = fullv1,
         )
         context.update(data)
         return template.render(**context)
