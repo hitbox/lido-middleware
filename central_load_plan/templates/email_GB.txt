@@ -43,6 +43,6 @@ SEAT    FIRST NAME      LAST NAME       EMPLOYEE #
 ITEM          DESCRIPTION
 {%- for status in aircraft_equipment_status %}
 {{ '%-14s'|format(status.item) -}}
-{% if status.description %}{{ '\n'.join(textwrap.wrap(status.description, width=80-14, subsequent_indent=' '*14)) }}{% endif %}{% endfor %}
+{% if status.description %}{{ '\n'.join(textwrap.wrap(status.description, width=80 - 14, subsequent_indent=' ' * 14)) }}{% endif %}{% endfor %}
 
 *** OFP IS THE CONTROLLING DOCUMENT FOR DATA PRODUCED FOR THIS MESSAGE. ***
