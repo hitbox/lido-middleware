@@ -14,6 +14,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 
+from marshmallow import ValidationError
+
 from . import crewmember
 from . import email
 from . import pluck
@@ -44,12 +46,14 @@ class CLPApp:
         self,
         source_glob,
         move_to,
+        move_to_on_schema_load_error,
         smtpconf,
         emailconf,
         dbconf,
     ):
         self.source_glob = source_glob
         self.move_to = Path(move_to)
+        self.move_to_on_schema_load_error = Path(move_to_on_schema_load_error)
         self.smtpconf = smtpconf
         self.emailconf = emailconf
         self.dbconf = dbconf
@@ -73,7 +77,12 @@ class CLPApp:
         tree = ET.parse(source)
         root = tree.getroot()
         strdict = pluck.fromxml(root)
-        data = ofpschema.load(strdict)
+        try:
+            data = ofpschema.load(strdict)
+        except ValidationError:
+            if self.move_to_on_schema_load_error is not None:
+                self.move_file(source, self.move_to_on_schema_load_error)
+            raise
         # crew members
         data['crewmembers'] = crewmember.fromdata(self.dbconf, data).crewmembers
         # build email
@@ -126,11 +135,12 @@ def main(argv=None):
     appconf = cp[appname]
     source_glob = appconf['source_glob']
     move_to = appconf['move_to'].strip()
+    move_to_on_schema_load_error = appconf.get('move_to_on_schema_load_error')
     smtpconf = smtpconfschema.load(cp['smtp'])
     emailconf = keyed_sections(cp, 'emailmessage')
     dbconf = keyed_sections(cp, 'oracle', func=oracleconfschema.load)
 
-    clpapp = CLPApp(source_glob, move_to, smtpconf, emailconf, dbconf)
+    clpapp = CLPApp(source_glob, move_to, move_to_on_schema_load_error, smtpconf, emailconf, dbconf)
 
     logger = logging.getLogger(appname)
     try:
