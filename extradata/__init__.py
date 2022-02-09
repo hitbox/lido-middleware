@@ -1,3 +1,4 @@
+import abc
 import csv
 
 from collections import defaultdict
@@ -120,7 +121,27 @@ class Stations:
             return {'iata': self.icao2iata[station], 'icao': station}
 
 
-class NetlineAircraftRegistrationAirlineMapping:
+class BaseAirlineMapping(abc.ABC):
+
+    @property
+    @abc.abstractmethod
+    def airline(self):
+        """
+        A mapping of aircraft registration to the operator.
+        """
+
+
+class ConstantAirlineMapping(BaseAirlineMapping):
+
+    def __init__(self, operator):
+        self._airline = defaultdict(lambda: operator)
+
+    @property
+    def airline(self):
+        return self._airline
+
+
+class NetlineAircraftRegistrationAirlineMapping(BaseAirlineMapping):
     """
     Get aircraft registration from Netline database
     """
