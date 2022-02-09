@@ -158,9 +158,6 @@ class PassMessageFilter(MessageFilter):
     Always true message filter.
     """
 
-    def __init__(self, archive):
-        pass
-
     def filter(self, message):
         """
         Return True to process message. This always returns True.
@@ -259,9 +256,6 @@ class PassMessageArchive(MessageArchive):
     """
     Empty do-nothing archiver to meet spec.
     """
-
-    def __init__(self, archive):
-        pass
 
     def save(self, message):
         pass
