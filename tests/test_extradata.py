@@ -13,6 +13,9 @@ class TestAircraftRegistrationAirlineMapping(unittest.TestCase):
 
 
 class TestAirlineDesignators(unittest.TestCase):
+    """
+    AirlineDesignators tests
+    """
 
     def test_by_company(self):
         self.assertEqual(airline_designators.by_company['ABX'], 'GB')
