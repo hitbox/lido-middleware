@@ -68,8 +68,8 @@ class GlobSource(Source):
             yield fn
 
     def itermessages(self):
-        import os
         import datetime
+        import os
         for fn in self.iterfilenames():
             with open(fn) as fp:
                 stat = os.stat(fn)
