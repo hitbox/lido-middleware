@@ -78,6 +78,22 @@ class GlobSource(Source):
                 yield fakemsg
 
 
+class PickleSource(Source):
+    """
+    Email messages from pickle file that is simply a list of email messages.
+    """
+
+    def __init__(self, pathname):
+        self.pathname = pathname
+
+    def itermessages(self):
+        import pickle
+        with open(self.pathname, 'rb') as pickle_fp:
+            messages = pickle.load(pickle_fp)
+            for msg in messages:
+                yield msg
+
+
 class PickleGlobSource(GlobSource):
 
     def itermessages(self):
