@@ -36,13 +36,20 @@ def jumpseat_type_and_remaining(substring_between_bars):
     """
     return (substring_between_bars[0], substring_between_bars[1:])
 
-JUMPSEAT_KEYS = ('last_name', 'first_name', 'employee_number', 'seat', 'seat_order')
+JUMPSEAT_KEYS = ('first_name', 'last_name', 'employee_number', 'seat', 'seat_order')
 
 def parse_for_other(string):
     """
     Parse jump seats for type O(ther).
     """
-    person_dict = dict(zip(JUMPSEAT_KEYS, string.split(';'), strict=True))
+    values = string.split(';')
+    if len(values) != len(JUMPSEAT_KEYS):
+        # strict=True not supported
+        raise ValueError('zip args not equal')
+    person_dict = dict(zip(JUMPSEAT_KEYS, values))
+    person_dict['employee_number'] = ''
+    person_dict['seat'] = 'ACM'
+    person_dict['seat_order'] = '999'
     return person_dict
 
 def fromdata(dbconfig, data):
@@ -166,8 +173,9 @@ def fromdata(dbconfig, data):
                 person_id = remaining
                 table, field = person_tables[person_type]
                 query = sa.select([
-                        sa.func.trim(table.c.name).label(JUMPSEAT_KEYS[0]), # last_name
-                        sa.func.trim(table.c.first_name).label(JUMPSEAT_KEYS[1]), # first_name
+                        # first/last indexes reversed from O(ther) jump seats
+                        sa.func.trim(table.c.name).label(JUMPSEAT_KEYS[1]), # last_name
+                        sa.func.trim(table.c.first_name).label(JUMPSEAT_KEYS[0]), # first_name
                         sa.func.trim(field).label(JUMPSEAT_KEYS[2]), # employee_number
                         sa.literal_column("'ACM'", type_=sa.String()).label(JUMPSEAT_KEYS[3]), # seat
                         sa.literal_column('999', type_=sa.Integer()).label(JUMPSEAT_KEYS[4]), # seat_order

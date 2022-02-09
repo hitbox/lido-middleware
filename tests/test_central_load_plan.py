@@ -181,27 +181,27 @@ class TestCentralLoadPlanCrewmembers(unittest.TestCase):
             ),
             (
                 # only other type
-                "OLAST;FIRST;123456;YV;3",
+                "OFIRST;LAST;123456;YV;3",
                 (
                     dict(
                         last_name="LAST",
                         first_name="FIRST",
-                        employee_number="123456",
-                        seat="YV",
-                        seat_order="3"
+                        employee_number="",
+                        seat="ACM",
+                        seat_order="999"
                     ),
                 ),
             ),
             (
                 # mixed types
-                "C12345|C65789|OLAST;FIRST;1234;WQ;3",
+                "C12345|C65789|OFIRST;LAST;1234;WQ;3",
                 (
                     dict(
                         last_name="LAST",
                         first_name="FIRST",
-                        employee_number="1234",
-                        seat="WQ",
-                        seat_order="3",
+                        employee_number="",
+                        seat="ACM",
+                        seat_order="999",
                     ),
                 ),
             ),
