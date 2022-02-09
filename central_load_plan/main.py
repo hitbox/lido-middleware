@@ -38,7 +38,7 @@ class CLPApp:
     ):
         self.source_glob = source_glob
         self.move_to = Path(move_to)
-        self.move_to_on_schema_load_error = Path(move_to_on_schema_load_error)
+        self.move_to_on_schema_load_error = move_to_on_schema_load_error
         self.smtpconf = smtpconf
         self.emailconf = emailconf
         self.dbconf = dbconf
@@ -66,7 +66,7 @@ class CLPApp:
             data = ofpschema.load(strdict)
         except ValidationError:
             if self.move_to_on_schema_load_error is not None:
-                self.move_file(source, self.move_to_on_schema_load_error)
+                self.move_file(source, Path(self.move_to_on_schema_load_error))
             raise
         # crew members
         data['crewmembers'] = crewmember.fromdata(self.dbconf, data).crewmembers
