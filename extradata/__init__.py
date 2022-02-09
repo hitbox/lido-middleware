@@ -18,6 +18,12 @@ class AircraftRegistrationAirlineMapping:
         self.airline = defaultdict(lambda:'ABX')
 
 
+def _or_none(v):
+    """
+    Return the value `v` if truthy or None.
+    """
+    return v if v else None
+
 class AirlineDesignators:
     """
     Access to company/airline designator mappings in both directions.
@@ -29,10 +35,15 @@ class AirlineDesignators:
     def __init__(self):
         path = Path(__file__).parent / 'airline_designators.csv'
         with open(path, newline='') as fp:
-            self.by_company = {k: v if v else None for k, v in csv.reader(fp) if k}
-            self.by_airline = {v: k if k else None for k, v in self.by_company.items() if v}
+            # company -> airline
+            self.by_company = {k: _or_none(v) for k, v in csv.reader(fp) if k}
+            # airline -> company
+            self.by_airline = {v: _or_none(k) for k, v in self.by_company.items() if v}
+            # companies
             self.company_codes = [c for c in self.by_company if c]
+            # airlines
             self.airline_codes = [a for a in self.by_airline if a]
+            # companies + airlines
             self.all_codes = self.company_codes + self.airline_codes
 
     def split_company_or_airline_and_flight_number(self, s):
