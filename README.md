@@ -38,21 +38,22 @@ most recently, `sablev2` is intended as the full implementation.
 
 # CHANGES
 
-  2022-02-08
-  dev/paxdetail/issue1
-  Fix some one and two-digit flights are not processing.
-  Solution: pad flight number to three places with zeros.
+2022-02-08
+dev/paxdetail/issue1
+Fix some one and two-digit flights are not processing.
+Solution: pad flight number to three places with zeros.
+commit: 06ee2f01f3d1f7c036c7a619724dd8311c07e50b
 
-  2022-02-07
-  dev/central_load_plan/handle_other_crewmembers
-  Branch to implement handling O(ther) type persons in the remark field, for
-  central_load_plan.
+2022-02-07
+dev/central_load_plan/handle_other_crewmembers
+Branch to implement handling O(ther) type persons in the remark field, for
+central_load_plan.
 
-  XXXX-XX-XX
-  Other branches I've completely forgotten what are for:
+XXXX-XX-XX
+Other branches I've completely forgotten what are for:
 
-  dev/central_load_plan/emailchanges1
-  dev/central_load_plan/monospace_email
-  dev/central_load_plan/more_readable_emails
-  dev/database
-  stage
+dev/central_load_plan/emailchanges1
+dev/central_load_plan/monospace_email
+dev/central_load_plan/more_readable_emails
+dev/database
+stage
