@@ -59,22 +59,21 @@ class AirlineDesignators:
         elif nmatches > 1:
             raise ExtradataError(
                 'More than one match for airline or company, %r, %r' % (s, matches))
+        # one match, is it the company or airline?
+        match = matches[0]
+        is_company = match in self.company_codes
+        is_airline = match in self.airline_codes
+        if is_company and is_airline:
+            raise ExtradataError(
+                'Code matches both company and airline, %r' % match)
+        data = {'flight_number': s[len(match):]}
+        if is_company:
+            data['company'] = match
+            data['airline_designator'] = self.by_company[match]
         else:
-            # one match, is it the company or airline?
-            match = matches[0]
-            is_company = match in self.company_codes
-            is_airline = match in self.airline_codes
-            if is_company and is_airline:
-                raise ExtradataError(
-                    'Code matches both company and airline, %r' % match)
-            data = {'flight_number': s[len(match):]}
-            if is_company:
-                data['company'] = match
-                data['airline_designator'] = self.by_company[match]
-            else:
-                data['company'] = self.by_airline[match]
-                data['airline_designator'] = match
-            return data
+            data['company'] = self.by_airline[match]
+            data['airline_designator'] = match
+        return data
 
 
 class Stations:
