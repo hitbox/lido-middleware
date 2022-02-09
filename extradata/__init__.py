@@ -3,6 +3,8 @@ import csv
 from collections import defaultdict
 from pathlib import Path
 
+import sqlalchemy as sa
+
 class ExtradataError(Exception):
     pass
 
@@ -132,8 +134,7 @@ class NetlineAircraftRegistrationAirlineMapping:
         self.port = port
         self._airline = None
 
-    def _init_airline(self):
-        import sqlalchemy as sa
+    def _get_engine(self):
         url = sa.engine.url.URL(
             drivername = self.drivername,
             host = self.host,
@@ -142,6 +143,10 @@ class NetlineAircraftRegistrationAirlineMapping:
             database = self.database,
             port = self.port)
         engine = sa.create_engine(url, max_identifier_length=128)
+        return engine
+
+    def _init_airline(self):
+        engine = self._get_engine()
         conn = engine.connect()
         metadata = sa.MetaData()
         # see: NetLine_Crew Core Data Model 2020.2.pdf
