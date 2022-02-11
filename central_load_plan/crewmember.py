@@ -15,6 +15,10 @@ from . import pluck
 from . import schema
 
 class CrewMemberResult:
+    """
+    Simple structure holding crewmembers and metadata so that the web app can
+    display useful info.
+    """
 
     def __init__(self, crewmembers, query, data, engine):
         self.crewmembers = crewmembers
@@ -25,6 +29,28 @@ class CrewMemberResult:
     def __bool__(self):
         return bool(self.crewmembers)
 
+
+def jumpseat_type_and_remaining(substring_between_bars):
+    """
+    Parse substrings in remark for type of seat and the remaining text.
+    """
+    return (substring_between_bars[0], substring_between_bars[1:])
+
+JUMPSEAT_KEYS = ('first_name', 'last_name', 'employee_number', 'seat', 'seat_order')
+
+def parse_for_other(string):
+    """
+    Parse jump seats for type O(ther).
+    """
+    values = string.split(';')
+    if len(values) != len(JUMPSEAT_KEYS):
+        # strict=True not supported
+        raise ValueError('zip args not equal')
+    person_dict = dict(zip(JUMPSEAT_KEYS, values))
+    person_dict['employee_number'] = ''
+    person_dict['seat'] = 'ACM'
+    person_dict['seat_order'] = '999'
+    return person_dict
 
 def fromdata(dbconfig, data):
     """
@@ -53,7 +79,6 @@ def fromdata(dbconfig, data):
     non_crew_member = sa.Table('non_crew_member', metadata, autoload_with=engine)
     duty = sa.Table('duty', metadata, autoload_with=engine)
     item_daily = sa.Table('item_daily', metadata, autoload_with=engine)
-
     remark_of_event = sa.Table('remark_of_event', metadata, autoload_with=engine)
 
     # build query
@@ -122,31 +147,43 @@ def fromdata(dbconfig, data):
 
     # run query and return result
     person_tables = {
+        # (table, field for person id)
         'C': (crew_member, crew_member.c.employee_no),
         'N': (non_crew_member, non_crew_member.c.employee_id),
     }
     with engine.connect() as conn:
+        # add crew members first
         crewmembers = list(map(dict, conn.execute(query_crew)))
-
-        # add jump seat people
+        # add jump seat people substrings
         jumpseats = [
-            (jumpseat_str[0], jumpseat_str[1:])
+            jumpseat_type_and_remaining(jumpseat_str)
             for result in conn.execute(query_jumpseats)
             for jumpseat_str in result.remark.split('|')
         ]
-        for person_type, person_id in jumpseats:
-            table, field = person_tables[person_type]
-            query = sa.select([
-                    sa.func.trim(table.c.name).label('last_name'),
-                    sa.func.trim(table.c.first_name).label('first_name'),
-                    sa.func.trim(field).label('employee_number'),
-                    sa.literal_column("'ACM'", type_=sa.String()).label('seat'),
-                    sa.literal_column('999', type_=sa.Integer()).label('seat_order'),
-                ]).where(
-                    field == person_id
-                )
-            for jumpseat in conn.execute(query):
-                crewmembers.append(jumpseat)
+        # parse substring further for other type or lookup from database for
+        # crew and employees with identification.
+        for person_type, remaining in jumpseats:
+            if person_type not in person_tables:
+                # person_id_or_string is just a string
+                person_string = remaining
+                person = parse_for_other(person_string)
+                crewmembers.append(person)
+            else:
+                # lookup from database
+                person_id = remaining
+                table, field = person_tables[person_type]
+                query = sa.select([
+                        # first/last indexes reversed from O(ther) jump seats
+                        sa.func.trim(table.c.name).label(JUMPSEAT_KEYS[1]), # last_name
+                        sa.func.trim(table.c.first_name).label(JUMPSEAT_KEYS[0]), # first_name
+                        sa.func.trim(field).label(JUMPSEAT_KEYS[2]), # employee_number
+                        sa.literal_column("'ACM'", type_=sa.String()).label(JUMPSEAT_KEYS[3]), # seat
+                        sa.literal_column('999', type_=sa.Integer()).label(JUMPSEAT_KEYS[4]), # seat_order
+                    ]).where(
+                        field == person_id
+                    )
+                for jumpseat in conn.execute(query):
+                    crewmembers.append(jumpseat)
 
         result = CrewMemberResult(crewmembers, query_crew, data, engine)
         return result

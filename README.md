@@ -35,8 +35,11 @@ The directory `sable` was the original, intended Sable to LIDO middleware. The
 `amazon_lsh` directory is another implementation that lacks a few things. And,
 most recently, `sablev2` is intended as the full implementation.
 
-
 # CHANGES
+  
+  2022-02-10
+  Add support for O(ther) type persons in central_load_plan/crewmember.py
+  From branch: dev/central_load_plan/handle_other_crewmembers
 
   2022-02-07
   dev/central_load_plan/handle_other_crewmembers
