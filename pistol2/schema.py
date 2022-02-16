@@ -22,6 +22,7 @@ from extradata import airline_map
 from extradata import stations
 from schema import CommonSchemaMixin
 from schema import PRINT_DATETIME_FORMAT
+from schema import intstr
 from units import VALID_WEIGHT_UNITS
 
 from .regex import company_and_flight_number_re
@@ -154,7 +155,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         data['airline_designator'] = airline_designators.by_company[data['company']]
 
         # military flight numbers
-        flight_number = data['flight_number'].replace('CMBDQ', '00').replace('CMB', '0')
+        flight_number = intstr(data['flight_number'])
         data['flight_number'] = flight_number
 
         if data['flight_number'][-1] in string.ascii_uppercase:
