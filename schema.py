@@ -24,3 +24,16 @@ class CommonSchemaMixin:
     estimated_pax_class_one = Constant(None)
     estimated_pax_class_two = Constant(None)
     estimated_pax_class_three = Constant(None)
+
+
+def intstr(string):
+    """
+    Return `string` with only digits and leading zeros removed. Like an integer
+    but still a string.
+    """
+    # strip non-digits
+    string = ''.join(char for char in string if char.isdigit())
+    # strip leading zeros
+    while string and string[0] == '0':
+        string = string[1:]
+    return string
