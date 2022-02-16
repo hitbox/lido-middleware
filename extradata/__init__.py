@@ -184,6 +184,39 @@ class NetlineAircraftRegistrationAirlineMapping(BaseAirlineMapping):
         return self._airline
 
 
+class ToAddressAirlineMapping:
+    """
+    Map from email to-address to airline code.
+    """
+    toaddress_airline_path = 'extradata/toaddress_airline.csv'
+
+    def __init__(self, toaddress_airline_path=None):
+        toaddress_airline_path = toaddress_airline_path or self.toaddress_airline_path
+        with open(toaddress_airline_path, newline='') as csvfile:
+            self._airlinemapping = list(csv.reader(csvfile))
+
+    def from_toaddresses(self, to_addresses):
+        """
+        Find one match against given email to addresses for an airline code.
+        """
+        matches = []
+        for to_address in to_addresses:
+            for prefix, airline_code in self._airlinemapping:
+                if to_addresses.lower().startswith(prefix):
+                    matches.append(airline_code)
+                    break
+
+        nmatches = len(matches)
+        if nmatches != 1:
+            if nmatches == 0:
+                raise ExtradataError('No airline matches for to addresses')
+            else:
+                raise ExtradataError('More than one match for to addresses')
+
+        return matches[0]
+
+
 aircraftregistration = AircraftRegistrationAirlineMapping()
 airline_designators = AirlineDesignators()
+airline_map = ToAddressAirlineMapping()
 stations = Stations()

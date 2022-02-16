@@ -18,8 +18,8 @@ from marshmallow.validate import Range
 from marshmallow.validate import Regexp
 
 from extradata import airline_designators
+from extradata import airline_map
 from extradata import stations
-from message_to_airlinemap import airline_from_toaddr
 from schema import CommonSchemaMixin
 from schema import PRINT_DATETIME_FORMAT
 from units import VALID_WEIGHT_UNITS
@@ -148,7 +148,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         data['company'] = data['company'][:3]
 
         if data['company'] == 'AMZ':
-            data['company'] = airline_from_toaddr(data['message_to'])
+            data['company'] = airline_map.from_toaddresses(data['message_to'])
 
         # Update airline designator from company value.
         data['airline_designator'] = airline_designators.by_company[data['company']]
