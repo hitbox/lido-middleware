@@ -3,7 +3,6 @@ import string
 from marshmallow import Schema
 from marshmallow import post_load
 from marshmallow import pre_load
-from marshmallow.exceptions import ValidationError
 from marshmallow.fields import Constant
 from marshmallow.fields import DateTime
 from marshmallow.fields import Float
@@ -14,7 +13,6 @@ from marshmallow.fields import String
 from marshmallow.validate import Length
 from marshmallow.validate import OneOf
 
-from extradata import ExtradataError
 from extradata import airline_designators
 from extradata import airline_map
 from schema import CommonSchemaMixin
