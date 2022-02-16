@@ -58,23 +58,31 @@ class AircraftConfigSchema(Schema):
     value = String()
 
 
+def get_prefix(*strings):
+    """
+    Return common prefix of strings.
+    """
+    prefix = ''
+    for chars in zip(*strings):
+        if set(chars) != 1:
+            break
+        prefix += chars[0]
+    return prefix
+
 def merge_or_raise(data, key1, key2):
     """
     Merge key1 and key2 on their common prefix, removing them. Raise if their
     values do not match.
 
     :param data: data to work on.
-    :param keys: positional args of keys with a common prefix.
+    :param key1: positional args of keys with a common prefix.
+    :param key2: ...
     """
-    prefix = ''
-    for char1, char2 in zip(key1, key2):
-        if char1 != char2:
-            break
-        prefix += char1
-    if prefix == '':
-        raise ValidationError('prefix not found for keys, %r', [key1, key2])
     if data[key1] != data[key2]:
         raise ValidationError('values do not match for merge into key %s' % prefix)
+    prefix = get_prefix(key1, key2)
+    if prefix == '':
+        raise ValidationError('prefix not found for keys, %r', [key1, key2])
     data[prefix] = data[key1]
     del data[key1]
     del data[key2]
