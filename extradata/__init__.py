@@ -1,7 +1,10 @@
+import abc
 import csv
 
 from collections import defaultdict
 from pathlib import Path
+
+import sqlalchemy as sa
 
 class ExtradataError(Exception):
     pass
@@ -18,6 +21,12 @@ class AircraftRegistrationAirlineMapping:
         self.airline = defaultdict(lambda:'ABX')
 
 
+def _or_none(v):
+    """
+    Return the value `v` if truthy or None.
+    """
+    return v if v else None
+
 class AirlineDesignators:
     """
     Access to company/airline designator mappings in both directions.
@@ -29,10 +38,15 @@ class AirlineDesignators:
     def __init__(self):
         path = Path(__file__).parent / 'airline_designators.csv'
         with open(path, newline='') as fp:
-            self.by_company = {k: v if v else None for k, v in csv.reader(fp) if k}
-            self.by_airline = {v: k if k else None for k, v in self.by_company.items() if v}
+            # company -> airline
+            self.by_company = {k: _or_none(v) for k, v in csv.reader(fp) if k}
+            # airline -> company
+            self.by_airline = {v: _or_none(k) for k, v in self.by_company.items() if v}
+            # companies
             self.company_codes = [c for c in self.by_company if c]
+            # airlines
             self.airline_codes = [a for a in self.by_airline if a]
+            # companies + airlines
             self.all_codes = self.company_codes + self.airline_codes
 
     def split_company_or_airline_and_flight_number(self, s):
@@ -48,22 +62,21 @@ class AirlineDesignators:
         elif nmatches > 1:
             raise ExtradataError(
                 'More than one match for airline or company, %r, %r' % (s, matches))
+        # one match, is it the company or airline?
+        match = matches[0]
+        is_company = match in self.company_codes
+        is_airline = match in self.airline_codes
+        if is_company and is_airline:
+            raise ExtradataError(
+                'Code matches both company and airline, %r' % match)
+        data = {'flight_number': s[len(match):]}
+        if is_company:
+            data['company'] = match
+            data['airline_designator'] = self.by_company[match]
         else:
-            # one match, is it the company or airline?
-            match = matches[0]
-            is_company = match in self.company_codes
-            is_airline = match in self.airline_codes
-            if is_company and is_airline:
-                raise ExtradataError(
-                    'Code matches both company and airline, %r' % match)
-            data = {'flight_number': s[len(match):]}
-            if is_company:
-                data['company'] = match
-                data['airline_designator'] = self.by_company[match]
-            else:
-                data['company'] = self.by_airline[match]
-                data['airline_designator'] = match
-            return data
+            data['company'] = self.by_airline[match]
+            data['airline_designator'] = match
+        return data
 
 
 class Stations:
@@ -108,7 +121,27 @@ class Stations:
             return {'iata': self.icao2iata[station], 'icao': station}
 
 
-class NetlineAircraftRegistrationAirlineMapping:
+class BaseAirlineMapping(abc.ABC):
+
+    @property
+    @abc.abstractmethod
+    def airline(self):
+        """
+        A mapping of aircraft registration to the operator.
+        """
+
+
+class ConstantAirlineMapping(BaseAirlineMapping):
+
+    def __init__(self, operator):
+        self._airline = defaultdict(lambda: operator)
+
+    @property
+    def airline(self):
+        return self._airline
+
+
+class NetlineAircraftRegistrationAirlineMapping(BaseAirlineMapping):
     """
     Get aircraft registration from Netline database
     """
@@ -122,8 +155,7 @@ class NetlineAircraftRegistrationAirlineMapping:
         self.port = port
         self._airline = None
 
-    def _init_airline(self):
-        import sqlalchemy as sa
+    def _get_engine(self):
         url = sa.engine.url.URL(
             drivername = self.drivername,
             host = self.host,
@@ -132,6 +164,10 @@ class NetlineAircraftRegistrationAirlineMapping:
             database = self.database,
             port = self.port)
         engine = sa.create_engine(url, max_identifier_length=128)
+        return engine
+
+    def _init_airline(self):
+        engine = self._get_engine()
         conn = engine.connect()
         metadata = sa.MetaData()
         # see: NetLine_Crew Core Data Model 2020.2.pdf
@@ -148,6 +184,39 @@ class NetlineAircraftRegistrationAirlineMapping:
         return self._airline
 
 
+class ToAddressAirlineMapping:
+    """
+    Map from email to-address to airline code.
+    """
+    toaddress_airline_path = 'extradata/toaddress_airline.csv'
+
+    def __init__(self, toaddress_airline_path=None):
+        toaddress_airline_path = toaddress_airline_path or self.toaddress_airline_path
+        with open(toaddress_airline_path, newline='') as csvfile:
+            self._airlinemapping = list(csv.reader(csvfile))
+
+    def from_toaddresses(self, to_addresses):
+        """
+        Find one match against given email to addresses for an airline code.
+        """
+        matches = []
+        for to_address in to_addresses:
+            for prefix, airline_code in self._airlinemapping:
+                if to_addresses.lower().startswith(prefix):
+                    matches.append(airline_code)
+                    break
+
+        nmatches = len(matches)
+        if nmatches != 1:
+            if nmatches == 0:
+                raise ExtradataError('No airline matches for to addresses')
+            else:
+                raise ExtradataError('More than one match for to addresses')
+
+        return matches[0]
+
+
 aircraftregistration = AircraftRegistrationAirlineMapping()
 airline_designators = AirlineDesignators()
+airline_map = ToAddressAirlineMapping()
 stations = Stations()

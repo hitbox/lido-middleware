@@ -3,7 +3,6 @@ import string
 from marshmallow import Schema
 from marshmallow import post_load
 from marshmallow import pre_load
-from marshmallow.exceptions import ValidationError
 from marshmallow.fields import Constant
 from marshmallow.fields import DateTime
 from marshmallow.fields import Float
@@ -14,10 +13,8 @@ from marshmallow.fields import String
 from marshmallow.validate import Length
 from marshmallow.validate import OneOf
 
-from .message_to_airlinemap import airline_from_toaddr
-
-from extradata import ExtradataError
 from extradata import airline_designators
+from extradata import airline_map
 from schema import CommonSchemaMixin
 from schema import PRINT_DATETIME_FORMAT
 from units import VALID_WEIGHT_UNITS
@@ -49,7 +46,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
 
         # resolve AMZ (Amazon) using email to addresses
         if airline_company['company'] == 'AMZ':
-            company = airline_from_toaddr(data['message_to'])
+            company = airline_map.from_toaddresses(data['message_to'])
             airline_company['airline_designator'] = company
         del data['message_to']
 

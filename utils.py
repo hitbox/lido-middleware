@@ -21,11 +21,39 @@ def cleanlines(s):
     """
     return '\n'.join(s.splitlines())
 
+def getnumkeys(mapping, prefix):
+    """
+    Return list of keys in mapping that are exactly the prefix or the prefix
+    plus numbers.
+    """
+    values = []
+    if prefix in mapping:
+        values.append(mapping[prefix])
+    for key in mapping:
+        if (key.startswith(prefix)
+            and key[len(prefix):].isdigit()
+        ):
+            values.append(mapping[key])
+    return values
+
 def hide(s, char='*'):
     """
     Hide/mask characters of string.
     """
     return ''.join(char for c in s)
+
+def printexcept(func):
+    """
+    Decorate function printing any exceptions.
+    """
+    import functools
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(e)
+    return wrapper
 
 def sliding_match(substr, text):
     """
@@ -44,3 +72,20 @@ def sliding_match(substr, text):
         if i + len(substr) >= len(text):
             break
     return best_index
+
+def startfile(filepath):
+    """
+    Open a file with default application.
+    """
+    import os
+    import platform
+    import subprocess
+    if platform.system() == 'Darwin':
+        # macOS
+        subprocess.call(('open', filepath))
+    elif platform.system() == 'Windows':
+        # Windows
+        os.startfile(filepath)
+    else:
+        # linux variants
+        subprocess.call(('xdg-open', filepath))

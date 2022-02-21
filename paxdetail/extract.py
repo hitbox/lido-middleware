@@ -2,6 +2,9 @@ import sable2.extract
 import pistol2.extract
 
 class Extract:
+    """
+    Handle extracting data from message for sable or pistol via from address.
+    """
 
     def __init__(self, sable_from, pistol_from):
         self.sable_from = sable_from
@@ -11,7 +14,6 @@ class Extract:
         """
         delegate extract to sable2, pistol2, etc.
         """
-
         from_ = message.from_.lower()
 
         if from_ in self.sable_from:

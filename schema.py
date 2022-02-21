@@ -1,3 +1,5 @@
+import re
+
 from marshmallow.fields import Constant
 from marshmallow.fields import Float
 from marshmallow.fields import Integer
@@ -24,3 +26,30 @@ class CommonSchemaMixin:
     estimated_pax_class_one = Constant(None)
     estimated_pax_class_two = Constant(None)
     estimated_pax_class_three = Constant(None)
+
+
+def only_digits(string):
+    """
+    Return `string` with only digits and leading zeros removed. Like an integer
+    but still a string.
+    """
+    # strip non-digits
+    string = ''.join(char for char in string if char.isdigit())
+    # strip leading zeros
+    while string and string[0] == '0':
+        string = string[1:]
+    return string
+
+mid_digits_re = re.compile('^\D*(\d+)(\D|$)')
+
+def mid_digits(string):
+    """
+    Return inner digits, ignoring trailing digits and alpha chars. Strip
+    leading zeros.
+    """
+    result = ''
+    match = mid_digits_re.match(string)
+    if match:
+        result = match.group(1)
+        result = result.lstrip('0')
+    return result

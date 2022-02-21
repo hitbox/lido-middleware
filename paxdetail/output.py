@@ -19,7 +19,7 @@ class PAXDetailOutput:
                 <legId>
                     <flight>
                         <fnCarrier>{{ airline_designator }}</fnCarrier>
-                        <fnNumber>{{ flight_number }}</fnNumber>
+                        <fnNumber>{{ '{:0>3}'.format(flight_number) }}</fnNumber>
                     </flight>
                     <dayOfOrigin>{{ print_time_gmt.strftime('%Y-%m-%d') }}</dayOfOrigin>
                     <depApSched>{{ origin_iata }}</depApSched>

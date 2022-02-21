@@ -13,6 +13,9 @@ class TestAircraftRegistrationAirlineMapping(unittest.TestCase):
 
 
 class TestAirlineDesignators(unittest.TestCase):
+    """
+    AirlineDesignators tests
+    """
 
     def test_by_company(self):
         self.assertEqual(airline_designators.by_company['ABX'], 'GB')
@@ -22,24 +25,25 @@ class TestAirlineDesignators(unittest.TestCase):
         self.assertEqual(airline_designators.by_airline['GB'], 'ABX')
 
     def test_split_company_or_airline_and_flight_number(self):
-        _f = airline_designators.split_company_or_airline_and_flight_number
-        # company -> code
-        self.assertEqual(
-            _f('ABX1234'),
-            {'company': 'ABX', 'airline_designator': 'GB', 'flight_number': '1234'})
-        # code -> company
-        self.assertEqual(
-            _f('GB1234'),
-            {'company': 'ABX', 'airline_designator': 'GB', 'flight_number': '1234'})
-        #
-        self.assertEqual(
-            _f('AMZ8888'),
-            {'company': 'AMZ', 'airline_designator': None, 'flight_number': '8888'})
+        # shorten name
+        stringsplit = airline_designators.split_company_or_airline_and_flight_number
+        # company -> airline code
+        a = stringsplit('ABX1234')
+        b = {'company': 'ABX', 'airline_designator': 'GB', 'flight_number': '1234'}
+        self.assertEqual(a, b)
+        # airline code -> company
+        a = stringsplit('GB1234')
+        b = {'company': 'ABX', 'airline_designator': 'GB', 'flight_number': '1234'}
+        self.assertEqual(a, b)
+        # AMZ -> None
+        a = stringsplit('AMZ8888')
+        b = {'company': 'AMZ', 'airline_designator': None, 'flight_number': '8888'}
+        self.assertEqual(a, b)
         # not exists
         with self.assertRaises(ExtradataError):
-            self.assertEqual(
-                _f('NOPE1234'),
-                {'company': 'ABX', 'airline_designator': 'GB', 'flight_number': '1234'})
+            a = stringsplit('NOPE1234')
+            b = {'company': 'ABX', 'airline_designator': 'GB', 'flight_number': '1234'}
+            self.assertEqual(a, b)
 
 
 class TestStations(unittest.TestCase):

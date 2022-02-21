@@ -64,8 +64,11 @@ def from_text(text):
     return sable_data
 
 def loadplan_from_message(message):
-    first = message.attachments[0]
-    text = first.payload.decode('utf8', 'ignore')
+    """
+    Sable data from email message, partially deserialized.
+    """
+    first_attached = message.attachments[0]
+    text = first_attached.payload.decode('utf8', 'ignore')
     data = from_text(text)
     data['message_date'] = message.date.strftime(PRINT_DATETIME_FORMAT)
     data['message_to'] = message.to

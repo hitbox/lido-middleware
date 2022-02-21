@@ -68,14 +68,30 @@ class GlobSource(Source):
             yield fn
 
     def itermessages(self):
-        import os
         import datetime
+        import os
         for fn in self.iterfilenames():
             with open(fn) as fp:
                 stat = os.stat(fn)
                 date = datetime.datetime.fromtimestamp(stat.st_mtime)
                 fakemsg = FakeMessage(fn, date, fp.read())
                 yield fakemsg
+
+
+class PickleSource(Source):
+    """
+    Email messages from pickle file that is simply a list of email messages.
+    """
+
+    def __init__(self, pathname):
+        self.pathname = pathname
+
+    def itermessages(self):
+        import pickle
+        with open(self.pathname, 'rb') as pickle_fp:
+            messages = pickle.load(pickle_fp)
+            for msg in messages:
+                yield msg
 
 
 class PickleGlobSource(GlobSource):
@@ -141,9 +157,6 @@ class PassMessageFilter(MessageFilter):
     """
     Always true message filter.
     """
-
-    def __init__(self, archive):
-        pass
 
     def filter(self, message):
         """
@@ -243,9 +256,6 @@ class PassMessageArchive(MessageArchive):
     """
     Empty do-nothing archiver to meet spec.
     """
-
-    def __init__(self, archive):
-        pass
 
     def save(self, message):
         pass
