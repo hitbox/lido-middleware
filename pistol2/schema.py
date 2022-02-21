@@ -31,7 +31,11 @@ from .regex import company_and_flight_number_re
 from .regex import valid_config_name_pattern
 from .regex import valid_weight_name_pattern
 
-_max_six_digits = 999_999
+MAXSIXDIGITS = 999_999
+
+class FlightNumberError(ValidationError):
+    pass
+
 
 class WeightSchema(Schema):
     """
@@ -61,35 +65,6 @@ class AircraftConfigSchema(Schema):
     value = String()
 
 
-def get_prefix(*strings):
-    """
-    Return common prefix of strings.
-    """
-    prefix = ''
-    for chars in zip(*strings):
-        if set(chars) != 1:
-            break
-        prefix += chars[0]
-    return prefix
-
-def merge_or_raise(data, key1, key2):
-    """
-    Merge key1 and key2 on their common prefix, removing them. Raise if their
-    values do not match.
-
-    :param data: data to work on.
-    :param key1: positional args of keys with a common prefix.
-    :param key2: ...
-    """
-    if data[key1] != data[key2]:
-        raise ValidationError('values do not match for merge into key %s' % prefix)
-    prefix = get_prefix(key1, key2)
-    if prefix == '':
-        raise ValidationError('prefix not found for keys, %r', [key1, key2])
-    data[prefix] = data[key1]
-    del data[key1]
-    del data[key2]
-
 class LoadPlanSchema(CommonSchemaMixin, Schema):
     """
     Pistol Load Plan Schema
@@ -97,6 +72,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
 
     @pre_load
     def pre_load(self, data, **kwargs):
+        # merge keys that ought to the same values into one
         merge_or_raise(data, 'aircraft_registration1', 'aircraft_registration2')
         merge_or_raise(data, 'day1', 'day2')
         merge_or_raise(data, 'company_and_flight_number1', 'company_and_flight_number2')
@@ -139,32 +115,11 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         data['revenue_weight'] = _find(data['aircraft_configurations'], 'Revenue Wt', 'value')
         data['cargo_weight'] = data['revenue_weight']
 
-        # split company and flight number
-        match = company_and_flight_number_re.match(data['company_and_flight_number'])
-        if not match:
-            raise ValidationError(
-                'Unable to split company and flight number in %r',
-                data['company_and_flight_number'])
-        data.update(match.groupdict())
-        del data['company_and_flight_number']
-
-        data['company'] = data['company'][:3]
-
-        if data['company'] == 'AMZ':
-            data['company'] = airline_map.from_toaddresses(data['message_to'])
-
-        # Update airline designator from company value.
-        data['airline_designator'] = airline_designators.by_company[data['company']]
-
-        # military flight numbers
-        flight_number = intstr(data['flight_number'])
-        data['flight_number'] = flight_number
-
-        if data['flight_number'][-1] in string.ascii_uppercase:
-            # optional operational_suffix is present at end of flight_number,
-            # strip it off and put it where it belongs
-            data['operational_suffix'] = data['flight_number'][-1]
-            data['flight_number'] = data['flight_number'][:-1]
+        # company, flight_number and airline_desinator processing; and
+        # optionally operational_suffix
+        company_and_flight_number = data['company_and_flight_number']
+        message_to = data['message_to']
+        dict_for_company_and_flight_number(company_and_flight_number, message_to)
 
         return data
 
@@ -175,6 +130,12 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     estimated_total_traffic_load = Integer()
     payload = Integer()
     uld_count = Integer()
+
+    # saving some of the original pre-processed or differently processed values
+    company_and_flight_number = String()
+    flight_number_master = String()
+    flight_number_between = String()
+    flight_number_onlydigit = String()
 
     load_planner = String()
     company = String()
@@ -202,10 +163,10 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     weights = List(Nested(WeightSchema))
     aircraft_configurations = List(Nested(AircraftConfigSchema))
 
-    actual_takeoff_fuel = Integer(missing=0, validate=Range(max=_max_six_digits))
-    actual_zero_fuel_weight = Integer(missing=0, validate=Range(max=_max_six_digits))
+    actual_takeoff_fuel = Integer(missing=0, validate=Range(max=MAXSIXDIGITS))
+    actual_zero_fuel_weight = Integer(missing=0, validate=Range(max=MAXSIXDIGITS))
     center_of_gravity = Float(data_key='cg_percent_mac', missing=None)
-    dry_operating_weight = Integer(validate=Range(max=_max_six_digits))
+    dry_operating_weight = Integer(validate=Range(max=MAXSIXDIGITS))
     cargo_weight = Integer()
     revenue_weight = Integer()
     cargo_weight_for_estimated_total_traffic_load = Integer()
@@ -224,6 +185,8 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         else:
             if data['souls_onboard'] > 1:
                 # what is ACM?
+                # perhaps: Additional Crew Member
+                # https://www.allacronyms.com/ACM/Additional_Crew_Member
                 acm = data['souls_onboard'] - 2
             else:
                 acm = 0
@@ -287,11 +250,14 @@ def dict_for_flight_number(flight_number):
     """
     result = {}
 
-    result['flight_number'] = military_flight_number(flight_number)
-    result['flight_number_master'] = result['flight_number']
-
+    # the previous strategy for flight number, before `mid_digits`:
+    result['flight_number_master'] = military_flight_number(flight_number)
+    # unused because inadequate:
     result['flight_number_onlydigit'] = only_digits(flight_number)
+    # most promising, using now:
     result['flight_number_between'] = mid_digits(flight_number)
+    # the real flight number key:
+    result['flight_number'] = result['flight_number_between']
 
     if flight_number and flight_number[-1] in string.ascii_uppercase:
         # optional operational_suffix is present at end of flight_number,
