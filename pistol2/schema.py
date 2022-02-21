@@ -119,7 +119,8 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         # optionally operational_suffix
         company_and_flight_number = data['company_and_flight_number']
         message_to = data['message_to']
-        dict_for_company_and_flight_number(company_and_flight_number, message_to)
+        moredata = dict_for_company_and_flight_number(company_and_flight_number, message_to)
+        data.update(moredata)
 
         return data
 
