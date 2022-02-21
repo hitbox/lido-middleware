@@ -202,7 +202,7 @@ class ToAddressAirlineMapping:
         matches = []
         for to_address in to_addresses:
             for prefix, airline_code in self._airlinemapping:
-                if to_addresses.lower().startswith(prefix):
+                if to_address.lower().startswith(prefix):
                     matches.append(airline_code)
                     break
 
