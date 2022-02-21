@@ -29,6 +29,14 @@ Branch: dev/paxdetail/issue1
 Fix some one and two-digit flights are not processing.
 Solution: pad flight number to three places with zeros.
 commit: 06ee2f01f3d1f7c036c7a619724dd8311c07e50b
+Notes: Padding the flight numbers led to revealing a problem with pulling the
+       flight number from that jammed together string, at the top of pistol
+       email messages. Downloaded the pistol emails inbox and processed ever
+       message with a new flight number extractor that looks for numbers
+       between letters and ignores leading zeros. See schema.py:45. Also
+       schema.py:31 that was an earlier attempt that  just pulls all digits and
+       ignores leading zeros. The `report` module was used to generate an Excel
+       file demonstrating these methods.
 
 2022-02-07
 dev/central_load_plan/handle_other_crewmembers
