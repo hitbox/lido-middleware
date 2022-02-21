@@ -22,7 +22,7 @@ from extradata import airline_map
 from extradata import stations
 from schema import CommonSchemaMixin
 from schema import PRINT_DATETIME_FORMAT
-from schema import intstr
+from units import US_STANDARD_UNITS
 from units import VALID_WEIGHT_UNITS
 
 from .regex import company_and_flight_number_re
@@ -230,7 +230,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         data['estimated_total_traffic_load'] = estimated_total_traffic_load
 
         fac = 2.20462
-        if data['all_weights_unit'] in ('LB', '#'):
+        if data['all_weights_unit'] in US_STANDARD_UNITS:
             data['payload_kg'] = data['payload'] / fac
             data['revenue_weight_kg'] = data['revenue_weight'] / fac
         else:
