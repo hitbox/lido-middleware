@@ -22,6 +22,8 @@ from extradata import airline_map
 from extradata import stations
 from schema import CommonSchemaMixin
 from schema import PRINT_DATETIME_FORMAT
+from schema import mid_digits
+from schema import only_digits
 from units import US_STANDARD_UNITS
 from units import VALID_WEIGHT_UNITS
 
@@ -239,6 +241,115 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
 
         return data
 
+
+def get_prefix(*strings):
+    """
+    Return common prefix of strings.
+    """
+    prefix = ''
+    for chars in zip(*strings):
+        if len(set(chars)) != 1:
+            break
+        prefix += chars[0]
+    return prefix
+
+def merge_or_raise(data, key1, key2):
+    """
+    Merge key1 and key2 on their common prefix, removing them. Raise if their
+    values do not match.
+
+    :param data: data to work on.
+    :param key1: positional args of keys with a common prefix.
+    :param key2: ...
+    """
+    if key1 not in data:
+        raise ValidationError(f'key {key1!r} not in data')
+    if key2 not in data:
+        raise ValidationError(f'key {key2!r} not in data')
+    if data[key1] != data[key2]:
+        raise ValidationError('values do not match for merge into key %s' % prefix)
+    prefix = get_prefix(key1, key2)
+    if prefix == '':
+        raise ValidationError('prefix not found for keys, %r', [key1, key2])
+    data[prefix] = data[key1]
+    del data[key1]
+    del data[key2]
+
+def military_flight_number(flight_number):
+    """
+    Replace CMBDQ with 00 and CMB with 0.
+    """
+    return flight_number.replace('CMBDQ', '00').replace('CMB', '0')
+
+def dict_for_flight_number(flight_number):
+    """
+    Process flight_number string return a dict of parsed out data.
+    """
+    result = {}
+
+    result['flight_number'] = military_flight_number(flight_number)
+    result['flight_number_master'] = result['flight_number']
+
+    result['flight_number_onlydigit'] = only_digits(flight_number)
+    result['flight_number_between'] = mid_digits(flight_number)
+
+    if flight_number and flight_number[-1] in string.ascii_uppercase:
+        # optional operational_suffix is present at end of flight_number,
+        # strip it off and put it where it belongs
+        result['operational_suffix'] = flight_number[-1]
+        result['flight_number'] = flight_number[:-1]
+
+    return result
+
+def dict_for_company(company, to_addresses):
+    result = {}
+    # keep first three characters of company
+    result['company'] = company[:3]
+
+    # look up company from to-addresses
+    if result['company'] == 'AMZ':
+        result['company'] = airline_map.from_toaddresses(result['message_to'])
+
+    # Update airline designator from company value.
+    result['airline_designator'] = airline_designators.by_company[result['company']]
+    return result
+
+def dict_for_company_and_flight_number(
+    company_and_flight_number,
+    to_addresses = None,
+):
+    """
+    Process string creating company, flight_number, airline_designator, and
+    optionally, operational_suffix values.
+
+    :param company_and_flight_number:
+    :param to_addresses: optional iterable of to-addresses for resolving
+        company value in some cases.
+    """
+    if to_addresses is None:
+        to_addresses = []
+    result = {}
+
+    # split company and flight number adding the two keys
+    match = company_and_flight_number_re.match(company_and_flight_number)
+    if not match:
+        raise FlightNumberError(
+            'Unable to split company and flight number in %r',
+            company_and_flight_number)
+    match_dict = match.groupdict()
+    result.update(
+        company = match_dict['company'],
+        flight_number = match_dict['flight_number'],
+    )
+
+    data = dict_for_company(result['company'], to_addresses)
+    result.update(data)
+
+    # updates from flight number
+    data = dict_for_flight_number(result['flight_number'])
+    result.update(data)
+
+    return result
 
 def main(argv=None):
     """
