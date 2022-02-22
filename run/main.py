@@ -18,6 +18,10 @@ def main(argv=None):
         '--shell',
         action='store_true',
         help='Interactive shell after configured.')
+    parser.add_argument(
+        '--raise-exc',
+        action = 'store_true',
+        help = 'Raise instead of logging exceptions.')
     args = parser.parse_args(argv)
 
     # do logging in config or this takes over
@@ -30,6 +34,8 @@ def main(argv=None):
         code.interact(local=conf)
     else:
         try:
-            run(conf)
+            run(conf, raise_exc=args.raise_exc)
         except:
+            if args.raise_exc:
+                raise
             logger.exception('An exception occurred')

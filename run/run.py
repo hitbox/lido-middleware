@@ -7,7 +7,7 @@ from lido import LIDOWeightBalanceMessage
 
 from .exceptions import ExtractError
 
-def run(config):
+def run(config, raise_exc=False):
     """
     A single run--download, filter, process and write (file) for the LIDO
     messaging system to consume.
@@ -28,6 +28,7 @@ def run(config):
     output = config['OUTPUT']
     message_archive = config['MESSAGE_ARCHIVE']
     message_class = config.get('MESSAGE_CLASS', LIDOWeightBalanceMessage)
+    raise_exc = config.get('RAISE_EXC', raise_exc)
 
     # format for how messages get logged, nothing to do with processing or extracting.
     message_fmt = '{0.date:%Y-%m-%d %H:%M:%S} {0.subject!r}'.format
@@ -42,11 +43,15 @@ def run(config):
         try:
             extract_data = message_processor(message)
         except ExtractError as e:
+            if raise_exc:
+                raise
             logger.exception(e)
         else:
             try:
                 loadplan = schema.load(extract_data)
             except MarshmallowError as error:
+                if raise_exc:
+                    raise
                 # Prettier line-based output for marshmallow.ValidationError
                 # exceptions, with the data that failed.
                 # Print the original in case the prettier output loses something.
@@ -61,6 +66,8 @@ def run(config):
                         for errmsg in error_messages:
                             logger.error(errmsg)
             except ExtradataError:
+                if raise_exc:
+                    raise
                 logger.exception('An exception occurred')
             else:
                 logger.debug('loadplan loaded from schema')
