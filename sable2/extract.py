@@ -67,6 +67,8 @@ def loadplan_from_message(message):
     """
     Sable data from email message, partially deserialized.
     """
+    # NOTE: some of these are failing and could fallback on the message subject
+    # line for the company. maybe other things too.
     first_attached = message.attachments[0]
     text = first_attached.payload.decode('utf8', 'ignore')
     data = from_text(text)
