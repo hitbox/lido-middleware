@@ -28,6 +28,7 @@ pistol_metadata_re = re.compile(
 space_run = re.compile(' +')
 
 destination_iata_or_icao_pattern = '[A-Z]{3,4}'
+destination_iata_or_icao_re = re.compile(destination_iata_or_icao_pattern)
 
 ad_line_re = re.compile(
      '^AD'
