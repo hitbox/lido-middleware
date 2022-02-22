@@ -89,11 +89,10 @@ def dict_for_flight_number(flight_number):
     # parse flight number using the between strategy
     result['flight_number'] = mid_digits(flight_number)
 
-    if flight_number and flight_number[-1] in string.ascii_uppercase:
+    if flight_number and flight_number.endswith(tuple(string.ascii_uppercase)):
         # optional operational_suffix is present at end of flight_number,
         # strip it off and put it where it belongs
         result['operational_suffix'] = flight_number[-1]
-        result['flight_number'] = flight_number[:-1]
 
     return result
 
