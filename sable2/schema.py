@@ -18,7 +18,6 @@ from extradata import airline_designators
 from extradata import airline_map
 from schema import CommonSchemaMixin
 from schema import PRINT_DATETIME_FORMAT
-from schema import dict_for_company_and_flight_number
 from schema import dict_for_flight_number
 from schema import resolve_company_from_email
 from units import VALID_WEIGHT_UNITS

@@ -15,6 +15,7 @@ from extradata import airline_designators
 from extradata import airline_map
 
 PRINT_DATETIME_FORMAT = '%m/%d/%y %H%M'
+YN = 'YN'
 
 # split the company and flight number apart with regex
 # NOTE: keep longest company strings at front of capture
@@ -30,9 +31,9 @@ class CommonSchemaMixin:
     duplicate_number = Constant('1', validate=Length(max=1))
     revision_number = Constant('00', validate=Length(max=2))
     operational_suffix = Constant(' ', validate=Length(max=1))
-    pax_baggage_indicator = Constant('Y', validate=OneOf('YN'))
-    cargo_mail_indicator = Constant('Y', validate=OneOf('YN'))
-    transit_load_indicator = Constant('Y', validate=OneOf('YN'))
+    pax_baggage_indicator = Constant('Y', validate=OneOf(YN))
+    cargo_mail_indicator = Constant('Y', validate=OneOf(YN))
+    transit_load_indicator = Constant('Y', validate=OneOf(YN))
     tail_tank_indicator = Constant(' ', validate=Length(max=1))
     estimated_pax = Constant(0)
     dry_operating_index = Constant(None)
