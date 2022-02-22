@@ -108,8 +108,3 @@ other_weight_line_re = re.compile(
     '^(?P<name>%s) +(?P<weight>\d+)'
     '($|\ +)' # either the end of the string or some spaces
     % valid_other_weight_names_pattern)
-
-# split the company and flight number apart with regex
-# NOTE: keep longest company strings at front of capture
-company_and_flight_number_re = re.compile(
-    '^(?P<company>ATIATN|ABXABX|ATI8C|ABX|ATI|ATN|AMZ)(?P<flight_number>\S+)')

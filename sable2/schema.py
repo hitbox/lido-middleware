@@ -12,12 +12,18 @@ from marshmallow.fields import Nested
 from marshmallow.fields import String
 from marshmallow.validate import Length
 from marshmallow.validate import OneOf
+from marshmallow.validate import Range
 
 from extradata import airline_designators
 from extradata import airline_map
 from schema import CommonSchemaMixin
 from schema import PRINT_DATETIME_FORMAT
+from schema import dict_for_company_and_flight_number
+from schema import dict_for_flight_number
+from schema import resolve_company_from_email
 from units import VALID_WEIGHT_UNITS
+
+MAXFIVEDIGITS = 99_999
 
 class Position(Schema):
 
@@ -44,23 +50,16 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
         airline_company = airline_designators.split_company_or_airline_and_flight_number(
                 company_or_airline_and_flight_number)
 
-        # resolve AMZ (Amazon) using email to addresses
-        if airline_company['company'] == 'AMZ':
-            company = airline_map.from_toaddresses(data['message_to'])
-            airline_company['airline_designator'] = company
-        del data['message_to']
-
+        airline_company['company'] = resolve_company_from_email(
+            airline_company['company'], data['message_to'])
         data.update(airline_company)
-        del data['airline_and_flight_number']
 
-        if data['flight_number'] and data['flight_number'][-1] in string.ascii_uppercase:
-            # optional operational_suffix is present at end of flight_number,
-            # strip it off and put it where it belongs
-            data['operational_suffix'] = data['flight_number'][-1]
-            data['flight_number'] = data['flight_number'][:-1]
+        # further processing of flight_number and, optionally, operational_suffix
+        # dict_for_company_and_flight_number is not used because it parses
+        # flight_number with a regex that does not work for sable
+        data.update(dict_for_flight_number(data['flight_number']))
 
         data['cargo_weight'] = data['net_weight']
-
         # uld count
         if 'uld_count' not in data:
             data['uld_count'] = sum(1 for row in data['positions']
@@ -71,7 +70,7 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     planning_status = Constant('55', validate=Length(max=2))
 
     payload = Integer()
-    flight_number = String(required=True)
+    flight_number = Integer(validate=Range(max=MAXFIVEDIGITS))
     company = String(required=True)
     airline_designator = String(required=True, validate=Length(max=3))
     day = Integer(required=True)
@@ -79,6 +78,9 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     origin_iata = String(required=True, validate=Length(max=3))
     destination_iata = String(required=True, validate=Length(max=3))
     operational_suffix = String(missing='', validate=OneOf(string.ascii_uppercase))
+
+    # unused
+    airline_and_flight_number = String()
 
     net_weight = Integer()
     uld_count = Integer()
@@ -101,6 +103,10 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     positions = List(Nested(Position))
 
     gross_weight = Integer(data_key='gross')
+
+    # to addresses from email:
+    message_to = List(String())
+    message_from = String()
 
     @post_load
     def post_load(self, data, **kwargs):

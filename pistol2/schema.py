@@ -22,20 +22,16 @@ from extradata import airline_map
 from extradata import stations
 from schema import CommonSchemaMixin
 from schema import PRINT_DATETIME_FORMAT
+from schema import dict_for_company_and_flight_number
 from schema import mid_digits
-from schema import only_digits
 from units import US_STANDARD_UNITS
 from units import VALID_WEIGHT_UNITS
 
-from .regex import company_and_flight_number_re
 from .regex import valid_config_name_pattern
 from .regex import valid_weight_name_pattern
 
+MAXFIVEDIGITS = 99_999
 MAXSIXDIGITS = 999_999
-
-class FlightNumberError(ValidationError):
-    pass
-
 
 class WeightSchema(Schema):
     """
@@ -132,16 +128,13 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
     payload = Integer()
     uld_count = Integer()
 
-    # saving some of the original pre-processed or differently processed values
+    # unused
     company_and_flight_number = String()
-    flight_number_master = String()
-    flight_number_between = String()
-    flight_number_onlydigit = String()
 
     load_planner = String()
     company = String()
     airline_designator = String(validate=Length(max=3))
-    flight_number = String(validate=Length(max=5))
+    flight_number = Integer(validate=Range(max=MAXFIVEDIGITS))
     operational_suffix = String(missing='', validate=OneOf(string.ascii_uppercase))
     aircraft_registration = String()
     actual_departure_time = Time(allow_none=True, format='%H%M')
@@ -238,105 +231,3 @@ def merge_or_raise(data, key1, key2):
     data[prefix] = data[key1]
     del data[key1]
     del data[key2]
-
-def military_flight_number(flight_number):
-    """
-    Replace CMBDQ with 00 and CMB with 0.
-    """
-    return flight_number.replace('CMBDQ', '00').replace('CMB', '0')
-
-def dict_for_flight_number(flight_number):
-    """
-    Process flight_number string return a dict of parsed out data.
-    """
-    result = {}
-
-    # the previous strategy for flight number, before `mid_digits`:
-    result['flight_number_master'] = military_flight_number(flight_number)
-    # unused because inadequate:
-    result['flight_number_onlydigit'] = only_digits(flight_number)
-    # most promising, using now:
-    result['flight_number_between'] = mid_digits(flight_number)
-    # the real flight number key:
-    result['flight_number'] = result['flight_number_between']
-
-    if flight_number and flight_number[-1] in string.ascii_uppercase:
-        # optional operational_suffix is present at end of flight_number,
-        # strip it off and put it where it belongs
-        result['operational_suffix'] = flight_number[-1]
-        result['flight_number'] = flight_number[:-1]
-
-    return result
-
-def dict_for_company(company, to_addresses):
-    result = {}
-    # keep first three characters of company
-    result['company'] = company[:3]
-
-    # look up company from to-addresses
-    if result['company'] == 'AMZ':
-        result['company'] = airline_map.from_toaddresses(result['message_to'])
-
-    # Update airline designator from company value.
-    result['airline_designator'] = airline_designators.by_company[result['company']]
-    return result
-
-def dict_for_company_and_flight_number(
-    company_and_flight_number,
-    to_addresses = None,
-):
-    """
-    Process string creating company, flight_number, airline_designator, and
-    optionally, operational_suffix values.
-
-    :param company_and_flight_number:
-    :param to_addresses: optional iterable of to-addresses for resolving
-        company value in some cases.
-    """
-    if to_addresses is None:
-        to_addresses = []
-    result = {}
-
-    # split company and flight number adding the two keys
-    match = company_and_flight_number_re.match(company_and_flight_number)
-    if not match:
-        raise FlightNumberError(
-            'Unable to split company and flight number in %r',
-            company_and_flight_number)
-    match_dict = match.groupdict()
-    result.update(
-        company = match_dict['company'],
-        flight_number = match_dict['flight_number'],
-    )
-
-    data = dict_for_company(result['company'], to_addresses)
-    result.update(data)
-
-    # updates from flight number
-    data = dict_for_flight_number(result['flight_number'])
-    result.update(data)
-
-    return result
-
-def main(argv=None):
-    """
-    Extract and schema.load pistol message from file.
-    """
-    import argparse
-    import pickle
-    import pprint
-
-    from . import extract
-
-    parser = argparse.ArgumentParser(description=main.__doc__)
-    parser.add_argument('emailfile', help='Pickle email file')
-    args = parser.parse_args(argv)
-
-    with open(args.emailfile, 'rb') as src_fp:
-        email = pickle.load(src_fp)
-        loadplan_data = extract.loadplan_from_message(email)
-        data = LoadPlanSchema().load(loadplan_data)
-        pprint(data)
-
-if __name__ == '__main__':
-    main()
