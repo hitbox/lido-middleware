@@ -90,7 +90,9 @@ class LIDOWeightBalanceMessage:
         """
         WABFORMAT.txt:4
         """
-        return '{: >5}'.format(self.loadplan['flight_number'])
+        # zero padded to three places and then space padded to five.
+        s = '{:0>3}'.format(self.loadplan['flight_number'])
+        return '{: >5}'.format(s)
 
     @property
     def operational_suffix(self):
