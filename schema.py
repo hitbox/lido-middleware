@@ -63,6 +63,9 @@ def resolve_company_from_email(company, to_addresses):
     return company
 
 def dict_for_company(company, to_addresses):
+    """
+    Return dict info from company string.
+    """
     result = {}
     # keep first three characters of company
     result['company'] = resolve_company_from_email(company[:3], to_addresses)
