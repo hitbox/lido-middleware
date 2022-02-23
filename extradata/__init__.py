@@ -16,8 +16,6 @@ class AircraftRegistrationAirlineMapping:
     """
 
     def __init__(self):
-        import warnings
-        warnings.warn('Temporary defaultdict implementation')
         self.airline = defaultdict(lambda:'ABX')
 
 
