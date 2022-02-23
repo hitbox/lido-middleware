@@ -1,5 +1,4 @@
 import datetime
-import json
 import unittest
 
 import central_load_plan.email
@@ -151,13 +150,6 @@ class TestCentralLoadPlanEmail(unittest.TestCase):
         emailconf = dict(template=template)
         result = self.render(emailconf, TESTDATA)
         self.assertEqual(result, ATI_WANTS)
-
-    @unittest.skip('Things have changed and not sure how to test now.')
-    def test_render_template_abx(self):
-        template = 'central_load_plan/templates/email_GB.txt'
-        emailconf = dict(template=template)
-        result = self.render(emailconf, TESTDATA)
-        self.assertEqual(result, ABX_WANTS)
 
 
 class TestCentralLoadPlanCrewmembers(unittest.TestCase):

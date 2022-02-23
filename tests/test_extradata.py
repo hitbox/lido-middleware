@@ -1,16 +1,8 @@
 import unittest
 
 from extradata import ExtradataError
-from extradata import aircraftregistration
 from extradata import airline_designators
 from extradata import stations
-
-class TestAircraftRegistrationAirlineMapping(unittest.TestCase):
-
-    @unittest.skip('mapping will come from netline/base database')
-    def test_airline(self):
-        pass
-
 
 class TestAirlineDesignators(unittest.TestCase):
     """
