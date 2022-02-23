@@ -23,10 +23,10 @@ python -m run path/to/config.py
 
 
 # CHANGES
-  
-  2022-02-10
-  Add support for O(ther) type persons in central_load_plan/crewmember.py
-  From branch: dev/central_load_plan/handle_other_crewmembers
+
+2022-02-10
+Add support for O(ther) type persons in central_load_plan/crewmember.py
+From branch: dev/central_load_plan/handle_other_crewmembers
 
 2022-02-08
 Incident: 16279
