@@ -61,6 +61,8 @@ class OperationalFlightPlanSchema(Schema):
     flight_origin_date = Date(format=date_format)
     version_number = String()
     flight_number = Integer()
+    flight_identifier = String()
+    flight_identifier_first_three = String()
     airline_iata_code = String()
     origin_iata = String()
     destination_iata = String()

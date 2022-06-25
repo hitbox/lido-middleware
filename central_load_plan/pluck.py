@@ -35,6 +35,14 @@ def fromxml(root):
     data['flight_number'] = elem.attrib['number']
     data['airline_iata_code'] = elem.attrib['airlineIATACode']
 
+    elem = root.find(
+        './{*}M633SupplementaryHeader'
+        '/{*}Flight'
+        '/{*}FlightIdentification'
+        '/{*}FlightIdentifier')
+    data['flight_identifier'] = elem.text
+    data['flight_identifier_first_three'] = data['flight_identifier'][:3]
+
     # origin station IATA
     elem = root.find(
         './{*}M633SupplementaryHeader'
