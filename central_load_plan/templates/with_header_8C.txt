@@ -1,0 +1,55 @@
+{#- vim: set ft=jinja.html: #}
+{#- atsg.txt copied from email_8C.txt #}
+{#- ATI email template #}
+{%- set dtfmt = '%d/%H%M' %}
+{%- set tmfmt = '%H:%M' %}
+{#- CLP Portal Notes.docx: Airline Code+Flight Number/date (scheduled dept UTC)/Departure/Destination #}
+{{- flight_identifier_first_three }}{{ flight_number }}/{{ scheduled_departure_time.strftime('%d%b%y') }}U/{{ origin_iata }}/{{ destination_iata }}
+
+LEG DEPARTURE DATE (UTC): {{ leg_departure_date_utc.strftime('%d%b%y (%H%MZ)').upper() }} VER NO: {{ flight_plan_id }}
+FLT #  ORIG  DEST  TAIL #  STE   STD      ETE    PLANNED BLOCK TIME
+{# "FLT #" #}{{ '%-7s'|format(flight_number) -}}
+{# ORIG #}{{ '%-6s'|format(origin_iata) -}}
+{# DEST #}{{ '%-6s'|format(destination_iata) -}}
+{# "TAIL #" #}{{ '%-8s'|format(aircraft_registration) -}}
+{# STE: scheduled time enroute #}{{ '%-6s'|format(estimated_block_time.strftime(tmfmt)) -}}
+{# STD #}{{ '%-9s'|format(scheduled_departure_time.strftime(dtfmt)) -}}
+{# ETE #}{{ '%-7s'|format(estimated_time_enroute.strftime(tmfmt)) -}}
+{# "PLANNED BLOCK TIME" #}{{ estimated_block_time.strftime(tmfmt) }}
+
+*** ALL PAYLOAD AND FUEL DATA BELOW IN {LBS} ***
+*** BALLAST FUEL IS INCLUDED IN THE  RAMP FUEL VALUE ***
+
+PLND PAYLOAD    RAMP FUEL   FUEL BURN   TAXI FUEL   UNUSABLE FUEL
+{{ '%-16s'|format(planned_payload) -}}
+{{ '%-12s'|format(ramp_fuel) -}}
+{{ '%-12s'|format(fuel_burn) -}}
+{{ '%-12s'|format(taxi_fuel) -}}
+{% if ballast_fuel is none %}00000{% else %}{{ '%-12s'|format(ballast_fuel) }}{% endif %}
+
+MAX PAYLOAD   MZFW      MTOW       MLDG      OEW/BOW
+{{ '%-14s'|format(max_payload) -}}
+{{ '%-10s'|format(mzfw) -}}
+{{ '%-11s'|format(mtow) -}}
+{{ '%-10s'|format(mldg) -}}
+{{ dow }}
+
+SEAT    FIRST NAME      LAST NAME       EMPLOYEE #
+----    ----------      ---------       ----------
+{%- for crew in crewmembers %}
+{{ '%-8s'|format(crew.seat) -}}
+{{ '%-16s'|format(crew.first_name) -}}
+{{ '%-16s'|format(crew.last_name) -}}
+{{ '%-12s'|format(crew.employee_number) -}}
+{% endfor %}
+
+--- A/C EQUIPMENT STATUS ---
+ITEM          DESCRIPTION
+{%- for status in aircraft_equipment_status|sort(attribute='fak_status') %}
+{{ '%-14s'|format(status.item) -}}
+{% if status.description %}{# see central_load_plan.email NOTES 1 #}{{
+    fullv1(status, width=80-14, subsequent_indent=' '*14)
+}}{% endif %}
+{% endfor %}
+
+*** OFP IS THE CONTROLLING DOCUMENT FOR DATA PRODUCED FOR THIS MESSAGE. ***
