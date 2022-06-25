@@ -122,6 +122,8 @@ class CLPApp:
         Write all output files according to config.
         """
         for airline_iata_code, fileconfig in self.file_output_conf.items():
+            if data['airline_iata_code'] != airline_iata_code:
+                continue
             template = fileconfig['template']
             contents = email.render(template, data)
             output_format = fileconfig['output_format']
