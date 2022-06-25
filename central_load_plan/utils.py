@@ -34,8 +34,13 @@ def keyed_sections(cp, prefix, sep='_', func=None):
     if func is None:
         func = lambda x: x
 
-    result = {
-        secname.partition(sep)[2]: func(dict(ChainMap(cp[secname], base)))
-        for secname in cp if secname.startswith(prefix + sep)
-    }
+    def keyvalue(secname):
+        key = secname[len(prefix):].partition(sep)[2]
+        value = func(dict(ChainMap(cp[secname], base)))
+        return (key, value)
+
+    result = dict(
+        keyvalue(secname) for secname in cp
+        if secname.startswith(prefix + sep)
+    )
     return result
