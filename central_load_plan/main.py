@@ -1,7 +1,9 @@
 import argparse
 import configparser
+import datetime
 import glob
 import logging.config
+import os
 import shutil
 import smtplib
 import xml.etree.ElementTree as ET
@@ -35,6 +37,7 @@ class CLPApp:
         smtpconf,
         emailconf,
         dbconf,
+        other_exception_move_to = None,
     ):
         self.source_glob = source_glob
         self.move_to = Path(move_to)
@@ -42,6 +45,7 @@ class CLPApp:
         self.smtpconf = smtpconf
         self.emailconf = emailconf
         self.dbconf = dbconf
+        self.other_exception_move_to = other_exception_move_to
         self.logger = logging.getLogger(appname)
 
     def run(self):
@@ -56,6 +60,15 @@ class CLPApp:
             except KeyboardInterrupt:
                 raise
             except:
+                if self.other_exception_move_to:
+                    dest = os.path.join(
+                        self.other_exception_move_to,
+                        os.path.basename(source)
+                    )
+                    if os.path.exists(dest):
+                        root, ext = os.path.splitext(dest)
+                        dest = f'{root}.{datetime.datetime.now():%Y%m%d%H%M%S}{ext}'
+                    shutil.move(source, dest)
                 self.logger.exception('Exception occurred')
 
     def process_file(self, source):
@@ -121,14 +134,20 @@ def main(argv=None):
     source_glob = appconf['source_glob']
     move_to = appconf['move_to'].strip()
     move_to_on_schema_load_error = appconf.get('move_to_on_schema_load_error')
+    other_exception_move_to = appconf.get('other_exception_move_to').strip()
     smtpconf = smtpconfschema.load(cp['smtp'])
     emailconf = keyed_sections(cp, 'emailmessage')
     dbconf = keyed_sections(cp, 'oracle', func=oracleconfschema.load)
 
-    clpapp = CLPApp(source_glob, move_to, move_to_on_schema_load_error, smtpconf, emailconf, dbconf)
+    clpapp = CLPApp(
+        source_glob,
+        move_to,
+        move_to_on_schema_load_error,
+        smtpconf,
+        emailconf,
+        dbconf,
+        other_exception_move_to = other_exception_move_to,
+    )
 
     logger = logging.getLogger(appname)
-    try:
-        clpapp.run()
-    except:
-        logger.exception('Exception occurred during run')
+    clpapp.run()
