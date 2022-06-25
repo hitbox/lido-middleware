@@ -127,8 +127,10 @@ class CLPApp:
             template = fileconfig['template']
             contents = email.render(template, data)
             output_format = fileconfig['output_format']
-            with open(output_format.format(**data), 'w') as output_file:
+            filename = output_format.format(**data)
+            with open(filename, 'w') as output_file:
                 output_file.write(contents)
+            self.logger.info('created %s', filename)
 
     def move_file(self, source, dest):
         """
