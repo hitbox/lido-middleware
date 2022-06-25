@@ -58,11 +58,10 @@ def fullv1(status, **textwrap_options):
 
     return description
 
-def render(emailconf, data):
+def render(template_path, data):
     """
     Render email body text from airline specific template.
     """
-    template_path = emailconf['template']
     with open(template_path) as fp:
         template_string = fp.read()
         template = Template(template_string)
