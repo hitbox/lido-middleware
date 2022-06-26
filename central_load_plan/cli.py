@@ -1,7 +1,7 @@
 import argparse
 
 from . import main
-from .constants import appname
+from .constants import APPNAME
 
 def parse_args(argv=None):
     """
@@ -9,7 +9,7 @@ def parse_args(argv=None):
     """
     parser = argparse.ArgumentParser(
         description = main.run.__doc__,
-        prog = appname,
+        prog = APPNAME,
     )
     parser.add_argument('config', nargs='+')
     parser.add_argument('--dump-config',

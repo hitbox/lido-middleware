@@ -13,7 +13,7 @@ from marshmallow import ValidationError
 from . import crewmember
 from . import email
 from . import pluck
-from .constants import appname
+from .constants import APPNAME
 from .schema import ofpschema
 
 # NOTE: is this what OFP stands for?
@@ -43,7 +43,7 @@ class CLPApp:
         self.dbconf = dbconf
         self.ignore_crewmembers = ignore_crewmembers
         self.abort_on_error = abort_on_error
-        self.logger = logging.getLogger(appname)
+        self.logger = logging.getLogger(APPNAME)
 
     def run(self):
         """

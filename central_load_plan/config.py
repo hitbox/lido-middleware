@@ -3,7 +3,7 @@ import logging.config
 
 from types import SimpleNamespace
 
-from .constants import appname
+from .constants import APPNAME
 from .schema import oracleconfschema
 from .schema import smtpconfschema
 from .utils import keyed_sections
