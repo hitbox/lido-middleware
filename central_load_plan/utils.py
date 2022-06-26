@@ -1,4 +1,48 @@
+import datetime
+import os
+import shutil
+import traceback
+
 from collections import ChainMap
+
+from .constants import EXCEPTION_DATETIME_FMT
+
+def move_for_exception(source, move_to, e):
+    """
+    Move `source` to destination `move_to` with the current datetime put in the
+    filename. Write another file next to it in the destination, with the
+    exception `e` in it.
+    """
+    # capture now for both files
+    now = datetime.datetime.now()
+    # get just filename part
+    source_base = os.path.basename(source)
+    # split to insert now
+    base_root, base_ext = os.path.splitext(source_base)
+    # combine base filename, now and extension
+    dest_fn = ''.join([
+        base_root,
+        now.strftime(EXCEPTION_DATETIME_FMT),
+        base_ext,
+    ])
+    # combine with exception directory
+    dest_path = os.path.join(move_to, dest_fn)
+
+    # should be safe with a filename with a full datetime in it.
+    shutil.move(source, dest_path)
+
+    # write stacktrace
+    dest_fn = ''.join([
+        base_root,
+        now.strftime(EXCEPTION_DATETIME_FMT),
+        '.STACKTRACE',
+        base_ext,
+    ])
+    dest_path = os.path.join(move_to, dest_fn)
+    with open(dest_path, 'w') as stacktrace_fp:
+        stack_string = ''.join(traceback.format_exception(e))
+        stacktrace_fp.write(stack_string)
+        stacktrace_fp.write(str(e))
 
 def keyed_sections(cp, prefix, sep='_', func=None):
     """
