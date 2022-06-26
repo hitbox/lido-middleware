@@ -15,6 +15,7 @@ from . import email
 from . import pluck
 from .constants import APPNAME
 from .schema import ofpschema
+from .utils import move_for_exception
 
 # NOTE: is this what OFP stands for?
 # https://www.quora.com/Do-you-know-a-source-with-good-explanation-to-all-abbreviations-used-in-an-OFP-Operational-Flight-Plan
@@ -26,7 +27,7 @@ class CLPApp:
         self,
         source_glob,
         move_to,
-        move_to_on_schema_load_error,
+        exception_move_to,
         smtpconf,
         emailconf,
         file_output_conf,
@@ -34,9 +35,25 @@ class CLPApp:
         ignore_crewmembers,
         abort_on_error = False,
     ):
+        """
+        :param source_glob: source files glob.
+        :param move_to: move source files after processing.
+        :param smtpconf: smtplib.SMTP arguments dict.
+        :param emailconf:
+            dict of airline email configurations keyed on two-letter code,
+            which map to another dict specifying the template and to-addresses.
+        :param file_output_conf:
+            dict of airline codes mapped to a template and an output format
+            string, for writing files.
+        :param dbconf: see crewmember module.
+        :param ignore_crewmembers:
+            skip downloading crewmembers data. this avoid hitting the databases.
+        :param abort_on_error:
+            do not continue processing files from source glob on exception.
+        """
         self.source_glob = source_glob
         self.move_to = move_to
-        self.move_to_on_schema_load_error = move_to_on_schema_load_error
+        self.exception_move_to = exception_move_to
         self.smtpconf = smtpconf
         self.emailconf = emailconf
         self.file_output_conf = file_output_conf
@@ -58,8 +75,9 @@ class CLPApp:
                 self.process_file(source)
             except KeyboardInterrupt:
                 raise
-            except:
+            except Exception as e:
                 self.logger.exception('Exception occurred')
+                move_for_exception(source, self.exception_move_to, e)
                 if self.abort_on_error:
                     raise
 
@@ -70,12 +88,7 @@ class CLPApp:
         tree = ET.parse(source)
         root = tree.getroot()
         strdict = pluck.fromxml(root)
-        try:
-            data = ofpschema.load(strdict)
-        except ValidationError:
-            if self.move_to_on_schema_load_error is not None:
-                self.move_file(source, self.move_to_on_schema_load_error)
-            raise
+        data = ofpschema.load(strdict)
         # store original source filename
         data['source_filename'] = source
         # crew members
@@ -103,12 +116,12 @@ class CLPApp:
         # build email
         emailmessage = EmailMessage()
         airline_iata_code = data['airline_iata_code']
-        emailconf = self.emailconf[airline_iata_code]
+        airline_emailconf = self.emailconf[airline_iata_code]
         # set from, to, subject, ..., all option values get a chance at
         # using the values from data to use in a format string
-        for key, value in emailconf.items():
+        for key, value in airline_emailconf.items():
             emailmessage[key] = value.format(**data)
-        plaintext = email.render(emailconf['template'], data)
+        plaintext = email.render(airline_emailconf['template'], data)
         html = f'<pre>{ plaintext }</pre>'
         emailmessage.set_content(plaintext)
         emailmessage.add_alternative(html, subtype='html')

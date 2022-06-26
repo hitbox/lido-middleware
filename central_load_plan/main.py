@@ -18,7 +18,7 @@ def run(options):
     clpapp = CLPApp(
         appconf.source_glob,
         appconf.move_to,
-        appconf.move_to_on_schema_load_error,
+        appconf.exception_move_to,
         appconf.smtpconf,
         appconf.emailconf,
         appconf.file_output_conf,
