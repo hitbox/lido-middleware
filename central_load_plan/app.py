@@ -66,48 +66,58 @@ class CLPApp:
         """
         Entry point for full run against configuration
         """
-        for source in glob.glob(self.source_glob):
-            # skip empty
-            if os.stat(source).st_size == 0:
-                self.logger.info('skipping empty file %s' % source.resolve())
-                continue
+        for source_path in glob.glob(self.source_glob):
+            # source_path is as complete as was specified in config
+            # if a full path was given, we get one back
             try:
-                self.process_file(source)
+                self.process_file(source_path)
             except KeyboardInterrupt:
+                # let user break
                 raise
             except Exception as e:
                 self.logger.exception('Exception occurred')
-                move_for_exception(source, self.exception_move_to, e)
+                move_for_exception(source_path, self.exception_move_to, e)
                 if self.abort_on_error:
                     raise
 
-    def process_file(self, source):
+    def process_file(self, source_path):
         """
-        Extract data from source and process in all configured ways.
+        Extract data from source_path and process in all configured ways.
         """
-        tree = ET.parse(source)
-        root = tree.getroot()
-        strdict = pluck.fromxml(root)
-        data = ofpschema.load(strdict)
-        # store original source filename
-        data['source_filename'] = source
-        # crew members
-        if not self.ignore_crewmembers:
-            data['crewmembers'] = crewmember.fromdata(self.dbconf, data).crewmembers
+        # skip empty
+        if os.stat(source_path).st_size == 0:
+            self.logger.info(
+                'skip email and file output for empty file %s'
+                % os.path.abspath(source_path))
         else:
-            data['crewmembers'] = []
-        #
-        self.send_email(data)
-        self.do_move_source(data)
-        self.write_output_files(data)
+            tree = ET.parse(source_path)
+            root = tree.getroot()
+            strdict = pluck.fromxml(root)
+            data = ofpschema.load(strdict)
+            # store original source path for file output
+            data['source_path'] = source_path
+            # crew members
+            if not self.ignore_crewmembers:
+                crewmembers_obj = crewmember.fromdata(self.dbconf, data)
+                data['crewmembers'] = crewmembers_obj.crewmembers
+            else:
+                data['crewmembers'] = []
+            #
+            self.send_email(data)
+            self.write_output_files(data)
 
-    def do_move_source(self, data):
+        # always do move
+        self.do_move_source(source_path)
+
+    def do_move_source(self, source_path):
         """
         If configured, move source file.
         """
-        if self.move_to:
-            if os.path.exists(self.move_to):
-                self.move_file(data['source_filename'], self.move_to)
+        if (
+            self.move_to
+            and os.path.exists(self.move_to)
+        ):
+            self.move_file(source_path, self.move_to)
 
     def send_email(self, data):
         """
@@ -148,10 +158,13 @@ class CLPApp:
     def move_file(self, source, dest):
         """
         Move `source` to `dest` removing `dest` if it exists.
+        :param source: full absoulte path to source file.
+        :param dest: full absolute path to destination directory.
         """
-        move_to_full = os.path.join(dest, source.name)
-        if move_to_full.exists():
-            self.logger.info('removing %s', move_to_full.resolve())
-            move_to_full.unlink()
-        self.logger.info('moving original to %s', dest.resolve())
-        shutil.move(source, dest)
+        source_filename = os.path.basename(source)
+        final = os.path.join(dest, source_filename)
+        if os.path.exists(final):
+            self.logger.info('removing %s', final)
+            os.remove(final)
+        self.logger.info('moving original to %s', final)
+        shutil.move(source, final)
