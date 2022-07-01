@@ -87,11 +87,4 @@ def process(config_filename):
             path = os.path.dirname(path)
         raise_for_absolue_and_exists(path)
 
-    for airline_iata_code, fileconfig in appconf_data.file_output_conf.items():
-        path = fileconfig['output_format']
-        # NOTE: format strings with anything other than final path component
-        #       substitutions will fail.
-        path = os.path.dirname(path)
-        raise_for_absolue_and_exists(path)
-
     return appconf_data
