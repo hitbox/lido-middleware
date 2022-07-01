@@ -4,7 +4,7 @@
 {%- set dtfmt = '%d/%H%M' %}
 {%- set tmfmt = '%H:%M' %}
 {#- CLP Portal Notes.docx: Airline Code+Flight Number/date (scheduled dept UTC)/Departure/Destination #}
-{{- flight_identifier_first_three }}{{ flight_number }}/{{ scheduled_departure_time.strftime('%d%b%y') }}U/{{ origin_iata }}/{{ destination_iata }}
+{{- airline_iata_code }}{{ flight_number }}/{{ scheduled_departure_time.strftime('%d%b%y') }}U/{{ origin_iata }}/{{ destination_iata }}
 
 LEG DEPARTURE DATE (UTC): {{ leg_departure_date_utc.strftime('%d%b%y (%H%MZ)').upper() }} VER NO: {{ flight_plan_id }}
 FLT #  ORIG  DEST  TAIL #  STE   STD      ETE    PLANNED BLOCK TIME
