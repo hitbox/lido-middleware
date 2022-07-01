@@ -1,6 +1,7 @@
 import datetime
 import os
 import shutil
+import sys
 import traceback
 
 from collections import ChainMap
@@ -40,7 +41,9 @@ def move_for_exception(source, move_to, e):
     ])
     dest_path = os.path.join(move_to, dest_fn)
     with open(dest_path, 'w') as stacktrace_fp:
-        stack_string = ''.join(traceback.format_exception(e))
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        stack_string = ''.join(lines)
         stacktrace_fp.write(stack_string)
         stacktrace_fp.write(str(e))
 
