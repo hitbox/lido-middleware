@@ -1,4 +1,51 @@
+import datetime
+import os
+import shutil
+import sys
+import traceback
+
 from collections import ChainMap
+
+from .constants import EXCEPTION_DATETIME_FMT
+
+def move_for_exception(source, move_to, e):
+    """
+    Move `source` to destination `move_to` with the current datetime put in the
+    filename. Write another file next to it in the destination, with the
+    exception `e` in it.
+    """
+    # capture now for both files
+    now = datetime.datetime.now()
+    # get just filename part
+    source_base = os.path.basename(source)
+    # split to insert now
+    base_root, base_ext = os.path.splitext(source_base)
+    # combine base filename, now and extension
+    dest_fn = ''.join([
+        base_root,
+        now.strftime(EXCEPTION_DATETIME_FMT),
+        base_ext,
+    ])
+    # combine with exception directory
+    dest_path = os.path.join(move_to, dest_fn)
+
+    # should be safe with a filename with a full datetime in it.
+    shutil.move(source, dest_path)
+
+    # write stacktrace
+    dest_fn = ''.join([
+        base_root,
+        now.strftime(EXCEPTION_DATETIME_FMT),
+        '.STACKTRACE',
+        base_ext,
+    ])
+    dest_path = os.path.join(move_to, dest_fn)
+    with open(dest_path, 'w') as stacktrace_fp:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        stack_string = ''.join(lines)
+        stacktrace_fp.write(stack_string)
+        stacktrace_fp.write(str(e))
 
 def keyed_sections(cp, prefix, sep='_', func=None):
     """
@@ -34,8 +81,13 @@ def keyed_sections(cp, prefix, sep='_', func=None):
     if func is None:
         func = lambda x: x
 
-    result = {
-        secname.partition(sep)[2]: func(dict(ChainMap(cp[secname], base)))
-        for secname in cp if secname.startswith(prefix + sep)
-    }
+    def keyvalue(secname):
+        key = secname[len(prefix):].partition(sep)[2]
+        value = func(dict(ChainMap(cp[secname], base)))
+        return (key, value)
+
+    result = dict(
+        keyvalue(secname) for secname in cp
+        if secname.startswith(prefix + sep)
+    )
     return result

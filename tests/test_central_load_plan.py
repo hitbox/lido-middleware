@@ -147,8 +147,7 @@ class TestCentralLoadPlanEmail(unittest.TestCase):
 
     def test_render_template_ati(self):
         template = 'central_load_plan/templates/email_8C.txt'
-        emailconf = dict(template=template)
-        result = self.render(emailconf, TESTDATA)
+        result = self.render(template, TESTDATA)
         self.assertEqual(result, ATI_WANTS)
 
 
