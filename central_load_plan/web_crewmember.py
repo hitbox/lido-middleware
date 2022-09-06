@@ -90,10 +90,11 @@ def query():
     result = None
     form = CrewmemberArgsForm(formdata = request.form or request.args)
 
-    if not current_app.config.get('VALIDATE_FORM', True):
-        result = EXAMPLE_RESULT
-    else:
-        if request.method == 'POST' and form.validate():
+    if request.method == 'POST':
+        if not current_app.config.get('VALIDATE_FORM', True):
+            # allow config to say use the example
+            result = EXAMPLE_RESULT
+        elif form.validate():
             # there doesn't seem to be support for html datetime field, it just
             # comes out as a text input
             # so we combine them here

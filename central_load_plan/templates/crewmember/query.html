@@ -40,7 +40,7 @@
         </tr>{% endfor %}
     </tbody>
 </table>
-{% else %}
+{% elif request.method == 'POST' %}
 <h2>No results</h2>
 {% endif %}
 {% endblock main %}
