@@ -12,6 +12,26 @@
     {{ render_form2(form) }}
 </form>
 {% if result %}
+<table>
+    <thead>
+        <tr>
+            <th>Last</th>
+            <th>First</th>
+            <th>Employee #</th>
+            <th>Seat</th>
+            <th>Order</th>
+        </tr>
+    <thead>
+    <tbody>
+        {% for crewmember in result.crewmembers|sort(attribute='seat_order') %}<tr>
+            <td>{{ crewmember.last_name }}</td>
+            <td>{{ crewmember.first_name }}</td>
+            <td>{{ crewmember.employee_number }}</td>
+            <td>{{ crewmember.seat }}</td>
+            <td>{{ crewmember.seat_order }}</td>
+        </tr>{% endfor %}
+    </tbody>
+</table>
 {% else %}
 <h2>No results</h2>
 {% endif %}
