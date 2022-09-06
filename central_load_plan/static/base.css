@@ -1,37 +1,46 @@
+html {
+    box-sizing: border-box;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
 body {
     font-family: arial;
     display: flex;
     justify-content: center;
 }
 
-#main {
-    width: 800px;
+label {
+    display: inline-block;
 }
 
-pre {
-    border: 1px solid black;
-    padding: 1rem;
-    font-size: 1rem;
-    white-space: pre-wrap;
+input:not([type=radio]),
+label:not([for ^= "airline_iata_code"]) {
+    padding: .25rem .5rem;
+    /*
+    margin: .25rem .5rem;
+    */
+    width: 100%;
 }
 
 input[type=submit] {
-    padding: 4px 6px;
-    min-width: 100px;
+    padding: .75rem;
 }
 
-.filelist {
-    font-family: monospace;
-    font-size: 1rem;
-    display: flex;
-    flex-wrap: wrap;
-    margin-top: 1rem;
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    grid-gap: 1rem;
 }
 
-.filelist > * {
-    padding: 8px;
+ul#airline_iata_code {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
 }
 
-.inputgroup {
-    margin-top: 1.5rem;
+.buttons {
+    margin-top: 2rem;
 }

@@ -1,18 +1,15 @@
 
 {% macro render_field(field) %}
-<div class="inputgroup">
-{% if field.type == 'BooleanField' %}
-    {{ field }}
-    {{ field.label }}
-{% else %}
-    {{ field.label }}
-    {{ field }}
-{% endif %}
-    <div>{% if field.errors %}
+{% set f, l = field, field.label %}
+{% if field.type == 'BooleanField' %}{% set f, l = l, f %}{% endif %}
+<div>{{ l }}</div>
+<div>
+    {{ f }}
+    {% if field.errors %}
         <ul>{% for error in field.errors %}
-            <li>{{ error }}</li>
-        {% endfor %}</ul>
-    {% endif %}</div>
+                <li>{{ error }}</li>
+            {% endfor %}</ul>
+    {% endif %}
 </div>
 {% endmacro %}
 
@@ -24,4 +21,16 @@
         {% for field in form|selectattr('type', 'in', ['SubmitField']) %}{{ field }}{% endfor %}
     </div>
 </form>
+{% endmacro %}
+
+
+{% macro render_form2(form) %}
+    <div class="grid-2">
+{% for field in form | rejectattr('type', 'in', ['SubmitField']) %}
+{{ render_field(field) }}
+{% endfor %}
+    </div>
+<div class="buttons">
+    {% for field in form|selectattr('type', 'in', ['SubmitField']) %}{{ field }}{% endfor %}
+</div>
 {% endmacro %}

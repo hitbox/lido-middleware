@@ -1,0 +1,17 @@
+<!doctype html>
+<html translate="no">{% set title = 'Lido / Central Load Plan' %}
+    <head>
+        <title>{{ title }}</title>
+        <meta name="google" content="notranslate">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon" href="data:,">
+        <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    </head>
+    <body>
+        <main>
+            <h2>{{ title }}</h2>
+            <h3>Crew members, jump seaters, and dead heads query</h3>
+            {% block main %}{% endblock main %}
+        </main>
+    </body>
+</html>

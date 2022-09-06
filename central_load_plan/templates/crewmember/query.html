@@ -1,0 +1,17 @@
+{% extends "crewmember/base.html" %}
+
+
+{% from "render.html" import render_form2 %}
+
+
+{% block main %}
+<ul>{% for text, data in interesting_data %}
+    <li><a href="{{ url_for('crewmember.query', **data) }}">{{ text }}</a></li>{% endfor %}
+</ul>
+<form action="{{ url_for('crewmember.query') }}" method="POST">
+    {{ render_form2(form) }}
+</form>
+{% if result %}
+    {{ result }}
+{% endif %}
+{% endblock main %}
