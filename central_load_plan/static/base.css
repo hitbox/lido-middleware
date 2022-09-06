@@ -6,14 +6,41 @@ html {
     box-sizing: inherit;
 }
 
+a:link {
+    color: red;
+}
+
+a:visited {
+    color: green;
+}
+
+a:hover {
+    color: hotpink;
+}
+
+a:active {
+    color: White;
+}
+
 body {
     font-family: arial;
     display: flex;
     justify-content: center;
+    background: #333;
+    color: white;
 }
 
 table {
     border-collapse: collapse;
+    width: 100%;
+}
+
+table, th, td {
+    border: 1px solid white;
+}
+
+th, td {
+    padding: .7rem;
 }
 
 label {
@@ -21,7 +48,7 @@ label {
 }
 
 input:not([type=radio]),
-label:not([for ^= "airline_iata_code"]) {
+label:not([for ^= "airline_iata_code-"]) {
     padding: .25rem .5rem;
     /*
     margin: .25rem .5rem;
@@ -51,5 +78,16 @@ ul#airline_iata_code {
 
 .data {
     font-family: monospace;
-    size: 1rem;
+    font-size: 1rem;
+}
+
+.flight-info {
+    display: flex;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.flight-info > * {
+    margin-left: 1rem;
+    margin-right: 1rem;
 }
