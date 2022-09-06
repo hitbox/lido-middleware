@@ -58,13 +58,19 @@ def query():
         # there doesn't seem to be support for html datetime field, it just
         # comes out as a text input
         # so we combine them here
-        form.data['scheduled_departure_time'] = datetime.datetime.combine(
-            form.data['scheduled_departure_date'],
-            form.data['scheduled_departure_time'],
+        flight_data = dict(
+            airline_iata_code = form.airline_iata_code.data,
+            flight_origin_date = form.flight_origin_date.data,
+            flight_number = form.flight_number.data,
+            origin_iata = form.origin_iata.data,
+            scheduled_departure_time = datetime.datetime.combine(
+                form.scheduled_departure_date.data,
+                form.scheduled_departure_time.data,
+            ),
         )
         clpconf_path = current_app.config['CLP_CONFIG']
         clpconf = central_load_plan.config.process(clpconf_path)
-        result = central_load_plan.crewmember.fromdata(clpconf.dbconf, form.data)
+        result = central_load_plan.crewmember.fromdata(clpconf.dbconf, flight_data)
 
     context = dict(
         form = form,

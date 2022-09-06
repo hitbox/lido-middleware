@@ -12,6 +12,7 @@
     {{ render_form2(form) }}
 </form>
 {% if result %}
-    {{ result }}
+{% else %}
+<h2>No results</h2>
 {% endif %}
 {% endblock main %}
