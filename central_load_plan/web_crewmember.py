@@ -1,3 +1,5 @@
+import datetime
+
 from flask import Blueprint
 from flask import Flask
 from flask import current_app
@@ -53,6 +55,13 @@ def query():
     result = None
     form = CrewmemberArgsForm(formdata = request.form or request.args)
     if request.method == 'POST' and form.validate():
+        # there doesn't seem to be support for html datetime field, it just
+        # comes out as a text input
+        # so we combine them here
+        form.data['scheduled_departure_time'] = datetime.datetime.combine(
+            form.data['scheduled_departure_date'],
+            form.data['scheduled_departure_time'],
+        )
         clpconf_path = current_app.config['CLP_CONFIG']
         clpconf = central_load_plan.config.process(clpconf_path)
         result = central_load_plan.crewmember.fromdata(clpconf.dbconf, form.data)
