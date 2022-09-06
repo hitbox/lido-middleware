@@ -48,3 +48,8 @@ ul#airline_iata_code {
 .buttons {
     margin-top: 2rem;
 }
+
+.data {
+    font-family: monospace;
+    size: 1rem;
+}

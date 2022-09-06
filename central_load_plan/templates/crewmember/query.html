@@ -24,11 +24,11 @@
     <thead>
     <tbody>
         {% for crewmember in result.crewmembers|sort(attribute='seat_order') %}<tr>
-            <td>{{ crewmember.last_name }}</td>
-            <td>{{ crewmember.first_name }}</td>
-            <td>{{ crewmember.employee_number }}</td>
-            <td>{{ crewmember.seat }}</td>
-            <td>{{ crewmember.seat_order }}</td>
+            <td class="data">{{ crewmember.last_name }}</td>
+            <td class="data">{{ crewmember.first_name }}</td>
+            <td class="data">{{ crewmember.employee_number }}</td>
+            <td class="data">{{ crewmember.seat }}</td>
+            <td class="data">{{ crewmember.seat_order }}</td>
         </tr>{% endfor %}
     </tbody>
 </table>
