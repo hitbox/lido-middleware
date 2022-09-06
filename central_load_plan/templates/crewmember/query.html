@@ -14,11 +14,11 @@
 {% if result %}
 <h2>Results</h2>
 <div class="flight-info">
-    <div class="data">{{ result.data.airline_iata_code }}</div>
-    <div class="data">{{ result.data.flight_origin_date }}</div>
-    <div class="data">{{ result.data.flight_number }}</div>
-    <div class="data">{{ result.data.origin_iata }}</div>
-    <div class="data">{{ result.data.scheduled_departure_time }}</div>
+    <div class="data" title="Airline IATA">{{ result.data.airline_iata_code }}</div>
+    <div class="data" title="Origin Date">{{ result.data.flight_origin_date }}</div>
+    <div class="data" title="Flight Number">{{ result.data.flight_number }}</div>
+    <div class="data" title="Origin IATA">{{ result.data.origin_iata }}</div>
+    <div class="data" title="Scheduled Departure">{{ result.data.scheduled_departure_time }}</div>
 </div>
 <table>
     <thead>
