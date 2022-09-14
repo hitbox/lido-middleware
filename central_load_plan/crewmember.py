@@ -97,6 +97,7 @@ def get_crew_query(tables, data):
                 (is_type_leg, duty.c.assigned_rank),
                 (is_type_deadhead, 99),
             ).label('seat_order'),
+            sa.literal('item_daily').label('source'),
         ])
         .select_from(item_daily)
         .join(
@@ -158,6 +159,7 @@ def get_deadheads_query(tables, data):
             sa.literal_column("'ACM'", type_=sa.String()).label(JUMPSEAT_KEYS[3]),
             # seat_order
             sa.literal_column('999', type_=sa.Integer()).label(JUMPSEAT_KEYS[4]),
+            sa.literal('duty').label('source'),
         ]).join(
             duty,
             duty.c.tlc == crew_member.c.tlc
@@ -187,6 +189,7 @@ def get_person_query(table, person_id, employee_number_field):
         sa.literal_column("'ACM'", type_=sa.String()).label(JUMPSEAT_KEYS[3]),
         # seat_order
         sa.literal_column('999', type_=sa.Integer()).label(JUMPSEAT_KEYS[4]),
+        sa.literal(table.name).label('source'),
     ]).where(
         employee_number_field == person_id
     )

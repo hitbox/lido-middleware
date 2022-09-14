@@ -41,6 +41,7 @@ EXAMPLE_RESULT = central_load_plan.crewmember.CrewMemberResult(
             employee_number = 'EE1',
             seat = 'PIC',
             seat_order = 0,
+            source = 'example',
         ),
         dict(
             last_name = 'LASTNAME2',
@@ -48,6 +49,7 @@ EXAMPLE_RESULT = central_load_plan.crewmember.CrewMemberResult(
             employee_number = 'EE2',
             seat = 'SIC',
             seat_order = 1,
+            source = 'example',
         ),
         dict(
             last_name = 'LASTNAME3',
@@ -55,6 +57,7 @@ EXAMPLE_RESULT = central_load_plan.crewmember.CrewMemberResult(
             employee_number = 'EE3',
             seat = 'ACM',
             seat_order = 999,
+            source = 'example',
         ),
     ],
     query = None,
