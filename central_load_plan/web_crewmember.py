@@ -31,6 +31,17 @@ INTERESTING_DATA = [
             scheduled_departure_time = '01:30',
         ),
     ),
+    (
+        'Incident 31846: No crew',
+        dict(
+            airline_iata_code = 'GB',
+            flight_origin_date = '2022-09-09',
+            flight_number = 3171,
+            origin_iata = 'SBD',
+            scheduled_departure_date = '2022-09-09',
+            scheduled_departure_time = '04:45',
+        ),
+    ),
 ]
 
 EXAMPLE_RESULT = central_load_plan.crewmember.CrewMemberResult(
