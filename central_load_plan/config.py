@@ -87,4 +87,9 @@ def process(config_filename):
             path = os.path.dirname(path)
         raise_for_absolue_and_exists(path)
 
+    # raise for email template paths exist
+    for item in appconf_data.emailconf.items():
+        airline_iata_code, airline_email_conf = item
+        raise_for_exists(airline_email_conf['template'])
+
     return appconf_data
