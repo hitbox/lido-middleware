@@ -4,10 +4,10 @@
 {% from "render.html" import render_form2 %}
 
 
-{% block main %}
-<ul>{% for text, data in interesting_data %}
-    <li><a href="{{ url_for('crewmember.query', **data) }}">{{ text }}</a></li>{% endfor %}
-</ul>
+{% block content %}
+<nav>{% for text, data in interesting_data %}
+    <h3><a href="{{ url_for('crewmember.query', **data) }}">{{ text }}</a></h3>{% endfor %}
+</nav>
 <form action="{{ url_for('crewmember.query') }}" method="POST">
     {{ render_form2(form) }}
 </form>
@@ -45,4 +45,4 @@
 {% elif request.method == 'POST' %}
 <h2>No results</h2>
 {% endif %}
-{% endblock main %}
+{% endblock content %}

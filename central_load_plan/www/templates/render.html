@@ -34,3 +34,22 @@
     {% for field in form|selectattr('type', 'in', ['SubmitField']) %}{{ field }}{% endfor %}
 </div>
 {% endmacro %}
+
+
+{% macro render_by_type(obj) %}
+{% if obj is iterable and obj is not string and obj is not mapping %}
+{# list, tuple, ... #}<code>[</code><ul>{{ render_iterable(obj) }}</ul><code>]</code>{% elif obj is mapping %}
+{# dict, ... #}<code>{</code><dl class="literal">{{ render_dict(obj) }}</dl><code>}</code>{% elif obj is string %}<code>'{{ obj }}'</code>{% else %}{{ obj }}{% endif %}
+{% endmacro %}
+
+
+{% macro render_dict(d) %}
+{% for key, val in d.items()|sort %}
+    <dt class="data">{{ render_by_type(key) }}</dt>
+    <dd class="data">{{ render_by_type(val) }}</dd>{% endfor %}
+{% endmacro %}
+
+
+{% macro render_iterable(iterable) %}
+{% for item in iterable %}<li>{{ render_by_type(item) }}</li>{% endfor %}
+{% endmacro %}

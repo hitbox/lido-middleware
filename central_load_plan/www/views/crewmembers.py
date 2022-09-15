@@ -1,10 +1,11 @@
 import datetime
 
 from flask import Blueprint
-from flask import Flask
 from flask import current_app
+from flask import redirect
 from flask import render_template
 from flask import request
+from flask import url_for
 from wtforms import DateField
 from wtforms import DateTimeField
 from wtforms import Form
@@ -16,6 +17,10 @@ from wtforms import TimeField
 
 import central_load_plan.config
 import central_load_plan.crewmember
+
+from .. import app
+
+CONFIG_PREFIX = f'{app.CONFIG_PREFIX}_CREWMEMBERS'
 
 crewmember_bp = Blueprint('crewmember', __name__)
 
@@ -96,7 +101,15 @@ class CrewmemberArgsForm(Form):
     submit = SubmitField('Submit')
 
 
-@crewmember_bp.route('/', methods=['GET', 'POST'])
+def current_config_get(final_name, default=None):
+    key =f'{CONFIG_PREFIX}{final_name}'
+    return current_app.config.get(key, default)
+
+@crewmember_bp.route('/')
+def index():
+    return redirect(url_for('.query'))
+
+@crewmember_bp.route('/query', methods=['GET', 'POST'])
 def query():
     """
     Query database for crew members, jump seats and dead heads.
@@ -105,7 +118,7 @@ def query():
     form = CrewmemberArgsForm(formdata = request.form or request.args)
 
     if request.method == 'POST':
-        if not current_app.config.get('VALIDATE_FORM', True):
+        if not current_config_get('VALIDATE_FORM', True):
             # allow config to say use the example
             result = EXAMPLE_RESULT
         elif form.validate():
@@ -122,7 +135,8 @@ def query():
                     form.scheduled_departure_time.data,
                 ),
             )
-            clpconf_path = current_app.config['CLP_CONFIG']
+            clpconf_path = current_config_get('CLP_CONFIG')
+            # None will cause Exception
             clpconf = central_load_plan.config.process(clpconf_path)
             result = central_load_plan.crewmember.fromdata(clpconf.dbconf, flight_data)
 
@@ -132,9 +146,3 @@ def query():
         result = result,
     )
     return render_template('crewmember/query.html', **context)
-
-def create_app():
-    app = Flask(__name__)
-    app.config.from_envvar('WEB_CREWMEMBER')
-    app.register_blueprint(crewmember_bp)
-    return app
