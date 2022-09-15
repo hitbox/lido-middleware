@@ -156,7 +156,32 @@ def get_message(data):
         crewmembers_obj = central_load_plan.crewmember.fromdata(clpconf.dbconf, data)
         data['crewmembers'] = crewmembers_obj.crewmembers
     else:
-        data['crewmembers'] = []
+        data['crewmembers'] = [
+            dict(
+                last_name = 'LASTNAME1',
+                first_name = 'FIRSTNAME1',
+                employee_number = 'EE1',
+                seat = 'PIC',
+                seat_order = 0,
+                source = 'example',
+            ),
+            dict(
+                last_name = 'LASTNAME2',
+                first_name = 'FIRSTNAME2',
+                employee_number = 'EE2',
+                seat = 'SIC',
+                seat_order = 1,
+                source = 'example',
+            ),
+            dict(
+                last_name = 'LASTNAME3',
+                first_name = 'FIRSTNAME3',
+                employee_number = 'EE3',
+                seat = 'ACM',
+                seat_order = 999,
+                source = 'example',
+            ),
+        ]
     template = emailconf['template']
     email_body = central_load_plan.email.render(template, data)
     return email_body
