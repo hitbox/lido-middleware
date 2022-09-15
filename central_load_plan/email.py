@@ -2,10 +2,16 @@ import re
 import textwrap
 
 from jinja2 import Template
+from jinja2 import FileSystemLoader
+from jinja2 import Environment
 
 from utils import sliding_match
 
 _whitespaceruns_re = re.compile(r'\s+')
+
+env = Environment(
+    loader = FileSystemLoader('central_load_plan/templates'),
+)
 
 # NOTES:
 # 1. The big chain of function calls in email_8c.txt template is to remove the
@@ -58,18 +64,16 @@ def fullv1(status, **textwrap_options):
 
     return description
 
-def render(template_path, data):
+def render(template, data):
     """
     Render email body text from airline specific template.
     """
-    with open(template_path) as fp:
-        template_string = fp.read()
-        template = Template(template_string)
-        context = dict(
-            textwrap = textwrap,
-            clean_remove = clean_remove,
-            rfindinsert = rfindinsert,
-            fullv1 = fullv1,
-        )
-        context.update(data)
-        return template.render(**context)
+    template = env.get_template(template)
+    context = dict(
+        textwrap = textwrap,
+        clean_remove = clean_remove,
+        rfindinsert = rfindinsert,
+        fullv1 = fullv1,
+    )
+    context.update(data)
+    return template.render(**context)
