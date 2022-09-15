@@ -25,6 +25,7 @@ from wtforms import SelectField
 from wtforms import SubmitField
 
 import central_load_plan.config
+import central_load_plan.crewmember
 import central_load_plan.email
 import central_load_plan.pluck
 import central_load_plan.schema
@@ -150,6 +151,12 @@ def get_message(data):
     airline_iata_code = data['airline_iata_code']
     clpconf = realappconfig()
     emailconf = clpconf.emailconf[airline_iata_code]
+    # crew members
+    if not current_config_get('_IGNORE_CREWMEMBERS'):
+        crewmembers_obj = central_load_plan.crewmember.fromdata(clpconf.dbconf, data)
+        data['crewmembers'] = crewmembers_obj.crewmembers
+    else:
+        data['crewmembers'] = []
     template = emailconf['template']
     email_body = central_load_plan.email.render(template, data)
     return email_body
