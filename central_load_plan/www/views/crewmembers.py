@@ -135,7 +135,7 @@ def query():
                     form.scheduled_departure_time.data,
                 ),
             )
-            clpconf_path = current_config_get('CLP_CONFIG')
+            clpconf_path = current_config_get('_CLP_CONFIG')
             # None will cause Exception
             clpconf = central_load_plan.config.process(clpconf_path)
             result = central_load_plan.crewmember.fromdata(clpconf.dbconf, flight_data)
