@@ -148,43 +148,11 @@ def realappconfig():
 
 def get_message(data):
     airline_iata_code = data['airline_iata_code']
-
     clpconf = realappconfig()
     emailconf = clpconf.emailconf[airline_iata_code]
-    # TODO
-    # - there's no airline key after processed
-    # - combine these two things into one or whatever using blueprints
-    print(emailconf)
     template = emailconf['template']
     email_body = central_load_plan.email.render(template, data)
     return email_body
-
-def trash_get_output(readable, ignorecrew):
-    """
-    Return a dict with useful things for displaying what would happen in a real run.
-    """
-    # XXX: this source -> tree -> pluck -> string_data -> data process is
-    #      repeated all over the place because, for example, here, we want to
-    #      pass the intermediate steps to the template
-    xmlstring = readable.read()
-    tree = ET.ElementTree(ET.fromstring(xmlstring))
-    root = tree.getroot()
-    data = central_load_plan.pluck.fromxml(root)
-    data = schema.OperationalFlightPlanSchema().load(data)
-    if not ignorecrew:
-        # hit database for crew members
-        crewresult = central_load_plan.crewmember.fromdata(current_app.config['CREWMEMBER_CONFIG'], data)
-        data['crewmembers'] = crewresult.crewmembers
-    airline_iata_code = data['airline_iata_code']
-    emailconf = current_app.config['EMAIL_TEMPLATES']
-    email_body = central_load_plan.email.render(emailconf[airline_iata_code], data)
-    result = dict(
-        data = data,
-        pprint_data = pprint.pformat(data),
-        email_body = email_body,
-        xmlstring = xmlstring,
-    )
-    return result
 
 @xml_bp.record
 def load_glob(state):
@@ -194,8 +162,8 @@ def load_glob(state):
     with state.app.app_context():
         print('Loading XML')
         xmlcache_path = current_config_get('_CACHE_PATH')
-        xml_glob = current_config_get('_GLOB')
-        if not (xmlcache_path or xml_glob):
+        xml_globs = current_config_get('_GLOBS')
+        if not (xmlcache_path or xml_globs):
             raise ValueError('No cache or xml glob configured')
 
         if xmlcache_path and os.path.exists(xmlcache_path):
@@ -203,17 +171,20 @@ def load_glob(state):
                 for xmldata in pickle.load(pickle_f):
                     database.append(xmldata)
         else:
-            for index, source_path in enumerate(glob.glob(xml_glob)):
-                # duplicate app.py:App.process_file
-                if os.stat(source_path).st_size != 0:
-                    tree = ET.parse(source_path)
-                    root = tree.getroot()
-                    strdict = central_load_plan.pluck.fromxml(root)
-                    data = central_load_plan.schema.ofpschema.load(strdict)
-                    # store original source path for file output
-                    data['source_path'] = source_path
-                    data['index'] = index
-                    database.append(data)
+            index = 0
+            for xmlglob in xml_globs:
+                for source_path in glob.glob(xmlglob):
+                    # duplicate app.py:App.process_file
+                    if os.stat(source_path).st_size != 0:
+                        tree = ET.parse(source_path)
+                        root = tree.getroot()
+                        strdict = central_load_plan.pluck.fromxml(root)
+                        data = central_load_plan.schema.ofpschema.load(strdict)
+                        # store original source path for file output
+                        data['source_path'] = source_path
+                        data['index'] = index
+                        database.append(data)
+                        index += 1
 
         if xmlcache_path:
             with open(xmlcache_path, 'wb') as pickle_f:

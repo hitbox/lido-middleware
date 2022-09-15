@@ -35,6 +35,12 @@ a:active {
     background-color: #111;
 }
 
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
 pre {
     font-size: 1rem;
 }
@@ -50,6 +56,22 @@ table, th, td {
 
 th, td {
     padding: .7rem;
+}
+
+code {
+    font-size: 1rem;
+}
+
+ul.literal,
+dl.literal,
+dl.literal > dd {
+    margin-left: 1rem;
+}
+
+ul.literal > li::after,
+dl.literal > dd::after {
+    /* lists and dicts */
+    content: ",";
 }
 
 dl.literal > dt::after {
@@ -70,16 +92,16 @@ input[type=submit] {
     padding: .75rem;
 }
 
+.rendered-message {
+    /* as output from email.render */
+    border: 1px solid white;
+    padding: 1rem;
+}
+
 .grid-2 {
     display: grid;
     grid-template-columns: repeat(2, auto);
     grid-gap: 1rem;
-}
-
-ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
 }
 
 .buttons {
