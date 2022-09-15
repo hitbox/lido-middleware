@@ -1,7 +1,9 @@
-{#- vim: set ft=jinja.html: #}
-{#- ATI email template #}
-{%- set dtfmt = '%d/%H%M' %}
-{%- set tmfmt = '%H:%M' %}
+{#- vim: set ft=jinja.html: -#}
+{%- extends "base.txt" -%}
+{#- ATI email template -#}
+
+
+{%- block flight %}
 
 LEG DEPARTURE DATE (UTC): {{ leg_departure_date_utc.strftime('%d%b%y (%H%MZ)').upper() }} VER NO: {{ flight_plan_id }}
 FLT #  ORIG  DEST  TAIL #  STE   STD      ETE    PLANNED BLOCK TIME
@@ -13,32 +15,32 @@ FLT #  ORIG  DEST  TAIL #  STE   STD      ETE    PLANNED BLOCK TIME
 {# STD #}{{ '%-9s'|format(scheduled_departure_time.strftime(dtfmt)) -}}
 {# ETE #}{{ '%-7s'|format(estimated_time_enroute.strftime(tmfmt)) -}}
 {# "PLANNED BLOCK TIME" #}{{ estimated_block_time.strftime(tmfmt) }}
+{% endblock flight -%}
 
-*** ALL PAYLOAD AND FUEL DATA BELOW IN {LBS} ***
-*** BALLAST FUEL IS INCLUDED IN THE  RAMP FUEL VALUE ***
+
+{%- block fuel %}
 
 PLND PAYLOAD    RAMP FUEL   FUEL BURN   TAXI FUEL   UNUSABLE FUEL
-{{ '%-16s'|format(planned_payload) -}}
-{{ '%-12s'|format(ramp_fuel) -}}
-{{ '%-12s'|format(fuel_burn) -}}
-{{ '%-12s'|format(taxi_fuel) -}}
-{% if ballast_fuel is none %}00000{% else %}{{ '%-12s'|format(ballast_fuel) }}{% endif %}
+{{ '{:16}'.format(planned_payload|string) -}}
+{{ '{:12}'.format(ramp_fuel|string) -}}
+{{ '{:12}'.format(fuel_burn|string) -}}
+{{ '{:12}'.format(taxi_fuel|string) -}}
+{% if ballast_fuel is none %}00000{% else %}{{ '{:12}'.format(ballast_fuel|string) }}{% endif -%}
+{% endblock fuel -%}
+
+
+{%- block weight %}
 
 MAX PAYLOAD   MZFW      MTOW       MLDG      OEW/BOW
-{{ '%-14s'|format(max_payload) -}}
-{{ '%-10s'|format(mzfw) -}}
-{{ '%-11s'|format(mtow) -}}
-{{ '%-10s'|format(mldg) -}}
-{{ dow }}
+{{ '{:14}'.format(max_payload|string) -}}
+{{ '{:10}'.format(mzfw|string) -}}
+{{ '{:11}'.format(mtow|string) -}}
+{{ '{:10}'.format(mldg|string) -}}
+{{ dow -}}
+{% endblock weight -%}
 
-SEAT    FIRST NAME      LAST NAME       EMPLOYEE #
-----    ----------      ---------       ----------
-{%- for crew in crewmembers %}
-{{ '%-8s'|format(crew.seat) -}}
-{{ '%-16s'|format(crew.first_name) -}}
-{{ '%-16s'|format(crew.last_name) -}}
-{{ '%-12s'|format(crew.employee_number) -}}
-{% endfor %}
+
+{%- block equipment %}
 
 --- A/C EQUIPMENT STATUS ---
 ITEM          DESCRIPTION
@@ -48,5 +50,4 @@ ITEM          DESCRIPTION
     fullv1(status, width=80-14, subsequent_indent=' '*14)
 }}{% endif %}
 {% endfor %}
-
-*** OFP IS THE CONTROLLING DOCUMENT FOR DATA PRODUCED FOR THIS MESSAGE. ***
+{% endblock equipment -%}
