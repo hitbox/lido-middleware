@@ -1,37 +1,41 @@
 {% macro render_object_GraphSource(graphsource) %}
-    <p><code>endpoint</code> uses a query string to select a minimal amount of data and generates filter criteria at runtime.</p>
-    {{ render_by_type({
-        'client_id': graphsource.client_id,
-        'authority': graphsource.authority,
-        'scopes': graphsource.scopes,
-        'username': graphsource.username,
-        'endpoint': graphsource.endpoint,
-        })
-    }}
+<p><code>endpoint</code> uses a query string to select a minimal amount of data and generates filter criteria at runtime.</p>
+{{ render_by_type({
+    'client_id': graphsource.client_id,
+    'authority': graphsource.authority,
+    'scopes': graphsource.scopes,
+    'username': graphsource.username,
+    'endpoint': graphsource.endpoint,
+    })
+}}
 {% endmacro %}
 
 
 {% macro render_object_ArchiveMessageFilter(obj) %}
-    {{ render_by_type({
-        'archive': obj.archive,
-    }) }}
+{{ render_by_type({ 'archive': obj.archive, }) }}
 {% endmacro %}
 
 
 {% macro render_object_NetlineAircraftRegistrationAirlineMapping(obj) %}
-    <p>Pull aircraft registrations from Netline <code class="python str">{{ obj.host }}</code> <code class="python str">{{ obj.username }}</code> <code class="python str">{{ obj.database }}</code>.</p>
+<p>Pull aircraft registrations from Netline <code class="python str">{{ obj.host }}</code> <code class="python str">{{ obj.username }}</code> <code class="python str">{{ obj.database }}</code>.</p>
 {% endmacro %}
 
 
 {% macro render_object_FileOutput(obj) %}
-    <p>Format string receiving the data for the lido message <code class="python str">lidomsg</code> and the current datetime <code class="python str">now</code>.</p>
-    <code class="python str line">{{ obj.pathfmt }}</code>
+<p>Format string receiving the data for the lido message <code class="python str">lidomsg</code> and the current datetime <code class="python str">now</code>.</p>
+<code class="python str line">{{ obj.pathfmt }}</code>
 {% endmacro %}
 
 
 {% macro render_object_SHA1GraphMessageArchive(obj) %}
-    <p>Take a SHA1 hash of the message contents and save to a line in a text file.</p>
-    <code class="python str line">{{ obj.path }}</code>
+<p>Take a SHA1 hash of the message contents and save to a line in a text file.</p>
+<code class="python str line">{{ obj.path }}</code>
+{% endmacro %}
+
+
+{% macro render_object_MultipleMailBoxSource(obj) %}
+<p>List of mailbox sources.</p>
+{% for source in obj.sources %}{{ render_by_type(source) }}{% endfor %}
 {% endmacro %}
 
 
@@ -59,5 +63,7 @@
     {{ render_object_FileOutput(obj) }}
 {% elif obj.__class__.__name__ == 'SHA1GraphMessageArchive' %}
     {{ render_object_SHA1GraphMessageArchive(obj) }}
+{% elif obj.__class__.__name__ == 'MultipleMailBoxSource' %}
+    {{ render_object_MultipleMailBoxSource(obj) }}
 {% else %}{{ obj }}{% endif %}
 {% endmacro %}
