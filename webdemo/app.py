@@ -48,7 +48,7 @@ def process(id):
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_envvar('APP_CONFIG')
+    app.config.from_envvar('WEBDEMO')
     # raise KeyError for templates and routes
     app.config['EXTRACT']
     app.config['LIST']

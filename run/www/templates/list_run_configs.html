@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+
+{% block main %}
+<h2>Run Configurations List</h2>
+<nav>{% for name, config in run_configs|items %}
+    <h3><a href="{{ url_for('run.view_run_config', name=name) }}" title="{{ config.blurb }}">{{ name }}</a></h3>{% endfor %}
+</nav>
+{% endblock main %}

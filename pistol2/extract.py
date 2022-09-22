@@ -250,7 +250,7 @@ def loadplan_from_message(message):
     """
     Loadplan data from email message. Adds message data too.
     """
-    loadplan_data = loadplan_from_text(message.text)
+    loadplan_data = loadplan_from_text(message.body)
     loadplan_data['message_to'] = message.to
     loadplan_data['message_from'] = message.from_
     return loadplan_data

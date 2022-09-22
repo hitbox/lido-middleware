@@ -1,8 +1,18 @@
+import base64
+import codecs
 import re
 import string
 
+from types import SimpleNamespace
+
+import marshmallow
+
+from marshmallow import Schema
 from marshmallow.exceptions import ValidationError
+from marshmallow.fields import Boolean
 from marshmallow.fields import Constant
+from marshmallow.fields import DateTime
+from marshmallow.fields import Field
 from marshmallow.fields import Float
 from marshmallow.fields import Integer
 from marshmallow.fields import List
@@ -40,6 +50,97 @@ class CommonSchemaMixin:
     estimated_pax_class_one = Constant(None)
     estimated_pax_class_two = Constant(None)
     estimated_pax_class_three = Constant(None)
+
+
+class Base64ContentField(Field):
+    """
+    A string (not bytes) of base64 encoded "bytes".
+    https://learn.microsoft.com/en-us/graph/api/resources/fileattachment?view=graph-rest-1.0#properties
+    See contentBytes
+    """
+
+    def _deserialize(self, string_of_bytes, attr, data, **kwargs):
+        try:
+            return base64.b64decode(string_of_bytes)
+        except TypeError:
+            raise ValidationError(
+                'Base 64 content field must be string or bytes.')
+
+
+class BodySchema(Schema):
+
+    content = String()
+    content_type = String(data_key='contentType')
+
+
+class EmailAddressSchema(Schema):
+
+    address = String()
+    name = String()
+
+
+class SenderSchema(Schema):
+
+    email_address = Nested(EmailAddressSchema, data_key='emailAddress')
+
+
+class RecipientSchema(Schema):
+
+    email_address = Nested(EmailAddressSchema, data_key='emailAddress')
+
+
+class AttachmentSchema(Schema):
+
+    class Meta:
+        # ignore metadata like links to the next page and other properties
+        # not needed.
+        unknown = marshmallow.EXCLUDE
+
+
+    content_type = String(data_key='contentType')
+    content = Base64ContentField(data_key='contentBytes')
+    id = String()
+    is_inline = Boolean(data_key='isInline')
+    last_modified_datetime = DateTime(data_key='lastModifiedDateTime')
+    name = String()
+    size = Integer()
+
+    @marshmallow.post_load
+    def make_expected(self, data, **kwargs):
+        expected = SimpleNamespace(
+            payload = data['content'],
+        )
+        return expected
+
+
+class MessageSchema(Schema):
+
+    class Meta:
+        # ignore metadata like links to next page and other uneeded properties.
+        unknown = marshmallow.EXCLUDE
+
+
+    sender = Nested(SenderSchema)
+    toRecipients = Nested(RecipientSchema, many=True)
+    subject = String()
+    received_datetime = DateTime(data_key='receivedDateTime')
+    body = Nested(BodySchema)
+
+    attachments = List(
+        Nested(AttachmentSchema)
+    )
+
+    @marshmallow.post_load
+    def make_like_imap_email(self, data, **kwargs):
+        email_like = SimpleNamespace(
+            from_ = data['sender']['email_address']['address'],
+            to = [ to_data['email_address']['address'] for to_data in data['toRecipients'] ],
+            subject = data['subject'],
+            date = data['received_datetime'],
+            body = data['body']['content'],
+            attachments = data['attachments'],
+        )
+        return email_like
 
 
 mid_digits_re = re.compile('^\D*(\d+)(\D|$)')

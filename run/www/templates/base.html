@@ -1,0 +1,16 @@
+<!doctype html>
+<html translate="no">{% set title = 'Lido W/B Middleware' %}
+    <head>{% block head %}
+        <title>{{ title }}</title>
+        <meta name="google" content="notranslate">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon" href="data:,">
+        <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+    {% endblock %}</head>
+    <body>{% block body %}
+        <main>
+            <h1>Lido Weight and Balance Middleware Runner</h1>
+            {% block main %}{% endblock main %}
+        </main>
+    {% endblock body %}</body>
+</html>

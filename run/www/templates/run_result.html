@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+
+{# with context to get injected functions #}
+{% from "render.html" import render_by_type with context %}
+{% from "render.html" import render_string_show_space with context %}
+
+
+{% set run_config_name = request.view_args.name %}
+
+
+{% block main %}
+<h3>
+    <a href="{{ url_for('run.view_run_config', name=run_config_name) }}">Back to {{ run_config_name }} run configuration</a>
+</h3>
+<h2>Run Result</h2>
+<h3>{{ run_config_name }}</h3>
+<h3>{{ run_start }}</h3>
+{% if not run_result %}
+<h4>No results</h4>
+{% else %}
+<h4>{{ run_result|length }} results</h4>
+{% for result in run_result %}
+<div class="result message">
+    {% if result.lido_message is none %}
+        <h4>Error</h4>
+        <pre>{{ result.marshmallow_error|default('No schema error') }}</pre>
+        <pre>{{ result.extract_error|default('No extract error') }}</pre>
+        <details>
+            <summary>Raw Result</summary>
+            <pre>{{ result }}</pre>
+        </details>
+    {% else %}
+        <div class="short-message">
+            <code class="message" title="Message Date">{{ result.message.date }}</code>
+            <code class="message" title="Subject">{{ result.message.subject }}</code>
+            <code class="message" title="From Address">{{ result.message.from_ }}</code>
+        </div>
+        <pre title="Lido message string">{{ result.lido_message }}</pre>
+        <pre title="Path to write Lideo string">{{ result.output.get_path(result.lido_message) }}</pre>
+        <details>
+            <summary>Email</summary>
+            <p>Raw email data</p>
+            <h4>Body</h4>
+            <pre>{% if result.message.body %}{{ result.message.body }}{% else %}(Empty){% endif %}</pre>
+            {% if result.message.attachments %}
+            <h4>Payload/Loadplan</h4>
+            {% for line in result.message.attachments[0].payload.decode().splitlines() %}
+            <pre class="line">{{ line }}</pre>
+            {% endfor %}
+            {% endif %}
+        </details>
+        <details>
+            <summary>Extract Data</summary>
+            <p>Pull text out of email or attachment, basically giving it a name.</p>
+            {{ render_by_type(result.extract_data) }}
+        </details>
+        <details>
+            <summary>Loadplan</summary>
+            <p>Make extract data ready to construct a Lido message string. Text is converted to data types and calculation may be done.</p>
+            {{ render_by_type(result.loadplan) }}
+        </details>
+    {% endif %}
+</div>
+{% endfor %}
+{% endif %}
+{% endblock main %}

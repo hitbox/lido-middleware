@@ -6,6 +6,8 @@ fs
 imap_tools
 jinja2
 marshmallow
+msal
+requests
 sqlalchemy
 sqlparse
 wtforms

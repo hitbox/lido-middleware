@@ -1,0 +1,63 @@
+{% macro render_object_GraphSource(graphsource) %}
+    <p><code>endpoint</code> uses a query string to select a minimal amount of data and generates filter criteria at runtime.</p>
+    {{ render_by_type({
+        'client_id': graphsource.client_id,
+        'authority': graphsource.authority,
+        'scopes': graphsource.scopes,
+        'username': graphsource.username,
+        'endpoint': graphsource.endpoint,
+        })
+    }}
+{% endmacro %}
+
+
+{% macro render_object_ArchiveMessageFilter(obj) %}
+    {{ render_by_type({
+        'archive': obj.archive,
+    }) }}
+{% endmacro %}
+
+
+{% macro render_object_NetlineAircraftRegistrationAirlineMapping(obj) %}
+    <p>Pull aircraft registrations from Netline <code class="python str">{{ obj.host }}</code> <code class="python str">{{ obj.username }}</code> <code class="python str">{{ obj.database }}</code>.</p>
+{% endmacro %}
+
+
+{% macro render_object_FileOutput(obj) %}
+    <p>Format string receiving the data for the lido message <code class="python str">lidomsg</code> and the current datetime <code class="python str">now</code>.</p>
+    <code class="python str line">{{ obj.pathfmt }}</code>
+{% endmacro %}
+
+
+{% macro render_object_SHA1GraphMessageArchive(obj) %}
+    <p>Take a SHA1 hash of the message contents and save to a line in a text file.</p>
+    <code class="python str line">{{ obj.path }}</code>
+{% endmacro %}
+
+
+{% macro render_dict(d) %}
+{% for key, val in d|dictsort %}<dt class="data">{{ render_by_type(key) }}</dt><dd class="data">{{ render_by_type(val) }}</dd>{% endfor %}{% endmacro %}
+
+
+{% macro render_iterable(iterable) %}
+{% for item in iterable %}<li>{{ render_by_type(item) }}</li>{% endfor %}
+{% endmacro %}
+
+
+{% macro render_by_type(obj) %}
+{% if obj is iterable and obj is not string and obj is not mapping %}
+{# list, tuple, ... #}<code class="python square-bracket">[</code><ul class="literal">{{ render_iterable(obj) }}</ul><code class="python square-bracket">]</code>{% elif obj is mapping %}
+{# dict, ... #}<code>{</code><dl class="literal">{{ render_dict(obj) }}</dl><code>}</code>
+{% elif obj is string %}<code class="python str">{{ repr(obj) }}</code>
+{% elif obj.__class__.__name__ == 'GraphSource' %}
+    {{ render_object_GraphSource(obj) }}
+{% elif obj.__class__.__name__ == 'ArchiveMessageFilter' %}
+    {{ render_object_ArchiveMessageFilter(obj) }}
+{% elif obj.__class__.__name__ == 'NetlineAircraftRegistrationAirlineMapping' %}
+    {{ render_object_NetlineAircraftRegistrationAirlineMapping(obj) }}
+{% elif obj.__class__.__name__ == 'FileOutput' %}
+    {{ render_object_FileOutput(obj) }}
+{% elif obj.__class__.__name__ == 'SHA1GraphMessageArchive' %}
+    {{ render_object_SHA1GraphMessageArchive(obj) }}
+{% else %}{{ obj }}{% endif %}
+{% endmacro %}

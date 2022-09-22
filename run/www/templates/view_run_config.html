@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+
+{% from "render.html" import render_by_type with context %}
+
+
+{% set config_name = request.view_args.name %}
+
+
+{% block main %}
+<h3><a href="{{ url_for('run.list_run_configs') }}">Back to configs list</a></h3>
+<h2>{{ config_name }} Configuration</h2>
+
+<h3>
+    <a class="btn wide" href="{{ url_for('run.run_named_config', name=config_name) }}">Run {{ config_name }} configuration</a>
+</h3>
+<p>Run the {{ config_name }} config mostly the same as it would be as a daemon.</p>
+<p>Configuration options that change the state of things will not be run. A substitute that does nothing will replace it.</p>
+
+<hr>
+
+<h2>Configured Options</h2>
+
+<div class="run-config-option">
+    <h3>SOURCE</h3>
+    <p>Source for run configuration. Emails and files for example.</p>
+    <div class="run-config">{{ render_by_type(PYFILE_CONFIG.SOURCE) }}</div>
+</div>
+
+<div class="run-config-option">
+    <h3>MESSAGE_FILTER</h3>
+    <p>Used to ignore some source items, already processed or seen emails perhaps.</p>
+    <div>{{ render_by_type(PYFILE_CONFIG.MESSAGE_FILTER) }}</div>
+</div>
+
+<div class="run-config-option">
+    <h3>AIRCRAFT_REGISTRATION_AIRLINE_MAPPING</h3>
+    <p>An optional mapping of aircraft registrations to airlines.</p>
+    <div>
+    {% if PYFILE_CONFIG.AIRCRAFT_REGISTRATION_AIRLINE_MAPPING %}
+        {{ render_by_type(PYFILE_CONFIG.AIRCRAFT_REGISTRATION_AIRLINE_MAPPING) }}
+    {% else %}
+        (None)
+    {% endif %}
+    </div>
+</div>
+
+<div class="run-config-option">
+    <h3>MESSAGE_PROCESSOR</h3>
+    <p>Processes a source item to prepare it for deserialization through the SCHEMA_CLASS.</p>
+    <div>{{ PYFILE_CONFIG.MESSAGE_PROCESSOR }}</div>
+</div>
+
+<div class="run-config-option">
+    <h3>SCHEMA_CLASS</h3>
+    <p>Final process on source items preparing it to be processed into a Lido message string.</p>
+    <div>{{ PYFILE_CONFIG.SCHEMA_CLASS }}</div>
+</div>
+
+<div class="run-config-option">
+    <h3>OUTPUT</h3>
+    <p>What kind of output to produce with the Lido string.</p>
+    <div class="run-config">{{ render_by_type(PYFILE_CONFIG.OUTPUT) }}</div>
+</div>
+
+<div class="run-config-option">
+    <h3>MESSAGE_ARCHIVE</h3>
+    <p>Final step to, optionally, save some local data to avoid processing sources more than once.</p>
+    <div>{{ render_by_type(PYFILE_CONFIG.MESSAGE_ARCHIVE.path) }}</div>
+</div>
+
+{% endblock main %}

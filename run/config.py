@@ -45,6 +45,10 @@ class MessageArchive:
     """
 
     @abstractmethod
+    def hash_payload(self, payload):
+        raise NotImplementedError
+
+    @abstractmethod
     def save(self, message):
         raise NotImplementedError
 
@@ -137,6 +141,59 @@ class MailBoxSource(Source):
             yield from messages
 
 
+class GraphSource(Source):
+
+    def __init__(
+        self,
+        *, # keyword arguments only
+        client_id,
+        secret,
+        authority,
+        scopes,
+        username,
+        password,
+        endpoint,
+        schema = None,
+    ):
+        self.client_id = client_id
+        self.secret = secret
+        self.authority = authority
+        self.scopes = scopes
+        self.username = username
+        self.password = password
+        self.endpoint = endpoint
+        self.schema = schema
+
+    def itermessages(self):
+        import msal
+        import requests
+        app = msal.ConfidentialClientApplication(
+            client_id = self.client_id,
+            authority = self.authority,
+            client_credential = self.secret,
+        )
+        # NOTE: in practice, the checks and loops over in hello_graph_api
+        #       always go to username/password.
+        token_result = app.acquire_token_by_username_password(
+            self.username, self.password, scopes=self.scopes,
+        )
+        access_token = token_result['access_token']
+        # accumulate messages until no nextLink
+        headers = {'Authorization': f'Bearer {access_token}'}
+        endpoint = self.endpoint
+        while True:
+            response = requests.get(endpoint, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            messages = data['value']
+            if self.schema:
+                messages = self.schema.load(messages, many=True)
+            yield from messages
+            if '@odata.nextLink' not in data:
+                break
+            endpoint = data['@odata.nextLink']
+
+
 class MultipleMailBoxSource(Source):
     """
     Loadplan messages from multiple mailboxes.
@@ -224,6 +281,22 @@ class StreamOutput(Output):
 
 class NullOutput(Output):
 
+    def __init__(self, pathfmt, mode='w', preprocessor=str):
+        """
+        :param pathfmt: format string, lidomsg=LIDOWeightBalanceMessage instance.
+        """
+        self.pathfmt = pathfmt
+        self.mode = mode
+        self.preprocessor = preprocessor
+
+    def get_path(self, lido_message):
+        context = dict(
+            lidomsg = lido_message,
+            now = datetime.datetime.now(),
+        )
+        path = self.pathfmt.format(**context)
+        return path
+
     def write(self, lido_message):
         pass
 
@@ -257,6 +330,9 @@ class PassMessageArchive(MessageArchive):
     Empty do-nothing archiver to meet spec.
     """
 
+    def hash_payload(self, payload):
+        pass
+
     def save(self, message):
         pass
 
@@ -273,11 +349,15 @@ class FileSystemArchive(MessageArchive):
 
 class SHA1FakeMessageArchive(FileSystemArchive):
 
-    def save(self, message):
+    def hash_payload(self, payload):
         import hashlib
-        sha1 = haslib.sha1(message.text.encode('utf8'))
-        payload = sha1.hexdigest() + '\n'
-        self.write(payload)
+        sha1 = haslib.sha1(payload)
+        hashed_payload = sha1.hexdigest()
+        return hashed_payload
+
+    def save(self, message):
+        hashed = self.hash_payload(message.text.encode('utf8'))
+        self.write(hashed + '\n')
 
 
 class SHA1MessageArchive(FileSystemArchive):
@@ -285,15 +365,37 @@ class SHA1MessageArchive(FileSystemArchive):
     Archive an email message as SHA1 in a file.
     """
 
+    def hash_payload(self, payload):
+        import hashlib
+        sha1 = hashlib.sha1(bytes(payload))
+        hashed_payload = sha1.hexdigest() + '\n'
+        return hashed_payload
+
     def save(self, message):
         """
         Save the SHA1 hashed bytes of email message to line-based file.
         :param message: imap_tools.message.MailMessage object.
         """
+        hashed_payload = self.hash_payload(message.obj)
+        self.write(hashed_payload)
+
+
+class SHA1GraphMessageArchive(FileSystemArchive):
+    """
+    Save SHA1 hashed JSON string of Microsoft Graph messages per line in a file.
+    """
+
+    def hash_payload(self, payload):
         import hashlib
-        sha1 = hashlib.sha1(bytes(message.obj))
-        payload = sha1.hexdigest() + '\n'
-        self.write(payload)
+        sha1 = hashlib.sha1(bytes(payload))
+        hashed_payload = sha1.hexdigest() + '\n'
+        return hashed_payload
+
+    def save(self, message_dict):
+        import json
+        payload = json.dumps(message_dict, sort_keys=True)
+        hashed_payload = self.hash_payload(payload)
+        self.write(hashed_payload)
 
 
 class RunConfig:
