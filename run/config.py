@@ -268,6 +268,36 @@ class ArchiveMessageFilter(MessageFilter):
                 return not_in_archive and subject(message.subject)
 
 
+class ArchiveMessageFilterGraph(MessageFilter):
+
+    def __init__(self, archive, subject=None):
+        self.archive = archive
+        self.subject = subject
+
+    def filter(self, message):
+        """
+        Returns True if message does not exist in archive.
+        """
+        import hashlib
+        import json
+
+        from pathlib import Path
+
+        subject = self.subject
+        if subject is None:
+            subject = lambda s: True
+
+        path = Path(self.archive)
+        if not path.exists():
+            return True
+        else:
+            with open(self.archive) as archive_file:
+                archived = set(line.strip() for line in archive_file.readlines())
+                sha1 = hashlib.sha1(bytes(json.dumps(message.__dict__, sort_keys=True)))
+                not_in_archive = sha1.hexdigest() not in archived
+                return not_in_archive and subject(message.subject)
+
+
 class StreamOutput(Output):
 
     def __init__(self, stream=None):
@@ -391,9 +421,9 @@ class SHA1GraphMessageArchive(FileSystemArchive):
         hashed_payload = sha1.hexdigest() + '\n'
         return hashed_payload
 
-    def save(self, message_dict):
+    def save(self, message):
         import json
-        payload = json.dumps(message_dict, sort_keys=True)
+        payload = json.dumps(message.__dict__, sort_keys=True)
         hashed_payload = self.hash_payload(payload)
         self.write(hashed_payload)
 

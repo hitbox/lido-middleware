@@ -3,8 +3,6 @@ import codecs
 import re
 import string
 
-from types import SimpleNamespace
-
 import marshmallow
 
 from marshmallow import Schema
@@ -107,9 +105,13 @@ class AttachmentSchema(Schema):
 
     @marshmallow.post_load
     def make_expected(self, data, **kwargs):
-        expected = SimpleNamespace(
-            payload = data['content'],
-        )
+        class Payload:
+
+            def __init__(self, content):
+                self.payload = content
+
+
+        expected = Payload(data['content'])
         return expected
 
 
@@ -132,7 +134,18 @@ class MessageSchema(Schema):
 
     @marshmallow.post_load
     def make_like_imap_email(self, data, **kwargs):
-        email_like = SimpleNamespace(
+        class EmailLike:
+
+            def __init__(self, from_, to, subject, date, body, attachments):
+                self.from_ = from_
+                self.to = to
+                self.subject = subject
+                self.date = date
+                self.body = body
+                self.attachments = attachments
+
+
+        email_like = EmailLike(
             from_ = data['sender']['email_address']['address'],
             to = [ to_data['email_address']['address'] for to_data in data['toRecipients'] ],
             subject = data['subject'],
