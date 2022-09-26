@@ -60,6 +60,10 @@
             <p>Make extract data ready to construct a Lido message string. Text is converted to data types and calculation may be done.</p>
             {{ render_by_type(result.loadplan) }}
         </details>
+        <details>
+            <summary>Hash for archive</summary>
+            {{ result.message.hashed_payload }}
+        </details>
     {% endif %}
 </div>
 {% endfor %}

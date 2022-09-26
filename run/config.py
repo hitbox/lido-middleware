@@ -2,11 +2,12 @@ import datetime
 import sys
 import types
 
+from abc import ABC
 from abc import abstractmethod
 
 from utils import _resolve
 
-class Source:
+class Source(ABC):
     """
     Produce messages from something.
     """
@@ -19,7 +20,7 @@ class Source:
         raise NotImplementedError
 
 
-class Output:
+class Output(ABC):
     """
     Writes LIDO message to something.
     """
@@ -29,23 +30,26 @@ class Output:
         raise NotImplementedError
 
 
-class MessageFilter:
+class MessageFilter(ABC):
     """
     Decide if email message should be processed.
     """
 
     @abstractmethod
     def filter(self, message):
+        """
+        Return True to process message.
+        """
         raise NotImplementedError
 
 
-class MessageArchive:
+class MessageArchive(ABC):
     """
     Save a message so that it can be ignored next run.
     """
 
     @abstractmethod
-    def hash_payload(self, payload):
+    def hash_message(self, payload):
         raise NotImplementedError
 
     @abstractmethod
@@ -112,7 +116,7 @@ class PickleGlobSource(GlobSource):
                     yield message
 
 
-class MailBoxSource(Source):
+class IMAPMailBoxSource(Source):
     """
     Loadplan messages from email mailbox.
     """
@@ -222,6 +226,18 @@ class PassMessageFilter(MessageFilter):
         return True
 
 
+class HashGraphMixin:
+
+    def hash_message(self, message):
+        import hashlib
+        import json
+        import schema
+        message_data = schema.MessageSchema().dump(message)
+        payload = json.dumps(message_data, sort_keys=True)
+        sha1 = hashlib.sha1(bytes(payload, 'utf8'))
+        return sha1
+
+
 class SHA1HexArchiveFilter(MessageFilter):
     """
     Filter out SHA1 hex digests that exist in a file.
@@ -240,6 +256,10 @@ class SHA1HexArchiveFilter(MessageFilter):
 
 
 class ArchiveMessageFilter(MessageFilter):
+    """
+    Check archive file of IMAP message hashes as way of avoiding reading the
+    same message again.
+    """
 
     def __init__(self, archive, subject=None):
         self.archive = archive
@@ -268,7 +288,10 @@ class ArchiveMessageFilter(MessageFilter):
                 return not_in_archive and subject(message.subject)
 
 
-class ArchiveMessageFilterGraph(MessageFilter):
+class GraphArchiveMessageFilter(
+    MessageFilter,
+    HashGraphMixin,
+):
 
     def __init__(self, archive, subject=None):
         self.archive = archive
@@ -278,9 +301,6 @@ class ArchiveMessageFilterGraph(MessageFilter):
         """
         Returns True if message does not exist in archive.
         """
-        import hashlib
-        import json
-
         from pathlib import Path
 
         subject = self.subject
@@ -290,12 +310,12 @@ class ArchiveMessageFilterGraph(MessageFilter):
         path = Path(self.archive)
         if not path.exists():
             return True
-        else:
-            with open(self.archive) as archive_file:
-                archived = set(line.strip() for line in archive_file.readlines())
-                sha1 = hashlib.sha1(bytes(json.dumps(message.__dict__, sort_keys=True)))
-                not_in_archive = sha1.hexdigest() not in archived
-                return not_in_archive and subject(message.subject)
+
+        with open(self.archive) as archive_file:
+            archived = set(line.strip() for line in archive_file.readlines())
+            sha1 = self.hash_message(message)
+            not_in_archive = sha1.hexdigest() not in archived
+            return not_in_archive and subject(message.subject)
 
 
 class StreamOutput(Output):
@@ -360,7 +380,7 @@ class PassMessageArchive(MessageArchive):
     Empty do-nothing archiver to meet spec.
     """
 
-    def hash_payload(self, payload):
+    def hash_message(self, payload):
         pass
 
     def save(self, message):
@@ -368,6 +388,10 @@ class PassMessageArchive(MessageArchive):
 
 
 class FileSystemArchive(MessageArchive):
+    """
+    Partial implementation of MessageArchive for appending the hashed payload
+    to a file.
+    """
 
     def __init__(self, path):
         self.path = path
@@ -377,25 +401,12 @@ class FileSystemArchive(MessageArchive):
             archive_file.write(payload)
 
 
-class SHA1FakeMessageArchive(FileSystemArchive):
-
-    def hash_payload(self, payload):
-        import hashlib
-        sha1 = haslib.sha1(payload)
-        hashed_payload = sha1.hexdigest()
-        return hashed_payload
-
-    def save(self, message):
-        hashed = self.hash_payload(message.text.encode('utf8'))
-        self.write(hashed + '\n')
-
-
 class SHA1MessageArchive(FileSystemArchive):
     """
-    Archive an email message as SHA1 in a file.
+    Archive an IMAP email message as SHA1 in a file.
     """
 
-    def hash_payload(self, payload):
+    def hash_message(self, payload):
         import hashlib
         sha1 = hashlib.sha1(bytes(payload))
         hashed_payload = sha1.hexdigest() + '\n'
@@ -406,26 +417,36 @@ class SHA1MessageArchive(FileSystemArchive):
         Save the SHA1 hashed bytes of email message to line-based file.
         :param message: imap_tools.message.MailMessage object.
         """
-        hashed_payload = self.hash_payload(message.obj)
+        hashed_payload = self.hash_message(message.obj)
         self.write(hashed_payload)
 
 
-class SHA1GraphMessageArchive(FileSystemArchive):
+class SHA1GraphMessageArchive(
+    # order is important for ABC
+    HashGraphMixin,
+    FileSystemArchive,
+):
     """
     Save SHA1 hashed JSON string of Microsoft Graph messages per line in a file.
     """
 
-    def hash_payload(self, payload):
-        import hashlib
-        sha1 = hashlib.sha1(bytes(payload))
-        hashed_payload = sha1.hexdigest() + '\n'
-        return hashed_payload
+    def save(self, message):
+        sha1 = self.hash_message(message)
+        self.write(sha1.hexdigest() + '\n')
+
+
+class PassSHA1GraphMessageArchive(
+    SHA1GraphMessageArchive
+):
+    """
+    Same as SHA1GraphMessageArchive without writes.
+    """
+
+    def write(self, hashed_payload):
+        pass
 
     def save(self, message):
-        import json
-        payload = json.dumps(message.__dict__, sort_keys=True)
-        hashed_payload = self.hash_payload(payload)
-        self.write(hashed_payload)
+        message.hashed = self.hash_message(message)
 
 
 class RunConfig:

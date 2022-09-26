@@ -73,7 +73,7 @@ def run_named_config(name):
         output = run.config.NullOutput(
             real_config['OUTPUT'].pathfmt,
         ),
-        message_archive = run.config.PassMessageArchive(),
+        message_archive = run.config.PassSHA1GraphMessageArchive(None),
         message_class = real_config.get('MESSAGE_CLASS', lido.LIDOWeightBalanceMessage),
         raise_exc = False,
         # TODO: airline_mapping
