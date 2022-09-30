@@ -36,7 +36,7 @@ def move_for_exception(source, move_to, e):
     dest_fn = ''.join([
         base_root,
         now.strftime(EXCEPTION_DATETIME_FMT),
-        '.STACKTRACE',
+        '.STACKTRACE.txt',
         base_ext,
     ])
     dest_path = os.path.join(move_to, dest_fn)
