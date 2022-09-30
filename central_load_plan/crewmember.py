@@ -91,7 +91,7 @@ def get_crew_query(tables, data):
                 (sa.and_(is_type_leg, duty.c.assigned_rank == 2), 'IRO'),
                 (sa.and_(is_type_leg, duty.c.assigned_rank == 3), 'CP'),
                 (sa.and_(is_type_leg, duty.c.assigned_rank == 5), 'FA'),
-                (is_type_leg, 'ACM'),
+                else_ = 'ACM',
             ).label('seat'),
             sa.case(
                 (is_type_leg, duty.c.assigned_rank),
