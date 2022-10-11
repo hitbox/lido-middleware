@@ -15,13 +15,8 @@ def log_marshmallow_error(marshmallow_error, logfunc):
     # Print the original in case the prettier output loses something.
     # key, [<validation error>, ...]
     for key, error_messages in marshmallow_error.messages.items():
-        if extract_data is not None:
-            if key in extract_data:
-                for errmsg in error_messages:
-                    logfunc(f'{key} {errmsg} ({extract_data[key]!r})')
-        else:
-            for errmsg in error_messages:
-                logfunc(errmsg)
+        for errmsg in error_messages:
+            logfunc(errmsg)
 
 class Runner:
     """
