@@ -186,7 +186,9 @@ class ToAddressAirlineMapping:
     """
     Map from email to-address to airline code.
     """
-    toaddress_airline_path = 'extradata/toaddress_airline.csv'
+    toaddress_airline_path = (
+        Path(__file__).parent.parent / 'extradata/toaddress_airline.csv'
+    )
 
     def __init__(self, toaddress_airline_path=None):
         toaddress_airline_path = toaddress_airline_path or self.toaddress_airline_path
