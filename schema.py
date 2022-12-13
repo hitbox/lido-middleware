@@ -144,6 +144,16 @@ class MessageSchema(Schema):
                 self.body = body
                 self.attachments = attachments
 
+            def dict_for_json(self):
+                return dict(
+                    from_ = self.from_,
+                    to = self.to,
+                    subject = self.subject,
+                    date = self.date.isoformat(),
+                    body = self.body,
+                    attachments = [a.payload.decode() for a in self.attachments],
+                )
+
 
         email_like = EmailLike(
             from_ = data['sender']['email_address']['address'],

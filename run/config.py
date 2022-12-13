@@ -237,6 +237,15 @@ class HashGraphMixin:
         sha1 = hashlib.sha1(bytes(payload, 'utf8'))
         return sha1
 
+    def hash_message(self, message):
+        # quick and dirty fix for hashing only the subject line of emails
+        import hashlib
+        import json
+        message_data = message.dict_for_json()
+        payload = json.dumps(message_data, sort_keys=True)
+        sha1 = hashlib.sha1(bytes(payload, 'utf8'))
+        return sha1
+
 
 class SHA1HexArchiveFilter(MessageFilter):
     """
