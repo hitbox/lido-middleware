@@ -229,15 +229,6 @@ class PassMessageFilter(MessageFilter):
 class HashGraphMixin:
 
     def hash_message(self, message):
-        import hashlib
-        import json
-        import schema
-        message_data = schema.MessageSchema().dump(message)
-        payload = json.dumps(message_data, sort_keys=True)
-        sha1 = hashlib.sha1(bytes(payload, 'utf8'))
-        return sha1
-
-    def hash_message(self, message):
         # quick and dirty fix for hashing only the subject line of emails
         import hashlib
         import json
