@@ -151,7 +151,8 @@ class MessageSchema(Schema):
                     subject = self.subject,
                     date = self.date.isoformat(),
                     body = self.body,
-                    attachments = [a.payload.decode() for a in self.attachments],
+                    # some attachments are pdf, ignore their encoding errors
+                    attachments = [a.payload.decode("utf8", "ignore") for a in self.attachments],
                 )
 
 
