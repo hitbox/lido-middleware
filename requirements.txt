@@ -1,5 +1,6 @@
 chardet
 cx_oracle
+oracledb # supersedes cx_oracle
 flask
 flask-wtf
 fs

@@ -20,5 +20,13 @@ def parse_args(argv=None):
         action = 'store_true',
         help = 'Stop processing on exception.',
     )
+    parser.add_argument('--test-smtp',
+        action = 'store_true',
+        help = 'Test SMTP connection and stop.',
+    )
+    parser.add_argument('--test-oracle',
+        action = 'store_true',
+        help = 'Test oracle connection and stop.',
+    )
     options = parser.parse_args(argv)
     return options

@@ -9,11 +9,20 @@ from itertools import zip_longest
 from pathlib import Path
 from types import SimpleNamespace
 
-import cx_Oracle as oracle
+import oracledb
 import sqlalchemy as sa
 
 from . import pluck
 from . import schema
+
+override_driver = None
+if sa.__version__.startswith('1'):
+    # oracledb compatibility with sqlalchemy
+    # https://stackoverflow.com/a/74105559/2680592
+    import sys
+    oracledb.version = "8.3.0"
+    sys.modules["cx_Oracle"] = oracledb
+    override_driver = 'oracle'
 
 JUMPSEAT_KEYS = ('first_name', 'last_name', 'employee_number', 'seat', 'seat_order')
 
@@ -195,26 +204,34 @@ def get_person_query(table, person_id, employee_number_field):
     )
     return query
 
+def get_engine(dbconfig):
+    if 'oracle_lib_dir' in dbconfig:
+        oracle_lib_dir = dbconfig['oracle_lib_dir']
+        try:
+            oracledb.init_oracle_client(lib_dir=oracle_lib_dir)
+        except oracledb.ProgrammingError:
+            # already initialized
+            pass
+
+    # connect
+    keys = ['username', 'password', 'host', 'port', 'database', 'query']
+    connection_config = {key: val for key, val in dbconfig.items() if key in keys}
+    if override_driver:
+        drivername = override_driver
+    else:
+        drivername = dbconfig['drivername']
+    url = sa.engine.URL.create(drivername, **connection_config)
+    engine = sa.create_engine(url, max_identifier_length=128)
+    return engine
+
 def fromdata(dbconfig, data):
     """
     Return airline specific, object containing crewmembers in list.
     """
     airline_code = data['airline_iata_code']
     airline_dbconfig = dbconfig[airline_code]
-    if 'oracle_lib_dir' in airline_dbconfig:
-        oracle_lib_dir = airline_dbconfig['oracle_lib_dir']
-        try:
-            oracle.init_oracle_client(lib_dir=oracle_lib_dir)
-        except oracle.ProgrammingError:
-            # already initialized
-            pass
 
-    # connect
-    keys = ['username', 'password', 'host', 'port', 'database', 'query']
-    connconf = {key: val for key, val in airline_dbconfig.items() if key in keys}
-    url = sa.engine.url.URL.create(airline_dbconfig['drivername'], **connconf)
-    engine = sa.create_engine(url, max_identifier_length=128)
-
+    engine = get_engine(airline_dbconfig)
     tables = get_tables(engine)
     query_crew = get_crew_query(tables, data)
     query_jumpseats = get_jumpseats_query(tables, data)

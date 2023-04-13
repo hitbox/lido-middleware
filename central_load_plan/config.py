@@ -1,7 +1,6 @@
 import configparser
 import logging.config
 import os
-import smtplib
 
 from types import SimpleNamespace
 
@@ -114,9 +113,5 @@ def process(config_filename):
     for item in appconf_data.emailconf.items():
         airline_iata_code, airline_email_conf = item
         rendering.env.get_template(airline_email_conf['template'])
-
-    # raise for smtp
-    with smtplib.SMTP(**appconf_data.smtpconf):
-        pass
 
     return appconf_data
