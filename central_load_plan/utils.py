@@ -8,24 +8,24 @@ from collections import ChainMap
 
 from .constants import EXCEPTION_DATETIME_FMT
 
-def move_for_exception(source, move_to, e):
+def insert_before_extension(base, insert_string):
+    root, ext = os.path.splitext(base)
+    filename = ''.join([root, insert_string, ext])
+    return filename
+
+def move_for_exception(source, move_to, exc):
     """
     Move `source` to destination `move_to` with the current datetime put in the
     filename. Write another file next to it in the destination, with the
-    exception `e` in it.
+    exception `exc` in it.
     """
     # capture now for both files
     now = datetime.datetime.now()
-    # get just filename part
+    now_string = now.strftime(EXCEPTION_DATETIME_FMT)
+
     source_base = os.path.basename(source)
-    # split to insert now
-    base_root, base_ext = os.path.splitext(source_base)
-    # combine base filename, now and extension
-    dest_fn = ''.join([
-        base_root,
-        now.strftime(EXCEPTION_DATETIME_FMT),
-        base_ext,
-    ])
+    dest_fn = insert_before_extension(source_base, now_string)
+
     # combine with exception directory
     dest_path = os.path.join(move_to, dest_fn)
 
@@ -33,19 +33,17 @@ def move_for_exception(source, move_to, e):
     shutil.move(source, dest_path)
 
     # write stacktrace
-    dest_fn = ''.join([
-        base_root,
-        now.strftime(EXCEPTION_DATETIME_FMT),
-        '.STACKTRACE.txt',
-        base_ext,
-    ])
-    dest_path = os.path.join(move_to, dest_fn)
-    with open(dest_path, 'w') as stacktrace_fp:
+    stacktrace_fn = insert_before_extension(
+        source_base,
+        f'{now_string}.STACKTRACE.txt'
+    )
+    stacktrace_path = os.path.join(move_to, stacktrace_fn)
+    with open(stacktrace_path, 'w') as stacktrace_fp:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         stack_string = ''.join(lines)
         stacktrace_fp.write(stack_string)
-        stacktrace_fp.write(str(e))
+        stacktrace_fp.write(str(exc))
 
 def keyed_sections(cp, prefix, sep='_', func=None):
     """
@@ -91,3 +89,16 @@ def keyed_sections(cp, prefix, sep='_', func=None):
         if secname.startswith(prefix + sep)
     )
     return result
+
+def path_format_data(path):
+    fmtdata = dict(
+        path = path,
+        now = datetime.datetime.now(),
+    )
+    head, tail = os.path.split(path)
+    fmtdata['path_head'] = head # directory
+    fmtdata['path_tail'] = tail # filename
+    root, ext = os.path.splitext(tail)
+    fmtdata['fn_root'] = root # filename without extension
+    fmtdata['fn_ext'] = ext # extension with dot
+    return fmtdata

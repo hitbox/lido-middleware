@@ -1,2 +1,4 @@
 class CentralLoadPlanError(Exception):
-    pass
+    """
+    Central Load Plan Error
+    """

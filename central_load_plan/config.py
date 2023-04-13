@@ -1,10 +1,11 @@
 import configparser
 import logging.config
 import os
+import smtplib
 
 from types import SimpleNamespace
 
-from . import email
+from . import rendering
 from .constants import APPNAME
 from .schema import oracleconfschema
 from .schema import smtpconfschema
@@ -23,6 +24,16 @@ def raise_for_absolue_and_exists(path):
     if not os.path.isabs(path):
         raise ConfigError('Path is not absolute, %r' % path)
     raise_for_exists(path)
+
+def raise_for_split_path(path):
+    head = path
+    while True:
+        if os.path.exists(head):
+            # good, found left side of path that exists
+            break
+        head, _ = os.path.split(head)
+        if not head:
+            raise ConfigError('split path not found')
 
 def process(config_filename):
     """
@@ -63,9 +74,17 @@ def process(config_filename):
 
     appconf_data = SimpleNamespace(
         source_glob = appconf['source_glob'],
+
+        # format strings for where to move source file after processing
+        # mkdir is a separate option to avoid confusion with filenames, i.e.,
+        # *NOT* accidentally creating a directory with the filename in it
         move_to = appconf['move_to'].strip(),
+        move_to_mkdir = appconf['move_to_mkdir'].strip(),
+
         exception_move_to = appconf.get('exception_move_to'),
         ignore_crewmembers = appconf.getboolean('ignore_crewmembers'),
+        dry_run = appconf.getboolean('dry', fallback=False),
+        abort_on_error = appconf.getboolean('abort_on_error', fallback=False),
         smtpconf = smtpconfschema.load(cp['smtp']),
         # emailconf: airline code keyed dict of to-addresses and templates
         emailconf = keyed_sections(cp, 'emailmessage'),
@@ -77,7 +96,6 @@ def process(config_filename):
     # all paths must be absolute and exist
     attrs = [
         'source_glob',
-        'move_to',
         'exception_move_to',
     ]
     for attr in attrs:
@@ -88,9 +106,17 @@ def process(config_filename):
             path = os.path.dirname(path)
         raise_for_absolue_and_exists(path)
 
+    # format string should eventually devolve to a path that exists
+    for attr in ['move_to', 'move_to_mkdir']:
+        raise_for_split_path(getattr(appconf_data, attr))
+
     # raise for email template paths exist
     for item in appconf_data.emailconf.items():
         airline_iata_code, airline_email_conf = item
-        email.env.get_template(airline_email_conf['template'])
+        rendering.env.get_template(airline_email_conf['template'])
+
+    # raise for smtp
+    with smtplib.SMTP(**appconf_data.smtpconf):
+        pass
 
     return appconf_data
