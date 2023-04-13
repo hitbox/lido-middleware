@@ -8,6 +8,6 @@ jinja2
 marshmallow
 msal
 requests
-sqlalchemy <= 1.4
+sqlalchemy < 2
 sqlparse
 wtforms
