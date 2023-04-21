@@ -44,6 +44,10 @@ MAX PAYLOAD     MZFW        MTOW        MLDG
 --- A/C EQUIPMENT STATUS ---
 ITEM          DESCRIPTION
 {%- for status in aircraft_equipment_status %}
-{{ '%-14s'|format(status.item) -}}
-{% if status.description %}{{ '\n'.join(textwrap.wrap(status.description, width=80 - 14, subsequent_indent=' ' * 14)) }}{% endif %}{% endfor %}
+{{ '{:14}'.format(status.item) -}}
+{% if status.description %}{{
+    '\n'.join(
+        textwrap.wrap(status.description, width=80 - 14, subsequent_indent=' ' * 14)
+    )
+}}{% endif %}{% endfor %}
 {% endblock equipment -%}
