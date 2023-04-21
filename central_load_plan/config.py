@@ -73,13 +73,8 @@ def process(config_filename):
 
     appconf_data = SimpleNamespace(
         source_glob = appconf['source_glob'],
-
         # format strings for where to move source file after processing
-        # mkdir is a separate option to avoid confusion with filenames, i.e.,
-        # *NOT* accidentally creating a directory with the filename in it
         move_to = appconf['move_to'].strip(),
-        move_to_mkdir = appconf['move_to_mkdir'].strip(),
-
         exception_move_to = appconf.get('exception_move_to'),
         ignore_crewmembers = appconf.getboolean('ignore_crewmembers'),
         dry_run = appconf.getboolean('dry', fallback=False),
@@ -106,7 +101,7 @@ def process(config_filename):
         raise_for_absolue_and_exists(path)
 
     # format string should eventually devolve to a path that exists
-    for attr in ['move_to', 'move_to_mkdir']:
+    for attr in ['move_to']:
         raise_for_split_path(getattr(appconf_data, attr))
 
     # raise for email template paths exist

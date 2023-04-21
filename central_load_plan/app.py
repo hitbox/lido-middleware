@@ -30,7 +30,6 @@ class CLPApp:
         self,
         source_glob,
         move_to,
-        move_to_mkdir,
         exception_move_to,
         smtpconf,
         emailconf,
@@ -43,8 +42,6 @@ class CLPApp:
         """
         :param source_glob: source files glob.
         :param move_to: move source files after processing.
-        :param move_to_mkdir:
-            format string to ensure directory `move_to` refers to exists.
         :param exception_move_to: path to move source on exception.
         :param smtpconf: smtplib.SMTP arguments dict.
         :param emailconf:
@@ -63,7 +60,6 @@ class CLPApp:
         """
         self.source_glob = source_glob
         self.move_to = move_to
-        self.move_to_mkdir = move_to_mkdir
         self.exception_move_to = exception_move_to
         self.smtpconf = smtpconf
         self.emailconf = emailconf
