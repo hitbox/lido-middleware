@@ -94,56 +94,60 @@ class CLPApp:
     def process_file(self, source_path):
         """
         Extract data from source_path and process in all configured ways.
+
+        :param source_path: path to source file as from glob.
         """
-        # skip empty
-        if os.stat(source_path).st_size == 0:
-            self.logger.info(
-                'skip empty file %r', os.path.abspath(source_path))
-        else:
-            xml_data = self._process_file(source_path)
-            # emails and output files only applicable for non-empty files
+        # NOTE
+        # - using default values for the benefit of format strings
+        xml_data = pluck.default_data()
+
+        if os.stat(source_path).st_size > 0:
+            self._update_from_source(source_path, xml_data)
+
+            # deserialize
+            xml_data = ofpschema.load(xml_data)
+
+            # crew members
+            if not self.ignore_crewmembers:
+                crewmembers_obj = crewmember.fromdata(self.dbconf, xml_data)
+                xml_data['crewmembers'] = crewmembers_obj.crewmembers
+
             self.send_email(source_path, xml_data)
-            self.write_output_files(source_path, xml_data)
+            self.write_output_files(xml_data)
 
-        # want to move source if empty too
-        self.do_move_source(source_path)
+        self.do_move_source(source_path, xml_data)
 
-    def _process_file(self, source_path):
-        # actually process source_path, the motivation of this method is
-        # reducing indentation.
+    def _update_from_source(self, source_path, xml_data):
+        # update dict from source xml
         tree = ET.parse(source_path)
         root = tree.getroot()
-        strdict = pluck.fromxml(root)
-        xml_data = ofpschema.load(strdict)
-        # crew members
-        if self.ignore_crewmembers:
-            xml_data['crewmembers'] = []
-        else:
-            crewmembers_obj = crewmember.fromdata(self.dbconf, xml_data)
-            xml_data['crewmembers'] = crewmembers_obj.crewmembers
-        return xml_data
+        pluck.fromxml_update(root, xml_data)
 
-    def do_move_source(self, source_path):
+    def do_move_source(self, source_path, xml_data):
         """
         If configured, move source file.
         :param source_path: path to a file.
         """
-        if self.move_to:
-            fmtdata = path_format_data(source_path)
-            dest_path = self.move_to.format(**fmtdata)
+        if not self.move_to:
+            return
 
-            # if given, ensure directory exists
-            if self.move_to_mkdir:
-                dest_dir = self.move_to_mkdir.format(**fmtdata)
-                if not os.path.exists(dest_dir):
-                    # dirname of source_path to compare dir with dir
-                    self.logger.info('mkdir %r',
-                        os.path.relpath(dest_dir, os.path.dirname(source_path))
-                    )
-                    if not self.dry_run:
-                        os.makedirs(dest_dir)
+        # NOTE
+        # - possibly called with empty xml_data
+        fmtdata = path_format_data(source_path)
+        fmtdata.update(xml_data)
+        dest_path = self.move_to.format(**fmtdata)
 
-            self.move_file(source_path, dest_path)
+        # ensure directory exists
+        dest_dir, _dest_fn = os.path.split(dest_path)
+        if not os.path.exists(dest_dir):
+            # dirname of source_path to compare dir with dir
+            self.logger.info('mkdir %r',
+                os.path.relpath(dest_dir, os.path.dirname(source_path))
+            )
+            if not self.dry_run:
+                os.makedirs(dest_dir)
+
+        self.move_file(source_path, dest_path)
 
     def send_email(self, source_path, xml_data):
         """
@@ -168,27 +172,34 @@ class CLPApp:
         with smtplib.SMTP(**self.smtpconf) as smtp:
             smtp.send_message(emailmessage)
             self.logger.info(
-                'email: %r to %r', emailmessage['subject'], emailmessage['to'])
+                'email: %r to %r',
+                emailmessage['subject'],
+                emailmessage['to']
+            )
 
-    def write_output_files(self, source_path, xml_data):
+    def write_output_files(self, xml_data):
         """
         Write all output files according to config.
+
+        :param xml_data: dict of xml_data.
         """
-        # NOTE
-        # - the email module could be renamed
-        # - it is really just a template renderer
-        # - only the filename format string gets the source_path
         for airline_iata_code, fileconfig in self.file_output_conf.items():
             if xml_data['airline_iata_code'] != airline_iata_code:
-                continue
-            template = fileconfig['template']
-            contents = rendering.render(template, xml_data)
-            output_format = fileconfig['output_format']
-            filename = output_format.format(source_path=source_path, **xml_data)
-            if not self.dry_run:
-                with open(filename, 'w') as output_file:
-                    output_file.write(contents)
-            self.logger.info('file: %r', os.path.relpath(filename, source_path))
+                break
+        else:
+            raise CentralLoadPlanError('airline code not found from xml data.')
+
+        template = fileconfig['template']
+        contents = rendering.render(template, xml_data)
+        output_format = fileconfig['output_format']
+        filename = output_format.format(**xml_data)
+        if not self.dry_run:
+            with open(filename, 'w') as output_file:
+                output_file.write(contents)
+        self.logger.info(
+            'file: %r',
+            os.path.normpath(filename)
+        )
 
     def move_file(self, source, dest):
         """
@@ -201,8 +212,8 @@ class CLPApp:
         prefix = os.path.commonprefix([source, dest])
         self.logger.info(
             'move %r to %r',
-            os.path.basename(source),
-            os.path.relpath(dest, os.path.dirname(source))
+            os.path.normpath(os.path.basename(source)),
+            os.path.normpath(os.path.relpath(dest, os.path.dirname(source)))
         )
         if not self.dry_run:
             shutil.move(source, dest)
