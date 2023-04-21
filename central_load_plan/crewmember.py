@@ -1,25 +1,14 @@
-import argparse
-import configparser
-import datetime
-import os
-import textwrap
-import xml.etree.ElementTree as ET
+import sys
 
-from itertools import zip_longest
-from pathlib import Path
 from types import SimpleNamespace
 
 import oracledb
 import sqlalchemy as sa
 
-from . import pluck
-from . import schema
-
 override_driver = None
 if sa.__version__.startswith('1'):
     # oracledb compatibility with sqlalchemy
     # https://stackoverflow.com/a/74105559/2680592
-    import sys
     oracledb.version = "8.3.0"
     sys.modules["cx_Oracle"] = oracledb
     override_driver = 'oracle'
@@ -278,50 +267,3 @@ def fromdata(dbconfig, data):
 
         result = CrewMemberResult(crewmembers, query_crew, data, engine)
         return result
-
-def main(argv=None):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('xmlfiles', nargs='+')
-    parser.add_argument('--config', nargs='+')
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('--report', action='store_true')
-    group.add_argument('--report-file', action='store_true')
-    args = parser.parse_args(argv)
-
-    filenames = []
-    if args.config:
-        filenames.extend(args.config)
-    if 'CREWMEMBER_CONFIG' in os.environ:
-        filenames.append(os.environ['CREWMEMBER_CONFIG'])
-    cp = configparser.ConfigParser()
-    cp.read(filenames)
-
-    for fn in args.xmlfiles:
-        tree = ET.parse(fn)
-        root = tree.getroot()
-        data = pluck.fromxml(root)
-        data = schema.OperationalFlightPlanSchema().load(data)
-        result = fromdata(cp, data)
-        if args.report:
-            if result:
-                print(fn + ' ' + result.engine.url.render_as_string())
-        elif args.report_file:
-            # same name, current dir
-            output = Path(fn).name
-            with open(output, 'w') as fp:
-                print(fn, file=fp)
-                for row in result.crewmembers:
-                    print(row, file=fp)
-                print(file=fp)
-                print(result.engine.url.render_as_string(), file=fp)
-                sql = result.query.compile(result.engine, compile_kwargs={'literal_binds': True})
-                sql = textwrap.wrap(sql)
-                sql = '\n'.join(sql)
-                print(sql, file=fp)
-        else:
-            print(fn)
-            for row in result.crewmembers:
-                print(row)
-
-if __name__ == '__main__':
-    main()
