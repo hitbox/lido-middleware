@@ -1,5 +1,6 @@
 import argparse
 import smtplib
+import time
 
 from pprint import pprint
 
@@ -7,9 +8,9 @@ from . import config
 from .app import CLPApp
 from .constants import APPNAME
 
-def parse_args(argv=None):
+def argument_parser():
     """
-    Process XML files into CLP email messages and send.
+    central_load_plan command line argument parser.
     """
     parser = argparse.ArgumentParser(
         description = run.__doc__,
@@ -32,8 +33,12 @@ def parse_args(argv=None):
         action = 'store_true',
         help = 'Test oracle connection and stop.',
     )
-    options = parser.parse_args(argv)
-    return options
+    parser.add_argument('--seconds',
+        metavar = 'N',
+        type = float,
+        help = 'Run in continuous mode, every %(metavar)s seconds.',
+    )
+    return parser
 
 def _test_smtp(conf):
     with smtplib.SMTP(**conf):
@@ -46,11 +51,12 @@ def _test_oracle(company_confs):
         with engine.connect():
             print(f'Connected {company_code} {engine}')
 
-def run():
+def run(argv=None):
     """
     Create Central Load Plan emails and files from XML files.
     """
-    options = parse_args()
+    parser = argument_parser()
+    options = parser.parse_args(argv)
     appconf = config.process(options.config)
 
     # flags that stop after processed
@@ -83,4 +89,6 @@ def run():
         dry_run = appconf.dry_run,
     )
 
-    clpapp.run()
+    while isinstance(appconf.seconds, float):
+        clpapp.run()
+        time.sleep(appconf.seconds)

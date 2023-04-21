@@ -73,6 +73,7 @@ def process(config_filename):
 
     appconf_data = SimpleNamespace(
         source_glob = appconf['source_glob'],
+        seconds = appconf.getfloat('seconds'),
         # format strings for where to move source file after processing
         move_to = appconf['move_to'].strip(),
         exception_move_to = appconf.get('exception_move_to'),
