@@ -78,7 +78,7 @@ class CLPApp:
             self._run(source_path)
 
     def _run(self, source_path):
-        self.logger.info('process: %r', source_path)
+        self.logger.info('process: %r', os.path.normpath(source_path))
         try:
             self.process_file(source_path)
         except KeyboardInterrupt:
