@@ -210,7 +210,6 @@ class CLPApp:
         """
         if os.path.exists(dest):
             raise CentralLoadPlanError('file exists: %r', dest)
-        prefix = os.path.commonprefix([source, dest])
         self.logger.info(
             'move %r to %r',
             os.path.normpath(os.path.basename(source)),
