@@ -119,9 +119,10 @@ class CLPApp:
 
     def _update_from_source(self, source_path, xml_data):
         # update dict from source xml
-        tree = ET.parse(source_path)
-        root = tree.getroot()
-        pluck.fromxml_update(root, xml_data)
+        with open(source_path) as source_file:
+            tree = ET.parse(source_path)
+            root = tree.getroot()
+            pluck.fromxml_update(root, xml_data)
 
     def do_move_source(self, source_path, xml_data):
         """
