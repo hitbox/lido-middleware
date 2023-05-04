@@ -86,6 +86,7 @@ def process(config_filename):
         # file_output_conf
         file_output_conf = keyed_sections(cp, 'file_output'),
         dbconf = keyed_sections(cp, 'oracle', func=oracleconfschema.load),
+        minimum_age = appconf.getfloat('minimum_age'),
     )
 
     # all paths must be absolute and exist

@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import smtplib
+import time
 import xml.etree.ElementTree as ET
 
 from email.message import EmailMessage
@@ -38,6 +39,7 @@ class CLPApp:
         ignore_crewmembers,
         abort_on_error = False,
         dry_run = False,
+        minimum_age = None,
     ):
         """
         :param source_glob: source files glob.
@@ -57,6 +59,8 @@ class CLPApp:
             do not continue processing files from source glob on exception.
         :param dry_run:
             avoid having any effect on the filesystem, emails are still sent.
+        :param minimum_age:
+            optional minimum age to process file.
         """
         self.source_glob = source_glob
         self.move_to = move_to
@@ -68,6 +72,7 @@ class CLPApp:
         self.ignore_crewmembers = ignore_crewmembers
         self.abort_on_error = abort_on_error
         self.dry_run = dry_run
+        self.minimum_age = minimum_age
         self.logger = logging.getLogger(APPNAME)
 
     def run(self):
@@ -79,6 +84,14 @@ class CLPApp:
 
     def _run(self, source_path):
         self.logger.info('process: %r', os.path.normpath(source_path))
+        status = os.stat(source_path)
+        diff = abs(time.time() - status.st_mtime)
+        if (
+            self.minimum_age is not None
+            and diff <= self.minimum_age
+        ):
+            self.logger.info('ignoring %f for minimum age.', diff)
+            return
         try:
             self.process_file(source_path)
         except KeyboardInterrupt:

@@ -87,8 +87,12 @@ def run(argv=None):
         appconf.ignore_crewmembers,
         abort_on_error = appconf.abort_on_error,
         dry_run = appconf.dry_run,
+        minimum_age = appconf.minimum_age,
     )
 
-    while isinstance(appconf.seconds, float):
+    if isinstance(appconf.seconds, float):
+        while True:
+            clpapp.run()
+            time.sleep(appconf.seconds)
+    else:
         clpapp.run()
-        time.sleep(appconf.seconds)
