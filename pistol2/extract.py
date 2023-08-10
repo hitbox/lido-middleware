@@ -2,6 +2,11 @@
 Extract string data from Pistol message. Nothing but None and strings should
 come out of here.
 """
+import argparse
+import json
+
+from pprint import pprint
+
 from run.exceptions import ExtractError
 
 from .regex import ad_line_re
@@ -93,6 +98,7 @@ def _weights_and_config_data(lines_iter, color_code):
         weights_data.append(match.groupdict())
     # pull other weight lines data
     for other_weight_line in other_weight_lines:
+        # normal, original processing one weight name and value pair per line
         match = other_weight_line_re.match(other_weight_line)
         if not match:
             raise PistolExtractError(
@@ -255,7 +261,8 @@ def loadplan_from_message(message):
     loadplan_data['message_from'] = message.from_
     return loadplan_data
 
-def main(argv=None):
+def cli_from_message(argv=None):
+    raise NotImplementedError
     """
     Parse PSTL weight and balance message from file.
     """
@@ -323,6 +330,42 @@ def main(argv=None):
                 print(text)
                 print(e)
         print('%s errors' % len(error_bucket))
+
+def cli_from_text(source):
+    """
+    Extract strings from message body in a file.
+    """
+    with open(source) as text_file:
+        data = loadplan_from_text(text_file.read())
+        pprint(data)
+
+def cli_from_json(source):
+    with open(source) as json_file:
+        data = json.load(json_file)
+        loadplan = loadplan_from_text(data['body'])
+        pprint(loadplan)
+
+def main(argv=None):
+    """
+    Commands for processing email body or whole email messages.
+    """
+    parser = argparse.ArgumentParser(description=main.__doc__)
+    subparsers = parser.add_subparsers(required=True)
+    # from_text
+    sp = subparsers.add_parser('from_text', help=cli_from_text.__doc__)
+    sp.add_argument('source')
+    sp.set_defaults(func=cli_from_text)
+    # from_json
+    sp = subparsers.add_parser('from_json', help=cli_from_json.__doc__)
+    sp.add_argument('source')
+    sp.set_defaults(func=cli_from_json)
+    # from_message
+    sp = subparsers.add_parser('from_message')
+    args = parser.parse_args(argv)
+
+    func = args.func
+    del args.func
+    func(**vars(args))
 
 if __name__ == '__main__':
     main()

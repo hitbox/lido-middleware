@@ -93,6 +93,10 @@ position_line_re = re.compile(
 valid_config_name_pattern = '|'.join(VALID_CONFIG_NAME_PATTERNS)
 valid_detail_weight_name_pattern = '|'.join(VALID_DETAIL_WEIGHT_NAMES)
 valid_other_weight_names_pattern = '|'.join(VALID_OTHER_WEIGHT_NAMES)
+
+# NOTE
+# - this is *NOT* used by extract
+# - it is used by schema
 valid_weight_name_pattern = '|'.join(VALID_DETAIL_WEIGHT_NAMES + VALID_OTHER_WEIGHT_NAMES)
 
 config_line_re = re.compile(
