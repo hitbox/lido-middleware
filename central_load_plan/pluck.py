@@ -232,8 +232,6 @@ def fromxml_update(root, data):
     # observed zero
     ballast_fuel_elem = root.find(
         './/*{*}AdditionalFuel[@reason="BallastFuel"]')
-    ballast_fuel_elem = root.find(_xmlpath(
-        './/*{*}AdditionalFuel[@reason="BallastFuel"]'))
     if ballast_fuel_elem:
         ballast_fuel_elem = ballast_fuel_elem.find(
             './{*}EstimatedWeight/{*}Value')
