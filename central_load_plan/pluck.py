@@ -1,3 +1,7 @@
+import argparse
+import xml.etree.ElementTree as ET
+
+from pprint import pprint
 from types import NoneType
 
 from .exception import CentralLoadPlanError
@@ -291,3 +295,22 @@ def fromxml_update(root, data):
         else:
             melcdlitem['description'] = title.text
         data['aircraft_equipment_status'].append(melcdlitem)
+
+def main(argv=None):
+    """
+    Dump data extracted from XML.
+    """
+    parser = argparse.ArgumentParser(
+        description = main.__doc__,
+    )
+    parser.add_argument('srcxml')
+    args = parser.parse_args(argv)
+
+    tree = ET.parse(args.srcxml)
+    root = tree.getroot()
+    data = default_data()
+    fromxml_update(root, data)
+    pprint(data)
+
+if __name__ == '__main__':
+    main()
