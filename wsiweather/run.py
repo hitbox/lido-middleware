@@ -11,7 +11,6 @@ from fs import open_fs
 
 from . import pluck
 from . import wxlmessage
-from .output import get_output_path
 from .schema import WSIWeatherSchema
 from .utils import is_glob
 
