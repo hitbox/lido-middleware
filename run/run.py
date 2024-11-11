@@ -144,8 +144,6 @@ class Runner:
         schema = schema_class()
         for message in source.itermessages():
             if not message_filter.filter(message):
-                logger.debug(
-                    'message filter rejected ' + self.message_fmt(message))
                 continue
             step_result = self.process_message(
                 message,
