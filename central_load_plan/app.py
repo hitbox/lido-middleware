@@ -211,7 +211,7 @@ class CLPApp:
             with open(filename, 'w') as output_file:
                 output_file.write(contents)
         self.logger.info(
-            'file: %r',
+            'file: %s',
             os.path.normpath(filename)
         )
 
@@ -224,7 +224,7 @@ class CLPApp:
         if os.path.exists(dest):
             raise CentralLoadPlanError('file exists: %r', dest)
         self.logger.info(
-            'move %r to %r',
+            'move %s to %s',
             os.path.normpath(os.path.basename(source)),
             os.path.normpath(os.path.relpath(dest, os.path.dirname(source)))
         )
