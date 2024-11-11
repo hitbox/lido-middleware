@@ -73,7 +73,8 @@ class Runner:
                     raise
                 errors['marshmallow_error'] = marshmallow_error
                 logger.exception(marshmallow_error)
-                log_marshmallow_error(marshmallow_error, logger.error)
+                if hasattr(marshmallow_error, 'messages'):
+                    log_marshmallow_error(marshmallow_error, logger.error)
             except ExtradataError as extract_error:
                 if raise_exc:
                     raise
