@@ -106,13 +106,10 @@ class OperationalFlightPlanSchema(Schema):
 
     @post_load
     def post_load(self, data, **kwargs):
-        # raise for mixed units
-        units = set()
-        for key, value in data.items():
-            if key.endswith('_unit') and value is not None:
-                units.add(value)
-        if len(units) != 1:
-            raise ValidationError('Mixed units %r' % units)
+        # Ensure that the scraped unit reporting is consistent, and add it to
+        # the data.
+        data['unit'] = raise_for_mixed_units(data)
+        data['unit_for_reporting'] = data['unit'].upper() + 'S'
 
         # calculate estimated arrival time
         etd = data['estimated_departure_time']
@@ -144,6 +141,22 @@ class OracleConfSchema(Schema):
     password = String()
     database = String()
 
+
+def raise_for_mixed_units(data, suffix='_unit', ignore_none=True):
+    """
+    Raise if all suffixed keys do not agree, perfectly.
+    """
+    units = set()
+    for key, value in data.items():
+        if ignore_none and value is None:
+            continue
+        if key.endswith(suffix):
+            units.add(value)
+    if len(units) != 1:
+        raise ValidationError('Mixed units %r' % units)
+
+    the_only_unit = next(iter(units))
+    return the_only_unit
 
 smtpconfschema = SMTPConfSchema()
 oracleconfschema = OracleConfSchema()
