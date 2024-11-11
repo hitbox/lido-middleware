@@ -1,8 +1,11 @@
 import string
 
+from datetime import date
+
 from marshmallow import Schema
 from marshmallow import post_load
 from marshmallow import pre_load
+from marshmallow.exceptions import MarshmallowError
 from marshmallow.fields import Constant
 from marshmallow.fields import DateTime
 from marshmallow.fields import Float
@@ -109,6 +112,14 @@ class LoadPlanSchema(CommonSchemaMixin, Schema):
 
     @post_load
     def post_load(self, data, **kwargs):
+        try:
+            # validate date of origin
+            # this is a copy of what lido.message.LIDOWeightBalanceMessage:date_of_origin()
+            date_of_origin = data['print_time_gmt'].date()
+            day = data['day']
+            date(date_of_origin.year, date_of_origin.month, day)
+        except:
+            raise MarshmallowError('invalid assembly of date_of_origin')
 
         # estimated total traffic load calculation
         if data['souls_onboard'] > 1:
