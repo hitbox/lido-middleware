@@ -74,7 +74,9 @@ def realmain(
                 archive_file.write(sha1hex + '\n')
 
 def main(argv=None):
-    "Process WSI files into Lido WXL messages."
+    """
+    Process WSI files into Lido WXL messages.
+    """
     parser = argparse.ArgumentParser(description=main.__doc__, prog=APPNAME)
     parser.add_argument('config', help='INI config for run')
     args = parser.parse_args(argv)
