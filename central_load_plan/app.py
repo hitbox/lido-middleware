@@ -29,7 +29,9 @@ class CLPApp:
 
     def __init__(
         self,
-        source_glob,
+        sources,
+        reader,
+        archive,
         move_to,
         exception_move_to,
         smtpconf,
@@ -40,9 +42,15 @@ class CLPApp:
         abort_on_error = False,
         dry_run = False,
         minimum_age = None,
+        force_write_out = None,
     ):
         """
-        :param source_glob: source files glob.
+        :param sources:
+            List of objects that generate source paths.
+        :param reader:
+            Object reads xml from whatever source and returns an element tree.
+        :param archive:
+            Object to check and save files as processed.
         :param move_to: move source files after processing.
         :param exception_move_to: path to move source on exception.
         :param smtpconf: smtplib.SMTP arguments dict.
@@ -61,8 +69,12 @@ class CLPApp:
             avoid having any effect on the filesystem, emails are still sent.
         :param minimum_age:
             optional minimum age to process file.
+        :param force_write_out:
+            Force writing the nested XML from EFF ZIP.
         """
-        self.source_glob = source_glob
+        self.sources = sources
+        self.reader = reader
+        self.archive = archive
         self.move_to = move_to
         self.exception_move_to = exception_move_to
         self.smtpconf = smtpconf
@@ -73,38 +85,53 @@ class CLPApp:
         self.abort_on_error = abort_on_error
         self.dry_run = dry_run
         self.minimum_age = minimum_age
+        self.force_write_out = force_write_out
         self.logger = logging.getLogger(APPNAME)
 
     def run(self):
         """
         Entry point for full run against configuration
         """
-        for source_path in glob.glob(self.source_glob):
-            self._run(source_path)
+        today = datetime.date.today()
+        yesterday = today - datetime.timedelta(days=1)
+        tomorrow = today + datetime.timedelta(days=1)
+        substitutions = {
+            'today': today,
+            'yesterday': yesterday,
+            'tomorrow': tomorrow,
+        }
+        for source in self.sources:
+            for path in source.paths(substitutions):
+                if not self.archive.check(path):
+                    self._run(path, substitutions)
 
-    def _run(self, source_path):
-        self.logger.info('process: %r', os.path.normpath(source_path))
+    def _run(self, source_path, substitutions):
+        # Continue if file is not empty and older than minimum_age.
         status = os.stat(source_path)
         diff = abs(time.time() - status.st_mtime)
-        if (
-            self.minimum_age is not None
-            and diff <= self.minimum_age
-        ):
+        if status.st_size == 0:
+            self.logger.info(f'ignore empty {source_path}')
+            return
+
+        if self.minimum_age is not None and diff <= self.minimum_age:
+            # Skip file for minimum age.
             self.logger.info('ignoring %f for minimum age.', diff)
             return
+
         try:
-            self.process_file(source_path)
+            self.process_file(source_path, substitutions)
         except KeyboardInterrupt:
             # let user break
             raise
         except Exception as exc:
             self.logger.exception('Exception occurred %r', source_path)
-            if not self.dry_run:
+            # Move file for exception if configured.
+            if not self.dry_run and self.exception_move_to:
                 move_for_exception(source_path, self.exception_move_to, exc)
             if self.abort_on_error:
                 raise
 
-    def process_file(self, source_path):
+    def process_file(self, source_path, substitutions):
         """
         Extract data from source_path and process in all configured ways.
 
@@ -114,8 +141,10 @@ class CLPApp:
         # - using default values for the benefit of format strings
         xml_data = pluck.default_data()
 
-        if os.stat(source_path).st_size > 0:
-            self._update_from_source(source_path, xml_data)
+        source_stat = os.stat(source_path)
+        if source_stat.st_size > 0:
+            real_xml_name, xml_root = self.reader.read(source_path)
+            xml_data.update(pluck.fromxml(xml_root))
 
             # deserialize
             xml_data = ofpschema.load(xml_data)
@@ -125,26 +154,30 @@ class CLPApp:
                 crewmembers_obj = crewmember.fromdata(self.dbconf, xml_data)
                 xml_data['crewmembers'] = crewmembers_obj.crewmembers
 
-            self.send_email(source_path, xml_data)
+            # Ad-hoc write to make archive files for JSON processing.
+            if self.force_write_out:
+                more_subs = substitutions.copy()
+                more_subs['real_xml_name'] = real_xml_name
+                force_write_out = self.force_write_out.format(**more_subs, **xml_data)
+                force_write_out = os.path.normpath(force_write_out)
+
+                os.makedirs(os.path.dirname(force_write_out), exist_ok=True)
+                with open(force_write_out, 'wb') as force_write_file:
+                    tree = ET.ElementTree(xml_root)
+                    tree.write(force_write_file, encoding="utf-8", xml_declaration=True)
+                    self.logger.info('file: %s', force_write_out)
+
+            self.send_email(xml_data)
             self.write_output_files(xml_data)
-
-        self.do_move_source(source_path, xml_data)
-
-    def _update_from_source(self, source_path, xml_data):
-        # update dict from source xml
-        with open(source_path) as source_file:
-            tree = ET.parse(source_path)
-            root = tree.getroot()
-            pluck.fromxml_update(root, xml_data)
+            if self.move_to:
+                self.do_move_source(source_path, xml_data)
+            self.archive.save(source_path)
 
     def do_move_source(self, source_path, xml_data):
         """
         If configured, move source file.
         :param source_path: path to a file.
         """
-        if not self.move_to:
-            return
-
         # NOTE
         # - possibly called with empty xml_data
         fmtdata = path_format_data(source_path)
@@ -163,13 +196,10 @@ class CLPApp:
 
         self.move_file(source_path, dest_path)
 
-    def send_email(self, source_path, xml_data):
+    def send_email(self, xml_data):
         """
         Send all emails according to config.
         """
-        # NOTE
-        # - this gives the format strings from config the source_path but does
-        #   not give it to the email templates.
         # build email
         emailmessage = EmailMessage()
         airline_iata_code = xml_data['airline_iata_code']
@@ -177,19 +207,20 @@ class CLPApp:
         # set from, to, subject, ..., all option values get a chance at
         # using the values from xml_data to use in a format string
         for key, value in airline_emailconf.items():
-            emailmessage[key] = value.format(source_path=source_path, **xml_data)
+            emailmessage[key] = value.format(**xml_data)
         plaintext = rendering.render(airline_emailconf['template'], xml_data)
         html = f'<pre>{ plaintext }</pre>'
         emailmessage.set_content(plaintext)
         emailmessage.add_alternative(html, subtype='html')
         # send email
         with smtplib.SMTP(**self.smtpconf) as smtp:
-            smtp.send_message(emailmessage)
-            self.logger.info(
-                'email: %r to %r',
-                emailmessage['subject'],
-                emailmessage['to']
-            )
+            if not self.dry_run:
+                smtp.send_message(emailmessage)
+                self.logger.info(
+                    'email: %r to %r',
+                    emailmessage['subject'],
+                    emailmessage['to']
+                )
 
     def write_output_files(self, xml_data):
         """

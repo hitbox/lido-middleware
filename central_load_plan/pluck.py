@@ -64,10 +64,14 @@ def _xmlpath(*tags):
     tags_string = '/'.join(map(_ignore_ns, tags))
     return f'./{tags_string}'
 
-def fromxml_update(root, data):
+def fromxml(root, default_data_maker=None):
     """
-    Pluck values from Operational Flight Plan XML file and update given dict.
+    Pluck data from XML into a dict.
     """
+    if default_data_maker is None:
+        default_data_maker = default_data
+    data = default_data()
+
     # NOTE: root is <FlightPlan>
     # flight plan id
     data['flight_plan_id'] = root.attrib['flightPlanId']
@@ -293,6 +297,15 @@ def fromxml_update(root, data):
         else:
             melcdlitem['description'] = title.text
         data['aircraft_equipment_status'].append(melcdlitem)
+
+    return data
+
+def fromxml_update(root, data):
+    """
+    Pluck values from Operational Flight Plan XML file and update given dict.
+    """
+    xml_data = fromxml(root)
+    data.update(xml_data)
 
 def main(argv=None):
     """

@@ -4,16 +4,29 @@ import os
 
 from types import SimpleNamespace
 
+import central_load_plan.models
+
 from . import rendering
 from .constants import APPNAME
 from .schema import oracleconfschema
 from .schema import smtpconfschema
 from .utils import keyed_sections
 
+CONFIG_EVAL_CONTEXT = {
+    'EFFZipReader': central_load_plan.models.EFFZipReader,
+    'GlobSource': central_load_plan.models.GlobSource,
+    'NullArchive': central_load_plan.models.NullArchive,
+    'PathArchive': central_load_plan.models.PathArchive,
+    'XMLReader': central_load_plan.models.XMLReader,
+}
+
 class ConfigError(Exception):
     """
     Error raised by configuration parsing and checking.
     """
+
+def human_split(string):
+    return string.replace(',', ' ').split()
 
 def raise_for_exists(path):
     if not os.path.exists(path):
@@ -34,19 +47,13 @@ def raise_for_split_path(path):
         if not head:
             raise ConfigError('split path not found')
 
-def process(config_filename):
-    """
-    Parse config file, setup logging if configured (basic config otherwise),
-    and return namespace config for CLPApp.
-    """
-    cp = configparser.RawConfigParser()
-    cp.read(config_filename)
-
+def ensure_logging(cp):
     if all(key in cp for key in ['loggers', 'formatters', 'handlers']):
         logging.config.fileConfig(cp)
     else:
         logging.basicConfig(level=logging.INFO)
 
+def raise_for_validation(cp):
     appconf = cp[APPNAME]
 
     required_sections = [
@@ -58,24 +65,78 @@ def process(config_filename):
         if key not in cp:
             raise ConfigError('Missing section key, %r' % key)
 
-    required_appconf = [
-        'source_glob',
-        'move_to',
-    ]
-    for key in required_appconf:
-        if key not in appconf:
-            raise ConfigError('Missing required key, %r' % key)
-
     # if given, value must be a path that exists
     if 'exception_move_to' in appconf:
         path = appconf['exception_move_to']
         raise_for_exists(path)
 
+def instance_from_section(section, context=None):
+    """
+    Instantiate from config section.
+    """
+    if context is None:
+        context = CONFIG_EVAL_CONTEXT
+    class_ = eval(section['class'], {}, context)
+    args = eval(section.get('args', '()'))
+    kwargs = eval(section.get('kwargs', '{}'))
+    instance = class_(*args, **kwargs)
+    return instance
+
+def raise_for_config_data(appconf_data):
+    # raise for email template paths exist
+    for item in appconf_data.emailconf.items():
+        airline_iata_code, airline_email_conf = item
+        rendering.env.get_template(airline_email_conf['template'])
+
+def process(config_filename):
+    """
+    Parse config file, setup logging if configured (basic config otherwise),
+    and return namespace config for CLPApp.
+    """
+    cp = configparser.RawConfigParser()
+    cp.read(config_filename)
+
+    # Ensure logging is configured.
+    ensure_logging(cp)
+
+    # Raise for configuration.
+    raise_for_validation(cp)
+
+    appconf = cp[APPNAME]
+
+    # Instantiate reader object.
+    reader_suffix = appconf.get('reader')
+    if not reader_suffix:
+        # Use pluggable reader that emulates the original behavior.
+        reader = central_load_plan.models.XMLReader()
+    else:
+        # Instantiate reader object from configuration.
+        reader_section = cp['reader.' + reader_suffix]
+        reader = instance_from_section(reader_section)
+
+    # Instantiate source objects
+    sources = []
+    for source_suffix in human_split(appconf['sources']):
+        source_section = cp['source.' + source_suffix]
+        source = instance_from_section(source_section)
+        sources.append(source)
+
+    # Instantiate archive object
+    archive_section = cp['archive.' + appconf['archive']]
+    archive = instance_from_section(archive_section)
+
+    # Ad-hoc force write file for from nested zip eff file.
+    force_write_out = appconf.get('force_write_out')
+
     appconf_data = SimpleNamespace(
-        source_glob = appconf['source_glob'],
+        sources = sources,
         seconds = appconf.getfloat('seconds'),
+        # Reader object
+        reader = reader,
+        # Archive
+        archive = archive,
         # format strings for where to move source file after processing
-        move_to = appconf['move_to'].strip(),
+        move_to = appconf.get('move_to', fallback=None),
         exception_move_to = appconf.get('exception_move_to'),
         ignore_crewmembers = appconf.getboolean('ignore_crewmembers'),
         dry_run = appconf.getboolean('dry', fallback=False),
@@ -87,28 +148,9 @@ def process(config_filename):
         file_output_conf = keyed_sections(cp, 'file_output'),
         dbconf = keyed_sections(cp, 'oracle', func=oracleconfschema.load),
         minimum_age = appconf.getfloat('minimum_age'),
+        force_write_out = force_write_out,
     )
 
-    # all paths must be absolute and exist
-    attrs = [
-        'source_glob',
-        'exception_move_to',
-    ]
-    for attr in attrs:
-        path = getattr(appconf_data, attr)
-        if attr == 'source_glob':
-            # strip wildcard from glob
-            # NOTE: would need to do more work to strip /**/* recursive globs
-            path = os.path.dirname(path)
-        raise_for_absolue_and_exists(path)
-
-    # format string should eventually devolve to a path that exists
-    for attr in ['move_to']:
-        raise_for_split_path(getattr(appconf_data, attr))
-
-    # raise for email template paths exist
-    for item in appconf_data.emailconf.items():
-        airline_iata_code, airline_email_conf = item
-        rendering.env.get_template(airline_email_conf['template'])
+    raise_for_config_data(appconf_data)
 
     return appconf_data

@@ -77,22 +77,19 @@ def run(argv=None):
         return
 
     clpapp = CLPApp(
-        appconf.source_glob,
-        appconf.move_to,
-        appconf.exception_move_to,
-        appconf.smtpconf,
-        appconf.emailconf,
-        appconf.file_output_conf,
-        appconf.dbconf,
-        appconf.ignore_crewmembers,
+        sources = appconf.sources,
+        reader = appconf.reader,
+        archive = appconf.archive,
+        move_to = appconf.move_to,
+        exception_move_to = appconf.exception_move_to,
+        smtpconf = appconf.smtpconf,
+        emailconf = appconf.emailconf,
+        file_output_conf = appconf.file_output_conf,
+        dbconf = appconf.dbconf,
+        ignore_crewmembers = appconf.ignore_crewmembers,
         abort_on_error = appconf.abort_on_error,
         dry_run = appconf.dry_run,
         minimum_age = appconf.minimum_age,
+        force_write_out = appconf.force_write_out,
     )
-
-    if isinstance(appconf.seconds, float):
-        while True:
-            clpapp.run()
-            time.sleep(appconf.seconds)
-    else:
-        clpapp.run()
+    clpapp.run()
