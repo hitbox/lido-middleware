@@ -108,11 +108,11 @@ class CLPApp:
     def _run(self, source_path, substitutions):
         # Continue if file is not empty and older than minimum_age.
         status = os.stat(source_path)
-        diff = abs(time.time() - status.st_mtime)
         if status.st_size == 0:
             self.logger.info(f'ignore empty {source_path}')
             return
 
+        diff = abs(time.time() - status.st_mtime)
         if self.minimum_age is not None and diff <= self.minimum_age:
             # Skip file for minimum age.
             self.logger.info('ignoring %f for minimum age.', diff)
@@ -141,37 +141,35 @@ class CLPApp:
         # - using default values for the benefit of format strings
         xml_data = pluck.default_data()
 
-        source_stat = os.stat(source_path)
-        if source_stat.st_size > 0:
-            real_xml_name, xml_root = self.reader.read(source_path)
-            xml_data.update(pluck.fromxml(xml_root))
+        real_xml_name, xml_root = self.reader.read(source_path)
+        xml_data.update(pluck.fromxml(xml_root))
 
-            # deserialize
-            xml_data = ofpschema.load(xml_data)
+        # deserialize
+        xml_data = ofpschema.load(xml_data)
 
-            # crew members
-            if not self.ignore_crewmembers:
-                crewmembers_obj = crewmember.fromdata(self.dbconf, xml_data)
-                xml_data['crewmembers'] = crewmembers_obj.crewmembers
+        # Add crew members from external database.
+        if not self.ignore_crewmembers:
+            crewmembers_obj = crewmember.fromdata(self.dbconf, xml_data)
+            xml_data['crewmembers'] = crewmembers_obj.crewmembers
 
-            # Ad-hoc write to make archive files for JSON processing.
-            if self.force_write_out:
-                more_subs = substitutions.copy()
-                more_subs['real_xml_name'] = real_xml_name
-                force_write_out = self.force_write_out.format(**more_subs, **xml_data)
-                force_write_out = os.path.normpath(force_write_out)
+        # Ad-hoc write to make archive files for JSON processing.
+        if self.force_write_out:
+            more_subs = substitutions.copy()
+            more_subs['real_xml_name'] = real_xml_name
+            force_write_out = self.force_write_out.format(**more_subs, **xml_data)
+            force_write_out = os.path.normpath(force_write_out)
 
-                os.makedirs(os.path.dirname(force_write_out), exist_ok=True)
-                with open(force_write_out, 'wb') as force_write_file:
-                    tree = ET.ElementTree(xml_root)
-                    tree.write(force_write_file, encoding="utf-8", xml_declaration=True)
-                    self.logger.info('file: %s', force_write_out)
+            os.makedirs(os.path.dirname(force_write_out), exist_ok=True)
+            with open(force_write_out, 'wb') as force_write_file:
+                tree = ET.ElementTree(xml_root)
+                tree.write(force_write_file, encoding="utf-8", xml_declaration=True)
+                self.logger.info('file: %s', force_write_out)
 
-            self.send_email(xml_data)
-            self.write_output_files(xml_data)
-            if self.move_to:
-                self.do_move_source(source_path, xml_data)
-            self.archive.save(source_path)
+        self.send_email(xml_data)
+        self.write_output_files(xml_data)
+        if self.move_to:
+            self.do_move_source(source_path, xml_data)
+        self.archive.save(source_path)
 
     def do_move_source(self, source_path, xml_data):
         """
@@ -228,6 +226,7 @@ class CLPApp:
 
         :param xml_data: dict of xml_data.
         """
+        # Find file config that matches airline code.
         for airline_iata_code, fileconfig in self.file_output_conf.items():
             if xml_data['airline_iata_code'] != airline_iata_code:
                 break

@@ -14,6 +14,7 @@ from .utils import keyed_sections
 
 CONFIG_EVAL_CONTEXT = {
     'EFFZipReader': central_load_plan.models.EFFZipReader,
+    'EmailOutput': central_load_plan.models.EmailOutput,
     'GlobSource': central_load_plan.models.GlobSource,
     'NullArchive': central_load_plan.models.NullArchive,
     'PathArchive': central_load_plan.models.PathArchive,
@@ -102,6 +103,18 @@ def process(config_filename):
     # Raise for configuration.
     raise_for_validation(cp)
 
+    # Determine config parser from version.
+    config_version = cp[APPNAME].get('version', '')
+    if config_version in ('', '0'):
+        parser = process_original
+    elif config_version == '1':
+        parser = process_v1
+
+    # Parse config into data for app.
+    appconf_data = parser(cp)
+    return appconf_data
+
+def process_original(cp):
     appconf = cp[APPNAME]
 
     # Instantiate reader object.
@@ -154,3 +167,10 @@ def process(config_filename):
     raise_for_config_data(appconf_data)
 
     return appconf_data
+
+def process_v1(cp):
+    appconf = cp[APPNAME]
+
+
+
+    raise NotImplementedError

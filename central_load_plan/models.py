@@ -1,14 +1,48 @@
 import glob
+import inspect
 import io
 import os
 import re
+import smtplib
 import xml.etree.ElementTree as ET
 import zipfile
 
 from abc import ABC
 from abc import abstractmethod
+from email.message import EmailMessage
 
-class Source(ABC):
+from . import rendering
+from .constants import APPNAME
+
+class Base(ABC):
+
+    def __init_subclass__(cls, **kwargs):
+        """
+        Enforce correct method signature at runtime
+        """
+        super().__init_subclass__(**kwargs)
+
+        return
+
+        def isabstractmethod(method):
+            return hasattr(method, '__isabstractmethod__')
+
+        abstract_methods = {
+            name: method for name, method in type(cls).__dict__.items()
+            if isabstractmethod(method)
+        }
+
+        for method_name, abstract_method in abstract_methods.items():
+            expected_sig = inspect.signature(abstract_method)
+            actual_sig = inspect.signature(cls.__dict__[method_name])
+
+            if actual_sig != expected_sig:
+                raise TypeError(
+                    f'{cls.__name__}.{method_name}() does not match required signature: {expected_sig}'
+                )
+
+
+class Source(Base):
 
     @abstractmethod
     def paths(self, substitutions=None):
@@ -17,7 +51,12 @@ class Source(ABC):
         """
 
 
-class Reader(ABC):
+class Reader(Base):
+    """
+    Reads an XML file and returns a tuple (filename, root_xml_element). The
+    filename is included to track the source file when reading nested ZIP
+    archives, such as those from EFF.
+    """
 
     @abstractmethod
     def read(self, source):
@@ -26,16 +65,28 @@ class Reader(ABC):
         """
 
 
-class Archive(ABC):
+class Output(Base):
 
     @abstractmethod
-    def check(self, source):
+    def write(self, xml_data, substitutions):
+        """
+        Write xml_data somewhere.
+        """
+
+
+class Archive(Base):
+    """
+    Archive checks and saves if a path has been archived as processed.
+    """
+
+    @abstractmethod
+    def check(self, source, xml_data):
         """
         Check if source is already processed.
         """
 
     @abstractmethod
-    def save(self, source):
+    def save(self, source, xml_data):
         """
         Save path to archive.
         """
@@ -126,7 +177,88 @@ class EFFZipReader(Reader):
                                 return (xml_name, root)
 
 
+class FileOutput(Output):
+    """
+    Write output file from rendered template.
+    """
+
+    def __init__(self, template, filename):
+        self.template = template
+        self.filename = filename
+        self.logger = logging.getLogger(APPNAME)
+
+    def write(self, xml_data):
+        """
+        Write file from template to another file.
+        """
+        contents = rendering.render(self.template, xml_data)
+        filename = os.path.normpath(self.filename.format(**xml_data))
+        with open(filename, 'w') as output_file:
+            output_file.write(contents)
+        self.logger.info('file: %s', filename)
+
+
+class EmailOutput(Output):
+    """
+    Create and email report output from template.
+    """
+    key_pairs = (
+        ('fromaddr', 'from'),
+        ('toaddrs', 'to'),
+        ('subject', 'subject'),
+    )
+
+    def __init__(self, smtp, fromaddr, toaddrs, subject, body_template):
+        """
+        :param smtp:
+            Dict SMTP configuration.
+        :param fromaddr:
+            String email appears to come from.
+        :param toaddrs:
+            String to send email to.
+        :param subject:
+            String subject of email.
+        :param body_template:
+            Filename of template to render email body from.
+        :param dry:
+            True for dry run. Do not actually send email.
+        """
+        self.smtp = smtp
+        self.fromaddr = fromaddr
+        self.toaddrs = toaddrs
+        self.subject = subject
+        self.body_template = body_template
+        self.logger = logging.getLogger(APPNAME)
+
+    def _email_message(self, xml_data):
+        email_message = EmailMessage()
+        # Update email message from self attributes.
+        for attr, key in self.key_pairs:
+            email_message[key] = getattr(self, attr)
+        # Add body to email message from rendered template as HTML.
+        plaintext = rendering.render(self.body_template, xml_data)
+        html = f'<pre>{ plaintext }</pre>'
+        email_message.set_content(plaintext)
+        email_message.add_alternative(html, subtype='html')
+        return email_message
+
+    def write(self, xml_data, substitutions):
+        """
+        Create and email message from xml data and runtime substitutions.
+        """
+        email_message = self._email_message(xml_data, substitutions)
+        with smtplib.SMTP(**self.smtp) as smtp:
+            smtp.send_message(email_message)
+            self.logger.info(
+                'email: %(email_message.subject)s to %(email_message.to)s',
+                email_message = email_message,
+            )
+
+
 class NullArchive(Archive):
+    """
+    Do nothing archive object.
+    """
 
     def check(self, path):
         """
@@ -142,6 +274,9 @@ class NullArchive(Archive):
 
 
 class PathArchive(Archive):
+    """
+    Save path to file and avoid processing again.
+    """
 
     def __init__(self, archive_path):
         self.archive_path = archive_path
@@ -160,3 +295,22 @@ class PathArchive(Archive):
         self._paths.add(os.path.normpath(path))
         with open(self.archive_path, 'a') as archive_file:
             archive_file.write(path + '\n')
+
+
+class MoveArchive(Archive):
+    """
+    Archive files by moving them.
+    """
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def check(self, path):
+        """
+        Assuming this path is never from where it will by moved, always report
+        not archived.
+        """
+        return False
+
+    def save(self, path):
+        raise NotImplementedError
