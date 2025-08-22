@@ -162,6 +162,7 @@ def process_original(cp):
         dbconf = keyed_sections(cp, 'oracle', func=oracleconfschema.load),
         minimum_age = appconf.getfloat('minimum_age'),
         force_write_out = force_write_out,
+        dbconf_fallback = keyed_sections(cp, 'fallback_oracle', func=oracleconfschema.load),
     )
 
     raise_for_config_data(appconf_data)
@@ -170,7 +171,4 @@ def process_original(cp):
 
 def process_v1(cp):
     appconf = cp[APPNAME]
-
-
-
     raise NotImplementedError

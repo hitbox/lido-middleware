@@ -91,5 +91,6 @@ def run(argv=None):
         dry_run = appconf.dry_run,
         minimum_age = appconf.minimum_age,
         force_write_out = appconf.force_write_out,
+        dbconf_fallback = appconf.dbconf_fallback,
     )
     clpapp.run()

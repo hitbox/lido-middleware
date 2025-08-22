@@ -43,6 +43,7 @@ class CLPApp:
         dry_run = False,
         minimum_age = None,
         force_write_out = None,
+        dbconf_fallback = None,
     ):
         """
         :param sources:
@@ -71,6 +72,8 @@ class CLPApp:
             optional minimum age to process file.
         :param force_write_out:
             Force writing the nested XML from EFF ZIP.
+        :param dbconf_fallback:
+            Another database config to try if the first fails.
         """
         self.sources = sources
         self.reader = reader
@@ -86,6 +89,7 @@ class CLPApp:
         self.dry_run = dry_run
         self.minimum_age = minimum_age
         self.force_write_out = force_write_out
+        self.dbconf_fallback = dbconf_fallback
         self.logger = logging.getLogger(APPNAME)
 
     def run(self):
@@ -149,7 +153,7 @@ class CLPApp:
 
         # Add crew members from external database.
         if not self.ignore_crewmembers:
-            crewmembers_obj = crewmember.fromdata(self.dbconf, xml_data)
+            crewmembers_obj = crewmember.fromdata(self.dbconf, xml_data, dbconfig_fallback=self.dbconf_fallback)
             xml_data['crewmembers'] = crewmembers_obj.crewmembers
 
         # Ad-hoc write to make archive files for JSON processing.
@@ -163,7 +167,7 @@ class CLPApp:
             with open(force_write_out, 'wb') as force_write_file:
                 tree = ET.ElementTree(xml_root)
                 tree.write(force_write_file, encoding="utf-8", xml_declaration=True)
-                self.logger.info('file: %s', force_write_out)
+                self.logger.info('forced write: %s', force_write_out)
 
         self.send_email(xml_data)
         self.write_output_files(xml_data)
