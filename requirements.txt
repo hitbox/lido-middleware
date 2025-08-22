@@ -1,6 +1,5 @@
 chardet
-cx_oracle
-oracledb # supersedes cx_oracle
+oracledb
 flask
 flask-wtf
 fs
@@ -9,6 +8,6 @@ jinja2
 marshmallow
 msal
 requests
-sqlalchemy < 2
+sqlalchemy
 sqlparse
 wtforms
