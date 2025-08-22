@@ -1,9 +1,12 @@
+import logging
 import sys
 
 from types import SimpleNamespace
 
 import oracledb
 import sqlalchemy as sa
+
+from sqlalchemy.exc import OperationalError
 
 override_driver = None
 if sa.__version__.startswith('1'):
@@ -14,6 +17,8 @@ if sa.__version__.startswith('1'):
     override_driver = 'oracle'
 
 JUMPSEAT_KEYS = ('first_name', 'last_name', 'employee_number', 'seat', 'seat_order')
+
+logger = logging.getLogger(__name__)
 
 class CrewMemberResult:
     """
@@ -79,7 +84,7 @@ def get_crew_query(tables, data):
     is_type_deadhead = item_daily.c.type == 'F'
 
     crew_query = (
-        sa.select([
+        sa.select(
             sa.func.trim(crew_member.c.name).label('last_name'),
             sa.func.trim(crew_member.c.first_name).label('first_name'),
             sa.func.trim(crew_member.c.employee_no).label('employee_number'),
@@ -96,7 +101,7 @@ def get_crew_query(tables, data):
                 (is_type_deadhead, 99),
             ).label('seat_order'),
             sa.literal('item_daily').label('source'),
-        ])
+        )
         .select_from(item_daily)
         .join(
             chain_item_daily,
@@ -123,9 +128,9 @@ def get_jumpseats_query(tables, data):
     remark_of_event = tables.remark_of_event
     item_daily = tables.item_daily
     jumpseats_query = (
-        sa.select([
+        sa.select(
             remark_of_event.c.remark,
-        ]).select_from(
+        ).select_from(
             item_daily
         ).join(
             remark_of_event,
@@ -149,7 +154,7 @@ def get_deadheads_query(tables, data):
     crew_member = tables.crew_member
     duty = tables.duty
     deadheads_query = (
-        sa.select([
+        sa.select(
             sa.func.trim(crew_member.c.name).label('last_name'),
             sa.func.trim(crew_member.c.first_name).label('first_name'),
             sa.func.trim(crew_member.c.employee_no).label('employee_number'),
@@ -158,7 +163,7 @@ def get_deadheads_query(tables, data):
             # seat_order
             sa.literal_column('999', type_=sa.Integer()).label(JUMPSEAT_KEYS[4]),
             sa.literal('duty').label('source'),
-        ]).join(
+        ).join(
             duty,
             duty.c.tlc == crew_member.c.tlc
         ).filter(
@@ -175,7 +180,7 @@ def get_deadheads_query(tables, data):
     return deadheads_query
 
 def get_person_query(table, person_id, employee_number_field):
-    query = sa.select([
+    query = sa.select(
         # first/last indexes reversed from O(ther) jump seats
         # last_name
         sa.func.trim(table.c.name).label(JUMPSEAT_KEYS[1]),
@@ -188,7 +193,7 @@ def get_person_query(table, person_id, employee_number_field):
         # seat_order
         sa.literal_column('999', type_=sa.Integer()).label(JUMPSEAT_KEYS[4]),
         sa.literal(table.name).label('source'),
-    ]).where(
+    ).where(
         employee_number_field == person_id
     )
     return query
@@ -213,14 +218,22 @@ def get_engine(dbconfig):
     engine = sa.create_engine(url, max_identifier_length=128)
     return engine
 
-def fromdata(dbconfig, data):
+def fromdata(dbconfig, data, dbconfig_fallback=None):
     """
     Return airline specific, object containing crewmembers in list.
     """
     airline_code = data['airline_iata_code']
-    airline_dbconfig = dbconfig[airline_code]
 
-    engine = get_engine(airline_dbconfig)
+    for dbconf in [dbconfig, dbconfig_fallback]:
+        airline_dbconfig = dbconf[airline_code]
+        try:
+            engine = get_engine(airline_dbconfig)
+            engine.connect()
+            logger.info('%s', engine)
+            break
+        except OperationalError:
+            logger.debug('Database connection failed.')
+
     tables = get_tables(engine)
     query_crew = get_crew_query(tables, data)
     query_jumpseats = get_jumpseats_query(tables, data)
@@ -239,7 +252,7 @@ def fromdata(dbconfig, data):
     }
     with engine.connect() as conn:
         # add crew members first
-        crewmembers = list(map(dict, conn.execute(query_crew)))
+        crewmembers = conn.execute(query_crew).mappings().fetchall()
         # add jump seat people substrings
         jumpseats = [
             jumpseat_type_and_remaining(jumpseat_str)
@@ -260,10 +273,10 @@ def fromdata(dbconfig, data):
                 table, employee_number_field = person_tables[person_type]
                 person_query = get_person_query(table, person_id, employee_number_field)
                 for jumpseat in conn.execute(person_query):
-                    crewmembers.append(jumpseat)
+                    crewmembers.append(jumpseat._mapping)
         # add deadheads from duty
         for person in conn.execute(query_deadheads):
-            crewmembers.append(person)
+            crewmembers.append(person._mapping)
 
         result = CrewMemberResult(crewmembers, query_crew, data, engine)
         return result
