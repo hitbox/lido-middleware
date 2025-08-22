@@ -195,7 +195,7 @@ class FileOutput(Output):
         filename = os.path.normpath(self.filename.format(**xml_data))
         with open(filename, 'w') as output_file:
             output_file.write(contents)
-        self.logger.info('file: %s', filename)
+        self.logger.info('rendered file: %s', filename)
 
 
 class EmailOutput(Output):
