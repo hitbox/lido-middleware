@@ -27,3 +27,5 @@ SEAT    FIRST NAME      LAST NAME       EMPLOYEE #
 {%- block message2 %}
 *** OFP IS THE CONTROLLING DOCUMENT FOR DATA PRODUCED FOR THIS MESSAGE. ***
 {%- endblock message2 -%}
+
+{%- block footer -%}{%- endblock footer -%}

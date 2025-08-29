@@ -51,3 +51,9 @@ ITEM          DESCRIPTION
     )
 }}{% endif %}{% endfor %}
 {% endblock equipment -%}
+
+
+{%- block footer %}
+
+ABX COMAT will NOT be shipped in the OPEN AREA of the bulk pit on ABX aircraft.
+{%- endblock -%}
