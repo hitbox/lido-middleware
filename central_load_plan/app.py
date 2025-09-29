@@ -25,6 +25,8 @@ from .utils import path_format_data
 # https://www.quora.com/Do-you-know-a-source-with-good-explanation-to-all-abbreviations-used-in-an-OFP-Operational-Flight-Plan
 # OFP: Operational Flight Plan
 
+logger = logging.getLogger(APPNAME)
+
 class CLPApp:
 
     def __init__(
@@ -90,7 +92,6 @@ class CLPApp:
         self.minimum_age = minimum_age
         self.force_write_out = force_write_out
         self.dbconf_fallback = dbconf_fallback
-        self.logger = logging.getLogger(APPNAME)
 
     def run(self):
         """
@@ -113,13 +114,13 @@ class CLPApp:
         # Continue if file is not empty and older than minimum_age.
         status = os.stat(source_path)
         if status.st_size == 0:
-            self.logger.info(f'ignore empty {source_path}')
+            logger.info(f'ignore empty {source_path}')
             return
 
         diff = abs(time.time() - status.st_mtime)
         if self.minimum_age is not None and diff <= self.minimum_age:
             # Skip file for minimum age.
-            self.logger.info('ignoring %f for minimum age.', diff)
+            logger.info('ignoring %f for minimum age.', diff)
             return
 
         try:
@@ -128,7 +129,7 @@ class CLPApp:
             # let user break
             raise
         except Exception as exc:
-            self.logger.exception('Exception occurred %r', source_path)
+            logger.exception('Exception occurred %r', source_path)
             # Move file for exception if configured.
             if not self.dry_run and self.exception_move_to:
                 move_for_exception(source_path, self.exception_move_to, exc)
@@ -167,7 +168,7 @@ class CLPApp:
             with open(force_write_out, 'wb') as force_write_file:
                 tree = ET.ElementTree(xml_root)
                 tree.write(force_write_file, encoding="utf-8", xml_declaration=True)
-                self.logger.info('forced write: %s', force_write_out)
+                logger.info('forced write: %s', force_write_out)
 
         self.send_email(xml_data)
         self.write_output_files(xml_data)
@@ -190,7 +191,7 @@ class CLPApp:
         dest_dir, _dest_fn = os.path.split(dest_path)
         if not os.path.exists(dest_dir):
             # dirname of source_path to compare dir with dir
-            self.logger.info('mkdir %r',
+            logger.info('mkdir %r',
                 os.path.relpath(dest_dir, os.path.dirname(source_path))
             )
             if not self.dry_run:
@@ -218,7 +219,7 @@ class CLPApp:
         with smtplib.SMTP(**self.smtpconf) as smtp:
             if not self.dry_run:
                 smtp.send_message(emailmessage)
-                self.logger.info(
+                logger.info(
                     'email: %r to %r',
                     emailmessage['subject'],
                     emailmessage['to']
@@ -244,7 +245,7 @@ class CLPApp:
         if not self.dry_run:
             with open(filename, 'w') as output_file:
                 output_file.write(contents)
-        self.logger.info(
+        logger.info(
             'file: %s',
             os.path.normpath(filename)
         )
@@ -257,7 +258,7 @@ class CLPApp:
         """
         if os.path.exists(dest):
             raise CentralLoadPlanError('file exists: %r', dest)
-        self.logger.info(
+        logger.info(
             'move %s to %s',
             os.path.normpath(os.path.basename(source)),
             os.path.normpath(os.path.relpath(dest, os.path.dirname(source)))

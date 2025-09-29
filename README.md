@@ -2,6 +2,13 @@
 
 Python 3
 
+# Central Load Plan
+
+2025-09-25
+Pluck and deserialize, unread XML files and send emails and write files from templates for each airline. May need a database to hold email lists and allow an interface to update them. Apparently the email list we're using now are invalid and we'll have to manage them, something to do with Amazon. Move file to archive. This program is the main consumer of these xml files.
+See incident 111038:
+https://support.atsginc.com/incidents/165428433-clp-email-rejected-fuel-messages
+
 
 # Structure
 

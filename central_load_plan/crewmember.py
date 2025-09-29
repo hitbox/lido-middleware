@@ -10,11 +10,12 @@ from sqlalchemy.exc import OperationalError
 
 override_driver = None
 if sa.__version__.startswith('1'):
-    # oracledb compatibility with sqlalchemy
-    # https://stackoverflow.com/a/74105559/2680592
-    oracledb.version = "8.3.0"
-    sys.modules["cx_Oracle"] = oracledb
-    override_driver = 'oracle'
+    pass
+    # # oracledb compatibility with sqlalchemy
+    # # https://stackoverflow.com/a/74105559/2680592
+    # oracledb.version = "8.3.0"
+    # sys.modules["cx_Oracle"] = oracledb
+    # override_driver = 'oracle'
 
 JUMPSEAT_KEYS = ('first_name', 'last_name', 'employee_number', 'seat', 'seat_order')
 
@@ -201,11 +202,11 @@ def get_person_query(table, person_id, employee_number_field):
 def get_engine(dbconfig):
     if 'oracle_lib_dir' in dbconfig:
         oracle_lib_dir = dbconfig['oracle_lib_dir']
-        try:
-            oracledb.init_oracle_client(lib_dir=oracle_lib_dir)
-        except oracledb.ProgrammingError:
-            # already initialized
-            pass
+        #try:
+        #    oracledb.init_oracle_client(lib_dir=oracle_lib_dir)
+        #except oracledb.ProgrammingError:
+        #    # already initialized
+        #    pass
 
     # connect
     keys = ['username', 'password', 'host', 'port', 'database', 'query']
@@ -214,6 +215,8 @@ def get_engine(dbconfig):
         drivername = override_driver
     else:
         drivername = dbconfig['drivername']
+    if 'query' in connection_config:
+        connection_config['query'] = eval(connection_config['query'])
     url = sa.engine.URL.create(drivername, **connection_config)
     engine = sa.create_engine(url, max_identifier_length=128)
     return engine

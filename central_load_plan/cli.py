@@ -1,4 +1,5 @@
 import argparse
+import logging
 import smtplib
 
 from pprint import pprint

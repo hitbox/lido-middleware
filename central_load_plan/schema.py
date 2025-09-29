@@ -140,6 +140,7 @@ class OracleConfSchema(Schema):
     username = String()
     password = String()
     database = String()
+    query = String()
 
 
 def raise_for_mixed_units(data, suffix='_unit', ignore_none=True):
