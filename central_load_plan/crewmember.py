@@ -209,15 +209,13 @@ def get_engine(dbconfig):
         #    pass
 
     # connect
-    keys = ['username', 'password', 'host', 'port', 'database', 'query']
+    keys = ['username', 'password', 'host', 'port', 'database', 'query', 'drivername']
     connection_config = {key: val for key, val in dbconfig.items() if key in keys}
     if override_driver:
         drivername = override_driver
-    else:
-        drivername = dbconfig['drivername']
     if 'query' in connection_config:
         connection_config['query'] = eval(connection_config['query'])
-    url = sa.engine.URL.create(drivername, **connection_config)
+    url = sa.engine.URL.create(**connection_config)
     engine = sa.create_engine(url, max_identifier_length=128)
     return engine
 
@@ -235,7 +233,7 @@ def fromdata(dbconfig, data, dbconfig_fallback=None):
             logger.info('%s', engine)
             break
         except OperationalError:
-            logger.debug('Database connection failed.')
+            logger.debug('Database connection failed. %s', airline_dbconfig)
 
     tables = get_tables(engine)
     query_crew = get_crew_query(tables, data)
