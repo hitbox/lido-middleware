@@ -1,4 +1,5 @@
 import logging
+import os
 
 from marshmallow.exceptions import MarshmallowError
 
@@ -85,7 +86,7 @@ class Runner:
                 lido_message = message_class(loadplan)
                 logger.debug('lido_message created')
                 path = output.write(lido_message)
-                logger.debug('%s', path)
+                logger.debug('%s', os.path.normpath(path))
                 message_archive.save(message)
                 logger.info('message processed and archived ' + self.message_fmt(message))
         rv = dict(
