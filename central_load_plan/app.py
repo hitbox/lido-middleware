@@ -130,9 +130,6 @@ class CLPApp:
             raise
         except Exception as exc:
             logger.exception('Exception occurred %r', source_path)
-            # Move file for exception if configured.
-            if not self.dry_run and self.exception_move_to:
-                move_for_exception(source_path, self.exception_move_to, exc)
             if self.abort_on_error:
                 raise
 
