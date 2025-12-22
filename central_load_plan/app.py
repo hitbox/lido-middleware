@@ -230,7 +230,7 @@ class CLPApp:
         """
         # Find file config that matches airline code.
         for airline_iata_code, fileconfig in self.file_output_conf.items():
-            if xml_data['airline_iata_code'] != airline_iata_code:
+            if xml_data['airline_iata_code'] == airline_iata_code:
                 break
         else:
             raise CentralLoadPlanError('airline code not found from xml data.')
