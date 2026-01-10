@@ -7,7 +7,10 @@ import smtplib
 import time
 import xml.etree.ElementTree as ET
 
+from datetime import date
 from email.message import EmailMessage
+from email.utils import formatdate
+from email.utils import make_msgid
 from pathlib import Path
 
 from marshmallow import ValidationError
@@ -129,6 +132,8 @@ class CLPApp:
             # let user break
             raise
         except Exception as exc:
+            if self.exception_move_to:
+                move_for_exception(source_path, self.exception_move_to, exc)
             logger.exception('Exception occurred %r', source_path)
             if self.abort_on_error:
                 raise
@@ -142,6 +147,7 @@ class CLPApp:
         # NOTE
         # - using default values for the benefit of format strings
         xml_data = pluck.default_data()
+        logger.info('process_file: %s, xml_data=%r', source_path, xml_data)
 
         real_xml_name, xml_root = self.reader.read(source_path)
         xml_data.update(pluck.fromxml(xml_root))
@@ -208,7 +214,10 @@ class CLPApp:
         # using the values from xml_data to use in a format string
         for key, value in airline_emailconf.items():
             emailmessage[key] = value.format(**xml_data)
-        plaintext = rendering.render(airline_emailconf['template'], xml_data)
+        emailmessage['Message-ID'] = make_msgid()
+        template = airline_emailconf['template']
+        logger.info('email template=%s', template)
+        plaintext = rendering.render(template, xml_data)
         html = f'<pre>{ plaintext }</pre>'
         emailmessage.set_content(plaintext)
         emailmessage.add_alternative(html, subtype='html')
@@ -217,9 +226,10 @@ class CLPApp:
             if not self.dry_run:
                 smtp.send_message(emailmessage)
                 logger.info(
-                    'email: %r to %r',
+                    'email: %r to %r, message-id=%r',
                     emailmessage['subject'],
-                    emailmessage['to']
+                    emailmessage['to'],
+                    emailmessage['message-id'],
                 )
 
     def write_output_files(self, xml_data):
@@ -236,6 +246,7 @@ class CLPApp:
             raise CentralLoadPlanError('airline code not found from xml data.')
 
         template = fileconfig['template']
+        logger.info('file output template=%s', template)
         contents = rendering.render(template, xml_data)
         output_format = fileconfig['output_format']
         filename = output_format.format(**xml_data)

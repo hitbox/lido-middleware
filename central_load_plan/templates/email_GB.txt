@@ -13,7 +13,7 @@ FLT #  ORIG  DEST  TAIL #  STE   STD      ETD    ETA
 {# "TAIL #" #}{{ '%-8s'|format(aircraft_registration) -}}
 {# STE #}{{ '%-6s'|format(estimated_block_time.strftime(tmfmt)) -}}
 {# STD #}{{ '%-9s'|format(scheduled_departure_time.strftime(dtfmt)) -}}
-{# ETD #}{{ '%-7s'|format(estimated_arrival_time.strftime(tmfmt)) -}}
+{# ETD #}{{ '%-7s'|format(estimated_departure_time.strftime(tmfmt)) -}}
 {# ETA #}{{ estimated_arrival_time.strftime(dtfmt) }}
 {% endblock flight -%}
 

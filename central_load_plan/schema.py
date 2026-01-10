@@ -54,7 +54,7 @@ class OperationalFlightPlanSchema(Schema):
     leg_departure_date_utc = DateTime(format=datetime_format)
     flight_origin_date = Date(format=date_format)
     version_number = String()
-    flight_number = Integer()
+    flight_number = Integer() # lsyrept datasebase needs integer for crew members
     flight_identifier = String()
     flight_identifier_first_three = String()
     airline_iata_code = String()
