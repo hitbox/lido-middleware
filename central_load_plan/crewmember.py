@@ -1,6 +1,10 @@
+import argparse
+import json
 import logging
 import sys
 
+from datetime import date
+from datetime import time
 from types import SimpleNamespace
 
 import oracledb
@@ -202,11 +206,6 @@ def get_person_query(table, person_id, employee_number_field):
 def get_engine(dbconfig):
     if 'oracle_lib_dir' in dbconfig:
         oracle_lib_dir = dbconfig['oracle_lib_dir']
-        #try:
-        #    oracledb.init_oracle_client(lib_dir=oracle_lib_dir)
-        #except oracledb.ProgrammingError:
-        #    # already initialized
-        #    pass
 
     # connect
     keys = ['username', 'password', 'host', 'port', 'database', 'query', 'drivername']
@@ -226,9 +225,8 @@ def fromdata(dbconfig, data, dbconfig_fallback=None):
     airline_code = data['airline_iata_code']
 
     for dbconf in [dbconfig, dbconfig_fallback]:
-        airline_dbconfig = dbconf[airline_code]
         try:
-            engine = get_engine(airline_dbconfig)
+            engine = get_engine(dbconf)
             engine.connect()
             logger.info('%s', engine)
             break
@@ -281,3 +279,42 @@ def fromdata(dbconfig, data, dbconfig_fallback=None):
 
         result = CrewMemberResult(crewmembers, query_crew, data, engine)
         return result
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        'Debug queries for looking up crewmembers.',
+    )
+    parser.add_argument(
+        'airline_iata_code',
+    )
+    parser.add_argument(
+        'flight_origin_date',
+        type = date.fromisoformat,
+    )
+    parser.add_argument(
+        'flight_number',
+        type = int,
+    )
+    parser.add_argument(
+        'origin_iata',
+    )
+    parser.add_argument(
+        'scheduled_departure_time',
+        type = time.fromisoformat,
+    )
+    parser.add_argument(
+        '--database',
+        type = json.loads
+    )
+    args = parser.parse_args(argv)
+    print(args.database)
+    dbconfig = sa.URL.create(**args.database)
+    delattr(args, 'database')
+
+    flight_data = vars(args)
+    from pprint import pprint
+    pprint(flight_data)
+    fromdata(dbconfig, flight_data)
+
+if __name__ == '__main__':
+    main()
