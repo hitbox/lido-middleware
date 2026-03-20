@@ -4,6 +4,7 @@ import logging
 import sys
 
 from datetime import date
+from datetime import datetime
 from datetime import time
 from types import SimpleNamespace
 
@@ -204,7 +205,7 @@ def get_person_query(table, person_id, employee_number_field):
     return query
 
 def get_engine(dbconfig):
-    if 'oracle_lib_dir' in dbconfig:
+    if dbconfig and 'oracle_lib_dir' in dbconfig:
         oracle_lib_dir = dbconfig['oracle_lib_dir']
 
     # connect
@@ -214,7 +215,7 @@ def get_engine(dbconfig):
         drivername = override_driver
     if 'query' in connection_config:
         connection_config['query'] = eval(connection_config['query'])
-    url = sa.engine.URL.create(**connection_config)
+    url = sa.URL.create(**connection_config)
     engine = sa.create_engine(url, max_identifier_length=128)
     return engine
 
@@ -225,13 +226,14 @@ def fromdata(dbconfig, data, dbconfig_fallback=None):
     airline_code = data['airline_iata_code']
 
     for dbconf in [dbconfig, dbconfig_fallback]:
-        try:
-            engine = get_engine(dbconf)
-            engine.connect()
-            logger.info('%s', engine)
-            break
-        except OperationalError:
-            logger.debug('Database connection failed. %s', airline_dbconfig)
+        if dbconf:
+            try:
+                engine = get_engine(dbconf.get(airline_code, {}))
+                engine.connect()
+                logger.info('%s', engine)
+                break
+            except OperationalError:
+                logger.debug('Database connection failed. %s', dbconf)
 
     tables = get_tables(engine)
     query_crew = get_crew_query(tables, data)
@@ -300,15 +302,14 @@ def main(argv=None):
     )
     parser.add_argument(
         'scheduled_departure_time',
-        type = time.fromisoformat,
+        type = datetime.fromisoformat,
     )
     parser.add_argument(
         '--database',
         type = json.loads
     )
     args = parser.parse_args(argv)
-    print(args.database)
-    dbconfig = sa.URL.create(**args.database)
+    dbconfig = args.database
     delattr(args, 'database')
 
     flight_data = vars(args)
