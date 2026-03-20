@@ -19,35 +19,11 @@ import central_load_plan.config
 import central_load_plan.crewmember
 
 from .. import app
+from central_load_plan.engine import get_lsyrept_engine
 
 CONFIG_PREFIX = f'{app.CONFIG_PREFIX}_CREWMEMBERS'
 
 crewmember_bp = Blueprint('crewmember', __name__)
-
-INTERESTING_DATA = [
-    (
-        'Incident 31169: Missing dead head',
-        dict(
-            airline_iata_code = 'GB',
-            flight_origin_date = '2022-08-31',
-            flight_number = 445,
-            origin_iata = 'SJU',
-            scheduled_departure_date = '2022-08-31',
-            scheduled_departure_time = '01:30',
-        ),
-    ),
-    (
-        'Incident 31846: No crew',
-        dict(
-            airline_iata_code = 'GB',
-            flight_origin_date = '2022-09-09',
-            flight_number = 3171,
-            origin_iata = 'SBD',
-            scheduled_departure_date = '2022-09-09',
-            scheduled_departure_time = '04:45',
-        ),
-    ),
-]
 
 EXAMPLE_RESULT = central_load_plan.crewmember.CrewMemberResult(
     crewmembers = [
@@ -117,32 +93,27 @@ def query():
     result = None
     form = CrewmemberArgsForm(formdata = request.form or request.args)
 
-    if request.method == 'POST':
-        if not current_config_get('VALIDATE_FORM', True):
-            # allow config to say use the example
-            result = EXAMPLE_RESULT
-        elif form.validate():
-            # there doesn't seem to be support for html datetime field, it just
-            # comes out as a text input
-            # so we combine them here
-            flight_data = dict(
-                airline_iata_code = form.airline_iata_code.data,
-                flight_origin_date = form.flight_origin_date.data,
-                flight_number = form.flight_number.data,
-                origin_iata = form.origin_iata.data,
-                scheduled_departure_time = datetime.datetime.combine(
-                    form.scheduled_departure_date.data,
-                    form.scheduled_departure_time.data,
-                ),
-            )
-            clpconf_path = current_config_get('_CLP_CONFIG')
-            # None will cause Exception
-            clpconf = central_load_plan.config.process(clpconf_path)
-            result = central_load_plan.crewmember.fromdata(clpconf.dbconf, flight_data)
+    if request.method == 'POST' and form.validate():
+        # there doesn't seem to be support for html datetime field, it just
+        # comes out as a text input
+        # so we combine them here
+        flight_data = dict(
+            airline_iata_code = form.airline_iata_code.data,
+            flight_origin_date = form.flight_origin_date.data,
+            flight_number = form.flight_number.data,
+            origin_iata = form.origin_iata.data,
+            scheduled_departure_time = datetime.datetime.combine(
+                form.scheduled_departure_date.data,
+                form.scheduled_departure_time.data,
+            ),
+        )
+        engine = get_lsyrept_engine(form.airline_iata_code.data)
+        result = central_load_plan.crewmember.fromdata(clpconf.dbconf, flight_data)
 
+    interesting_data = current_app.config.get('CREWMEMBERS_INTERESTING_DATA', [])
     context = dict(
         form = form,
-        interesting_data = INTERESTING_DATA,
+        interesting_data = interesting_data,
         result = result,
     )
     return render_template('crewmember/query.html', **context)

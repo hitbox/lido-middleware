@@ -1,4 +1,5 @@
 import argparse
+import os
 
 from .constants import APPNAME
 
@@ -33,3 +34,14 @@ def argument_parser():
         help = 'Run in continuous mode, every %(metavar)s seconds.',
     )
     return parser
+
+def parse_and_validate_args(argv=None):
+    parser = argument_parser()
+    args = parser.parse_args(argv)
+
+    # All given config files must exist.
+    for fn in args.config:
+        if not os.path.exists(fn):
+            raise FileNotFoundError(fn)
+
+    return args

@@ -1,6 +1,8 @@
 from flask import Flask
 from flask import render_template
 
+from . import extension
+
 CONFIG_PREFIX = 'CENTRAL_LOAD_PLAN'
 
 def create_app():
@@ -8,13 +10,14 @@ def create_app():
     Demo web apps for central_load_plan.
     """
     app = Flask(__name__)
-    app.config.from_envvar(f'{CONFIG_PREFIX}')
+    app.config.from_envvar(f'{CONFIG_PREFIX}_CONFIG')
+
+    extension.init_app(app)
 
     # matching config names with a truthy value to optionally hook up blueprints
 
-    if app.config.get(f'{CONFIG_PREFIX}_CREWMEMBERS'):
-        from .views.crewmembers import crewmember_bp
-        app.register_blueprint(crewmember_bp, url_prefix='/crewmembers')
+    from .views.crewmembers import crewmember_bp
+    app.register_blueprint(crewmember_bp, url_prefix='/crewmembers')
 
     if app.config.get(f'{CONFIG_PREFIX}_XML'):
         from .views.xml import xml_bp

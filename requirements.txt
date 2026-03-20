@@ -1,12 +1,15 @@
 chardet
-oracledb
 flask
+flask-sqlalchemy
 flask-wtf
 fs
 imap_tools
 jinja2
+lxml
 marshmallow
 msal
+oracledb
+psycopg
 requests
 sqlalchemy
 sqlparse

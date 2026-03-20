@@ -13,6 +13,13 @@ import sqlalchemy as sa
 
 from sqlalchemy.exc import OperationalError
 
+from central_load_plan.models.lsyrept import ChainItemDaily
+from central_load_plan.models.lsyrept import CrewMember
+from central_load_plan.models.lsyrept import Duty
+from central_load_plan.models.lsyrept import ItemDaily
+from central_load_plan.models.lsyrept import NonCrewMember
+from central_load_plan.models.lsyrept import RemarkOfEvent
+
 override_driver = None
 if sa.__version__.startswith('1'):
     pass
@@ -76,129 +83,82 @@ def get_tables(engine):
     )
     return result
 
-def get_crew_query(tables, data):
+def get_crew_query(data):
     """
-    :param tables: attribute access tables
     :param data: data as scraped from XML
     """
-    crew_member = tables.crew_member
-    item_daily = tables.item_daily
-    chain_item_daily = tables.chain_item_daily
-    duty = tables.duty
-
-    is_type_leg = item_daily.c.type == 'L'
-    is_type_deadhead = item_daily.c.type == 'F'
-
     crew_query = (
         sa.select(
-            sa.func.trim(crew_member.c.name).label('last_name'),
-            sa.func.trim(crew_member.c.first_name).label('first_name'),
-            sa.func.trim(crew_member.c.employee_no).label('employee_number'),
-            sa.case(
-                (sa.and_(is_type_leg, duty.c.assigned_rank == 0), 'PIC'),
-                (sa.and_(is_type_leg, duty.c.assigned_rank == 1), 'SIC'),
-                (sa.and_(is_type_leg, duty.c.assigned_rank == 2), 'IRO'),
-                (sa.and_(is_type_leg, duty.c.assigned_rank == 3), 'CP'),
-                (sa.and_(is_type_leg, duty.c.assigned_rank == 5), 'FA'),
-                else_ = 'ACM',
-            ).label('seat'),
-            sa.case(
-                (is_type_leg, duty.c.assigned_rank),
-                (is_type_deadhead, 99),
-            ).label('seat_order'),
+            CrewMember.trimmed_name().label('last_name'),
+            CrewMember.trimmed_first_name().label('first_name'),
+            CrewMember.trimmed_employee_no().label('employee_number'),
+            Duty.seat_case(ItemDaily.is_leg).label('seat'),
+            Duty.seat_order_case(ItemDaily.is_leg, ItemDaily.is_deadhead).label('seat_order'),
             sa.literal('item_daily').label('source'),
         )
-        .select_from(item_daily)
+        .select_from(ItemDaily)
         .join(
-            chain_item_daily,
-            chain_item_daily.c.item_daily_uno == item_daily.c.uno
-        ).join(
-            duty,
-            duty.c.chain_daily_uno == chain_item_daily.c.chain_daily_uno
-        ).join(
-            crew_member,
-            crew_member.c.tlc == duty.c.tlc
-        ).filter(
-            item_daily.c.airline == data['airline_iata_code'],
-            item_daily.c.day_of_origin == data['flight_origin_date'],
-            item_daily.c.flight_no == data['flight_number'],
-            item_daily.c.airport_c_is_dep == data['origin_iata'],
-            item_daily.c.departure_date_scd == data['scheduled_departure_time'].date(),
-            # departure_time_scd is stored as CHAR(4)
-            item_daily.c.departure_time_scd == data['scheduled_departure_time'].strftime('%H%M'),
-        ).order_by('seat_order')
+            ChainItemDaily,
+            ChainItemDaily.item_daily_uno == ItemDaily.uno,
+        )
+        .join(
+            Duty,
+            Duty.chain_daily_uno == ChainItemDaily.chain_daily_uno,
+        )
+        .join(
+            CrewMember,
+            CrewMember.tlc == Duty.tlc,
+        )
+        .where(
+            ItemDaily.matches_flight(data)
+        )
+        .order_by('seat_order')
     )
     return crew_query
 
-def get_jumpseats_query(tables, data):
-    remark_of_event = tables.remark_of_event
-    item_daily = tables.item_daily
-    jumpseats_query = (
-        sa.select(
-            remark_of_event.c.remark,
-        ).select_from(
-            item_daily
-        ).join(
-            remark_of_event,
-            remark_of_event.c.uno == item_daily.c.uno
-        ).filter(
-            item_daily.c.airline == data['airline_iata_code'],
-            item_daily.c.day_of_origin == data['flight_origin_date'],
-            item_daily.c.flight_no == data['flight_number'],
-            item_daily.c.airport_c_is_dep == data['origin_iata'],
-            item_daily.c.departure_date_scd == data['scheduled_departure_time'].date(),
-            # departure_time_scd is stored as CHAR(4)
-            item_daily.c.departure_time_scd == data['scheduled_departure_time'].strftime('%H%M'),
-            # is jumpseat remark
-            remark_of_event.c.type == 'J',
+def get_jumpseats_query(data):
+    return (
+        sa.select(RemarkOfEvent.remark)
+        .join(ItemDaily, RemarkOfEvent.uno == ItemDaily.uno)
+        .where(
+            ItemDaily.matches_flight(data),
+            RemarkOfEvent.is_jumpseat,
         )
     )
-    return jumpseats_query
 
-def get_deadheads_query(tables, data):
+def get_deadheads_query(data):
     # Incident 31169: some dead heads missing.
-    crew_member = tables.crew_member
-    duty = tables.duty
-    deadheads_query = (
+    return (
         sa.select(
-            sa.func.trim(crew_member.c.name).label('last_name'),
-            sa.func.trim(crew_member.c.first_name).label('first_name'),
-            sa.func.trim(crew_member.c.employee_no).label('employee_number'),
-            # seat (deadhead)
-            sa.literal_column("'ACM'", type_=sa.String()).label(JUMPSEAT_KEYS[3]),
-            # seat_order
-            sa.literal_column('999', type_=sa.Integer()).label(JUMPSEAT_KEYS[4]),
+            CrewMember.trimmed_name().label('last_name'),
+            CrewMember.trimmed_first_name().label('first_name'),
+            CrewMember.trimmed_employee_no().label('employee_number'),
+            sa.literal('ACM').label('seat'),
+            sa.literal(999).label('seat_order'),
             sa.literal('duty').label('source'),
-        ).join(
-            duty,
-            duty.c.tlc == crew_member.c.tlc
-        ).filter(
-            duty.c.airline == data['airline_iata_code'],
-            duty.c.day_of_origin == data['flight_origin_date'],
-            duty.c.flight_no == data['flight_number'],
-            duty.c.airport_c_is_dep == data['origin_iata'],
-            duty.c.departure_date_scd == data['scheduled_departure_time'].date(),
-            # departure_time_scd is stored as CHAR(4)
-            duty.c.departure_time_scd == data['scheduled_departure_time'].strftime('%H%M'),
-            duty.c.type == 'F', # deadhead
+        )
+        .join(Duty, Duty.tlc == CrewMember.tlc)
+        .join(ItemDaily, Duty.chain_daily_uno == ItemDaily.chain_daily_uno)
+        .where(
+            ItemDaily.matches_flight(data),
+            Duty.is_deadhead,
         )
     )
-    return deadheads_query
 
-def get_person_query(table, person_id, employee_number_field):
+def get_person_query(person_model, person_id, employee_number_field):
     query = sa.select(
         # first/last indexes reversed from O(ther) jump seats
         # last_name
-        sa.func.trim(table.c.name).label(JUMPSEAT_KEYS[1]),
+        person_model.trimmed_first_name().label(JUMPSEAT_KEYS[1]),
         # first_name
-        sa.func.trim(table.c.first_name).label(JUMPSEAT_KEYS[0]),
+        person_model.trimmed_name().label(JUMPSEAT_KEYS[0]),
         # employee_number
-        sa.func.trim(employee_number_field).label(JUMPSEAT_KEYS[2]),
+        person_model.trimmed_employee_no().label(JUMPSEAT_KEYS[2]),
         # seat
         sa.literal_column("'ACM'", type_=sa.String()).label(JUMPSEAT_KEYS[3]),
         # seat_order
         sa.literal_column('999', type_=sa.Integer()).label(JUMPSEAT_KEYS[4]),
-        sa.literal(table.name).label('source'),
+        sa.literal(person_model.name).label('source'),
     ).where(
         employee_number_field == person_id
     )
@@ -236,9 +196,9 @@ def fromdata(dbconfig, data, dbconfig_fallback=None):
                 logger.debug('Database connection failed. %s', dbconf)
 
     tables = get_tables(engine)
-    query_crew = get_crew_query(tables, data)
-    query_jumpseats = get_jumpseats_query(tables, data)
-    query_deadheads = get_deadheads_query(tables, data)
+    crew_query = get_crew_query(data)
+    jumpseats_query = get_jumpseats_query(data)
+    deadheads_query = get_deadheads_query(data)
 
     person_tables = {
         # (table, field for person id)
@@ -253,11 +213,11 @@ def fromdata(dbconfig, data, dbconfig_fallback=None):
     }
     with engine.connect() as conn:
         # add crew members first
-        crewmembers = conn.execute(query_crew).mappings().fetchall()
+        crewmembers = conn.execute(crew_query).mappings().fetchall()
         # add jump seat people substrings
         jumpseats = [
             jumpseat_type_and_remaining(jumpseat_str)
-            for result in conn.execute(query_jumpseats)
+            for result in conn.execute(jumpseats_query)
             for jumpseat_str in result.remark.split('|')
         ]
         # parse substring further for other type or lookup from database for
@@ -276,11 +236,16 @@ def fromdata(dbconfig, data, dbconfig_fallback=None):
                 for jumpseat in conn.execute(person_query):
                     crewmembers.append(jumpseat._mapping)
         # add deadheads from duty
-        for person in conn.execute(query_deadheads):
+        for person in conn.execute(deadheads_query):
             crewmembers.append(person._mapping)
 
-        result = CrewMemberResult(crewmembers, query_crew, data, engine)
+        result = CrewMemberResult(crewmembers, crew_query, data, engine)
         return result
+
+def fromdata(session, data):
+    crew_query = get_crew_query(data)
+    for row in session.scalars(crew_query):
+        pass
 
 def main(argv=None):
     parser = argparse.ArgumentParser(

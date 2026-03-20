@@ -236,7 +236,7 @@ def fromxml(root, default_data_maker=None):
     # observed zero
     ballast_fuel_elem = root.find(
         './/*{*}AdditionalFuel[@reason="BallastFuel"]')
-    if ballast_fuel_elem:
+    if ballast_fuel_elem is not None:
         ballast_fuel_elem = ballast_fuel_elem.find(
             './{*}EstimatedWeight/{*}Value')
         data['ballast_fuel'] = ballast_fuel_elem.text

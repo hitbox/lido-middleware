@@ -11,6 +11,7 @@ from abc import ABC
 from abc import abstractmethod
 from email.message import EmailMessage
 
+from lxml import etree
 from . import rendering
 from .constants import APPNAME
 
@@ -53,9 +54,7 @@ class Source(Base):
 
 class Reader(Base):
     """
-    Reads an XML file and returns a tuple (filename, root_xml_element). The
-    filename is included to track the source file when reading nested ZIP
-    archives, such as those from EFF.
+    Base reader class.
     """
 
     @abstractmethod
@@ -133,10 +132,10 @@ class XMLReader(Reader):
     # which needs to report what name in the ZIP it is returning.
 
     def read(self, source):
-        with open(source) as source_file:
-            tree = ET.parse(source)
-            root = tree.getroot()
-            return (source, root)
+        parser = etree.XMLParser(recover=True)
+        tree = etree.parse(source, parser)
+        root = tree.getroot()
+        return (source, root)
 
 
 class EFFZipReader(Reader):
@@ -175,27 +174,6 @@ class EFFZipReader(Reader):
                                 tree = ET.parse(xml_file)
                                 root = tree.getroot()
                                 return (xml_name, root)
-
-
-class FileOutput(Output):
-    """
-    Write output file from rendered template.
-    """
-
-    def __init__(self, template, filename):
-        self.template = template
-        self.filename = filename
-        self.logger = logging.getLogger(APPNAME)
-
-    def write(self, xml_data):
-        """
-        Write file from template to another file.
-        """
-        contents = rendering.render(self.template, xml_data)
-        filename = os.path.normpath(self.filename.format(**xml_data))
-        with open(filename, 'w') as output_file:
-            output_file.write(contents)
-        self.logger.info('rendered file: %s', filename)
 
 
 class EmailOutput(Output):

@@ -13,12 +13,12 @@ from .schema import smtpconfschema
 from .utils import keyed_sections
 
 CONFIG_EVAL_CONTEXT = {
-    'EFFZipReader': central_load_plan.models.EFFZipReader,
-    'EmailOutput': central_load_plan.models.EmailOutput,
-    'GlobSource': central_load_plan.models.GlobSource,
-    'NullArchive': central_load_plan.models.NullArchive,
-    'PathArchive': central_load_plan.models.PathArchive,
-    'XMLReader': central_load_plan.models.XMLReader,
+    #'EFFZipReader': central_load_plan.models.EFFZipReader,
+    #'EmailOutput': central_load_plan.models.EmailOutput,
+    #'GlobSource': central_load_plan.models.GlobSource,
+    #'NullArchive': central_load_plan.models.NullArchive,
+    #'PathArchive': central_load_plan.models.PathArchive,
+    #'XMLReader': central_load_plan.models.XMLReader,
 }
 
 class ConfigError(Exception):
@@ -55,8 +55,6 @@ def ensure_logging(cp):
         logging.basicConfig(level=logging.INFO)
 
 def raise_for_validation(cp):
-    appconf = cp[APPNAME]
-
     required_sections = [
         APPNAME,
         'smtp',
@@ -67,6 +65,8 @@ def raise_for_validation(cp):
             raise ConfigError('Missing section key, %r' % key)
 
     # if given, value must be a path that exists
+    appconf = cp[APPNAME]
+
     if 'exception_move_to' in appconf:
         path = appconf['exception_move_to']
         raise_for_exists(path)
