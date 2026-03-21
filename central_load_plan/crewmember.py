@@ -110,7 +110,7 @@ def get_crew_query(data):
             CrewMember.tlc == Duty.tlc,
         )
         .where(
-            ItemDaily.matches_flight(data)
+            ItemDaily.filter_for_data(data)
         )
         .order_by('seat_order')
     )
@@ -140,7 +140,7 @@ def get_deadheads_query(data):
         .join(Duty, Duty.tlc == CrewMember.tlc)
         .join(ItemDaily, Duty.chain_daily_uno == ItemDaily.chain_daily_uno)
         .where(
-            ItemDaily.matches_flight(data),
+            ItemDaily.filter_for_data(data),
             Duty.is_deadhead,
         )
     )

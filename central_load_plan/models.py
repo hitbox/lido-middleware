@@ -91,6 +91,22 @@ class Archive(Base):
         """
 
 
+class ContextSource(Source):
+
+    def __init__(self, context_getter, path):
+        self.context_getter = context_getter
+        self.path = path
+
+    def paths(self, substitutions=None):
+        if substitutions is None:
+            substitutions = {}
+
+        substitutions.update(self.context_getter())
+
+        path = self.path.format(**substitutions)
+        # Want to display parsed paths to user as data in web view
+
+
 class GlobSource(Source):
     """
     Generate paths from glob pattern.

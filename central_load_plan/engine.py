@@ -12,7 +12,7 @@ def get_lsyrept_engine(airline_code):
     for name in keys:
         uri = current_app.config.get(name)
         # Create new URI with credentials for airline
-        uri = uri.update_query_dict(airline_creds)
+        uri = uri.set(**airline_creds)
         engine = sa.create_engine(uri)
         try:
             with engine.connect() as conn:

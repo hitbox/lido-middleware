@@ -6,6 +6,7 @@ from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
+from sqlalchemy.orm import Session
 from wtforms import DateField
 from wtforms import DateTimeField
 from wtforms import Form
@@ -108,7 +109,8 @@ def query():
             ),
         )
         engine = get_lsyrept_engine(form.airline_iata_code.data)
-        result = central_load_plan.crewmember.fromdata(clpconf.dbconf, flight_data)
+        with Session(engine) as session:
+            result = central_load_plan.crewmember.fromdata(session, flight_data)
 
     interesting_data = current_app.config.get('CREWMEMBERS_INTERESTING_DATA', [])
     context = dict(
