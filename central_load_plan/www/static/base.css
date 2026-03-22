@@ -123,3 +123,15 @@ input[type=submit] {
     margin-left: 1rem;
     margin-right: 1rem;
 }
+
+dl.key-value {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+}
+
+dl.key-value > dt {
+    font-weight: 600;
+}
+
+dl.key-value > dd {
+}

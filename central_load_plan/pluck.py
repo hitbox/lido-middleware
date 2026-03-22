@@ -300,6 +300,11 @@ def fromxml(root, default_data_maker=None):
 
     return data
 
+def from_path(path):
+    tree = ET.parse(path)
+    root = tree.getroot()
+    return fromxml(root)
+
 def fromxml_update(root, data):
     """
     Pluck values from Operational Flight Plan XML file and update given dict.

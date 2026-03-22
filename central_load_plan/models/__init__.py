@@ -104,7 +104,36 @@ class ContextSource(Source):
         substitutions.update(self.context_getter())
 
         path = self.path.format(**substitutions)
-        # Want to display parsed paths to user as data in web view
+
+        for fn in os.listdir(path):
+            full = os.path.join(path, fn)
+            yield full
+
+
+class RegexParser:
+
+    def __init__(self, regex, include_string=False):
+        """
+        :param regex: Named captured group regex or pattern to parse strings.
+        """
+        self.regex = re.compile(regex)
+        self.include_string = include_string
+
+    def __call__(self, string):
+        match = self.regex.match(string)
+        if match:
+            data = match.groupdict()
+            if self.include_string:
+                if isinstance(self.include_string, str):
+                    key = self.include_string
+                else:
+                    key = 'original'
+                if key in data:
+                    raise KeyError(f'{key} already exists.')
+                data[key] = string
+            return data
+        else:
+            raise ValueError(f'regex={self.regex} did not match {string=}')
 
 
 class GlobSource(Source):

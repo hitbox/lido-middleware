@@ -8,10 +8,34 @@
 <nav>{% for text, data in interesting_data %}
     <h3><a href="{{ url_for('crewmember.query', **data) }}">{{ text }}</a></h3>{% endfor %}
 </nav>
-<form action="{{ url_for('crewmember.query') }}" method="POST">
-    {{ render_form2(form) }}
+
+<form action="{{ url_for('crewmember.query') }}" method="GET">
+    {{ render_form2(eff_archive_form) }}
 </form>
+
+{% if eff_paths %}
+    <table>
+        <thead>
+            <tr>
+                <th>Archive Date</th>
+                <th>Origin</th>
+                <th>Dest.</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>{% for data in eff_paths %}
+                <tr data-href="{{ url_for('crewmember.from_data', airline_code=data.airline_code, archive_date=data.archive_date, origin=data.origin, destination=data.destination, time=data.time) }}">
+                    <td>{{ data.archive_date }}</td>
+                    <td>{{ data.origin }}</td>
+                    <td>{{ data.destination }}</td>
+                    <td>{{ data.time }}</td>
+            </tr>{% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
 {% if result %}
+{# Results from POST #}
 <h2>Results</h2>
 <div class="flight-info">
     <div class="data" title="Airline IATA">{{ result.data.airline_iata_code }}</div>

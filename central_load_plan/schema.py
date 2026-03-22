@@ -1,11 +1,14 @@
+import re
+
 from datetime import timedelta
 
 from marshmallow import Schema
 from marshmallow import post_load
-from marshmallow.fields import DateTime
 from marshmallow.fields import Date
+from marshmallow.fields import DateTime
 from marshmallow.fields import Integer
 from marshmallow.fields import List
+from marshmallow.fields import Method
 from marshmallow.fields import Nested
 from marshmallow.fields import String
 from marshmallow.fields import Time
@@ -15,13 +18,21 @@ from marshmallow.validate import ValidationError
 # ex: PT1H30M45S
 DURATION_FMT = 'PT%HH%MM%SS'
 
+excessive_whitespace_re = re.compile('\s{2,}')
+
+def compress_whitespace(string):
+    return re.sub(excessive_whitespace_re, ' ', string)
+
 class MELCDLItemSchema(Schema):
 
     item = String()
     description = String(allow_none=True)
 
-    @post_load
-    def post_load(self, data, **kwargs):
+    fak_status = Method('fak_status_from_item')
+
+    description_lines = Method('split_description_on_excessive_whitespace')
+
+    def fak_status_from_item(self, data):
         item = data['item']
         if item.endswith('00-30-FAK'):
             fak_status = 0
@@ -29,8 +40,10 @@ class MELCDLItemSchema(Schema):
             fak_status = 1
         else:
             fak_status = 99
-        data['fak_status'] = fak_status
-        return data
+        return fak_status
+
+    def split_description_on_excessive_whitespace(self, data):
+        return excessive_whitespace_re.split(data['description'])
 
 
 class CrewSchema(Schema):
@@ -141,6 +154,21 @@ class OracleConfSchema(Schema):
     password = String()
     database = String()
     query = String()
+
+
+class EFFArchivePathSchema(Schema):
+    """
+    Deserialize the path data for EFF archive files.
+    """
+
+    airline_code = String(validate=OneOf(['8C', 'GB']))
+    archive_date = Date()
+    origin = String()
+    destination = String()
+    time = Time(format='%H%M%S')
+
+    # RegexParser(include_string='path')
+    path = String()
 
 
 def raise_for_mixed_units(data, suffix='_unit', ignore_none=True):
