@@ -2,6 +2,7 @@ import csv
 import datetime
 import os
 
+import click
 import sqlalchemy as sa
 
 from sqlalchemy.orm import Session
@@ -20,8 +21,8 @@ import central_load_plan.config
 import central_load_plan.pluck
 import central_load_plan.crewmember
 
-from central_load_plan.engine import get_lsyrept_engine
 from central_load_plan.constants import AIRLINE_CODES
+from central_load_plan.engine import get_lsyrept_engine
 from central_load_plan.models.lsyrept import ChainItemDaily
 from central_load_plan.models.lsyrept import CrewMember
 from central_load_plan.models.lsyrept import Duty
@@ -29,8 +30,15 @@ from central_load_plan.models.lsyrept import ItemDaily
 from central_load_plan.models.lsyrept import LSYBase
 from central_load_plan.models.lsyrept import NonCrewMember
 from central_load_plan.models.lsyrept import RemarkOfEvent
+from central_load_plan.schema import ChainItemDailySchema
+from central_load_plan.schema import CrewMemberSchema
+from central_load_plan.schema import DutySchema
 from central_load_plan.schema import EFFArchivePathSchema
+from central_load_plan.schema import ItemDailySchema
+from central_load_plan.schema import NonCrewMemberSchema
 from central_load_plan.schema import OperationalFlightPlanSchema
+from central_load_plan.schema import RemarkOfEventSchema
+from central_load_plan.schema import lsyrept_model_schemas
 from central_load_plan.www import app
 from central_load_plan.www.form import CrewmemberArgsForm
 from central_load_plan.www.form import EFFArchiveFilterForm
@@ -129,19 +137,35 @@ def query():
     }
     return render_template('crewmember/query.html', **context)
 
+def get_lsyrept_schema(model):
+    for schema_class in lsyrept_schemas:
+        if schema_class.Meta.model == model:
+            return schema_class
+
 @crewmember_bp.cli.command('dump')
-def dump():
+@click.option('--print-only', is_flag=True)
+def dump(print_only):
     """
     Dump external database tables for all airlines.
     """
     for airlinecode in AIRLINE_CODES:
-        engine = get_lsyrept_engine(airlinecode)
-        with Session(engine) as session:
-            for model in LSYBase.__subclasses__():
-                query = sa.select(model)
-                fieldnames = [c.name for c in query.all_selected_columns]
+        for model in LSYBase.__subclasses__():
+            filename = f'{airlinecode}_{model.__name__}.csv'
+            schema_class = lsyrept_model_schemas[model]
+            schema = schema_class()
+            query = sa.select(model)
+            fieldnames = [c.name for c in query.selected_columns]
+            try:
+                engine = get_lsyrept_engine(airlinecode)
+            except:
+                continue
+            with Session(engine) as session:
                 rows = session.execute(query).mappings()
-                filename = f'{airlinecode}_{model.__name__}.csv'
-                with open(filename, 'w', newline='') as output_file:
-                    writer = csv.DictWriter(output_file, fieldnames)
-                    writer.writerows(rows)
+                if print_only:
+                    print(filename)
+                    for row in rows:
+                        print(row)
+                else:
+                    with open(filename, 'w', newline='') as output_file:
+                        writer = csv.DictWriter(output_file, fieldnames)
+                        writer.writerows(rows)

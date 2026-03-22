@@ -7,6 +7,7 @@ imap_tools
 jinja2
 lxml
 marshmallow
+marshmallow-sqlalchemy
 msal
 oracledb
 psycopg
