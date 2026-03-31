@@ -7,11 +7,14 @@ html {
 }
 
 body {
-    font-family: arial;
-    display: flex;
-    justify-content: center;
-    background: #333;
-    color: white;
+    font-family: sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1e1e1e;
+        color: white;
+    }
 }
 
 a:link {
@@ -92,6 +95,11 @@ input[type=submit] {
     padding: .75rem;
 }
 
+.flashes-container {
+    display: flex;
+    justify-content: center;
+}
+
 .rendered-message {
     /* as output from email.render */
     border: 1px solid white;
@@ -105,6 +113,7 @@ input[type=submit] {
 }
 
 .buttons {
+    display: flex;
     margin-top: 2rem;
 }
 
@@ -124,6 +133,11 @@ input[type=submit] {
     margin-right: 1rem;
 }
 
+ul.errors li {
+    background: red;
+    color: white;
+}
+
 dl.key-value {
     display: grid;
     grid-template-columns: max-content 1fr;
@@ -134,4 +148,12 @@ dl.key-value > dt {
 }
 
 dl.key-value > dd {
+}
+
+.boolean-yes {
+    background: green;
+}
+
+form {
+    max-width: 500px;
 }

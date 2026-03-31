@@ -12,16 +12,14 @@ function getHREF(el) {
 addEventListener("DOMContentLoaded", function() {
     for (const el of document.querySelectorAll("[data-href]")) {
         el.addEventListener("click", function(event) {
-            switch (event.button) {
-                case 0:
-                    /* left click */
-                    document.location = getHREF(event.target);
-                    break;
-                case 1:
-                    /* middle click */
-                    /* TODO: open in new tab does not work */
-                    window.open(getHREF(event.target), "_blank");
-                    break;
+            /* left click */
+            document.location = getHREF(event.target);
+        });
+        el.addEventListener("auxclick", function(event) {
+            /* right or middle click */
+            if (event.button == 1) {
+                /* middle click */
+                window.open(getHREF(event.target), "_blank");
             }
         });
     }

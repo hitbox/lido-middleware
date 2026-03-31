@@ -1,5 +1,36 @@
 from markupsafe import Markup
 
+from central_load_plan.www.primary_key import get_pk_dict
+
+class TableColumn:
+    """
+    Given an instance of a model provide header and value text for html.
+    """
+
+    def __init__(self, header, attr, cast=None):
+        self.header = header
+        self.attr = attr
+        self.cast = cast
+
+    def valueof(self, instance):
+        if self.cast:
+            value = self.cast(instance)
+        else:
+            value = getattr(instance, self.attr)
+        return value
+
+
+class Table:
+
+    def __init__(self, columns, model, row_endpoint=None):
+        self.columns = columns
+        self.model = model
+        self.row_endpoint = row_endpoint
+
+    def get_pk_dict(self, instance):
+        return get_pk_dict(instance)
+
+
 def render_object(obj, html=None):
     if html is None:
         html = []
@@ -17,3 +48,10 @@ def render_object(obj, html=None):
     else:
         return str(obj)
     return Markup(''.join(html))
+
+def yesno(value):
+    if value is True:
+        return Markup('<span class="boolean-yes">Yes</span>')
+    else:
+        return Markup('<span class="boolean-no">No</span>')
+

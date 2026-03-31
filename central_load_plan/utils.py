@@ -1,3 +1,4 @@
+import calendar
 import datetime
 import os
 import shutil
@@ -5,6 +6,9 @@ import sys
 import traceback
 
 from collections import ChainMap
+from datetime import date
+from datetime import datetime
+from datetime import timedelta
 
 from .constants import EXCEPTION_DATETIME_FMT
 
@@ -20,7 +24,7 @@ def move_for_exception(source, move_to, exc):
     exception `exc` in it.
     """
     # capture now for both files
-    now = datetime.datetime.now()
+    now = datetime.now()
     now_string = now.strftime(EXCEPTION_DATETIME_FMT)
 
     source_base = os.path.basename(source)
@@ -93,7 +97,7 @@ def keyed_sections(cp, prefix, sep='_', func=None):
 def path_format_data(path):
     fmtdata = dict(
         path = path,
-        now = datetime.datetime.now(),
+        now = datetime.now(),
     )
     head, tail = os.path.split(path)
     fmtdata['path_head'] = head # directory
@@ -102,3 +106,17 @@ def path_format_data(path):
     fmtdata['fn_root'] = root # filename without extension
     fmtdata['fn_ext'] = ext # extension with dot
     return fmtdata
+
+def datetimerange(start, end, step=timedelta(days=1)):
+    """
+    Caller is responsible for correct start and end data types with respect to the step.
+    """
+    while start < end:
+        yield start
+        start += step
+
+def startofmonth(value):
+    return date(value.year, value.month, 1)
+
+def endofmonth(value):
+    return date(value.year, value.month, calendar.mdays[value.month])

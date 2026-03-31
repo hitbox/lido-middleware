@@ -3,7 +3,7 @@ from flask import render_template
 
 from . import converter
 from . import extension
-from .views.crewmembers import crewmember_bp
+from . import views
 
 CONFIG_PREFIX = 'CENTRAL_LOAD_PLAN'
 
@@ -16,14 +16,7 @@ def create_app():
 
     extension.init_app(app)
     converter.init_app(app)
-
-    # matching config names with a truthy value to optionally hook up blueprints
-
-    app.register_blueprint(crewmember_bp, url_prefix='/crewmembers')
-
-    if app.config.get(f'{CONFIG_PREFIX}_XML'):
-        from .views.xml import xml_bp
-        app.register_blueprint(xml_bp, url_prefix='/xml')
+    views.init_app(app)
 
     @app.route('/')
     def index():
@@ -31,5 +24,10 @@ def create_app():
         List of links to enabled views' indexes.
         """
         return render_template('index.html', blueprints=app.blueprints)
+
+    @app.cli.command('create-db')
+    def create_db():
+        from central_load_plan.www.extension import db
+        db.create_all()
 
     return app

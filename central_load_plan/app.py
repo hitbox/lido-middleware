@@ -20,7 +20,7 @@ from . import pluck
 from . import rendering
 from .constants import APPNAME
 from .exception import CentralLoadPlanError
-from .schema import ofpschema
+from .schema import OperationalFlightPlanSchema
 from .utils import move_for_exception
 from .utils import path_format_data
 
@@ -153,6 +153,7 @@ class CLPApp:
         xml_data.update(pluck.fromxml(xml_root))
 
         # deserialize
+        ofpschema = OperationalFlightPlanSchema()
         xml_data = ofpschema.load(xml_data)
 
         # Add crew members from external database.

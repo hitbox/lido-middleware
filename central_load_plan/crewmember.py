@@ -85,7 +85,7 @@ def get_tables(engine):
 
 def get_crew_query(data):
     """
-    :param data: data as scraped from XML
+    :param data: deserialized data scraped from XML
     """
     crew_query = (
         sa.select(
@@ -118,10 +118,10 @@ def get_crew_query(data):
 
 def get_jumpseats_query(data):
     return (
-        sa.select(RemarkOfEvent.remark)
+        sa.select(RemarkOfEvent)
         .join(ItemDaily, RemarkOfEvent.uno == ItemDaily.uno)
         .where(
-            ItemDaily.matches_flight(data),
+            ItemDaily.filter_for_data(data),
             RemarkOfEvent.is_jumpseat,
         )
     )
@@ -138,9 +138,8 @@ def get_deadheads_query(data):
             sa.literal('duty').label('source'),
         )
         .join(Duty, Duty.tlc == CrewMember.tlc)
-        .join(ItemDaily, Duty.chain_daily_uno == ItemDaily.chain_daily_uno)
         .where(
-            ItemDaily.filter_for_data(data),
+            Duty.filter_for_data(data),
             Duty.is_deadhead,
         )
     )
@@ -158,7 +157,7 @@ def get_person_query(person_model, person_id, employee_number_field):
         sa.literal_column("'ACM'", type_=sa.String()).label(JUMPSEAT_KEYS[3]),
         # seat_order
         sa.literal_column('999', type_=sa.Integer()).label(JUMPSEAT_KEYS[4]),
-        sa.literal(person_model.name).label('source'),
+        sa.literal('RemarkOfEvent').label('source'),
     ).where(
         employee_number_field == person_id
     )
@@ -244,8 +243,13 @@ def fromdata(dbconfig, data, dbconfig_fallback=None):
 
 def fromdata(session, data):
     crew_query = get_crew_query(data)
-    for row in session.scalars(crew_query):
-        pass
+    jumpseats_query = get_jumpseats_query(data)
+    deadheads_query = get_deadheads_query(data)
+    yield from session.execute(crew_query).mappings()
+    for remark_of_event in session.execute(jumpseats_query).scalars():
+        for person in remark_of_event.split_remark_for_jumpseats(session):
+            yield person
+    yield from session.execute(deadheads_query).mappings()
 
 def main(argv=None):
     parser = argparse.ArgumentParser(

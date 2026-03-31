@@ -1,3 +1,6 @@
+from datetime import datetime
+from datetime import time
+
 import sqlalchemy as sa
 
 from sqlalchemy.orm import DeclarativeBase
@@ -6,6 +9,40 @@ from sqlalchemy.ext.hybrid import hybrid_property
 class LSYBase(DeclarativeBase):
 
     __bind_key__ = 'lsyrept'
+
+
+class FilterMixin:
+
+    @classmethod
+    def filter_for_data(cls, data):
+        flight_no = data['flight_number']
+        if cls == Duty:
+            flight_no = str(data['flight_number'])
+        return sa.and_(
+            cls.airline == data['airline_iata_code'],
+            cls.day_of_origin == datetime.combine(data['flight_origin_date'], time()),
+            cls.flight_no == flight_no,
+            cls.airport_c_is_dep == data['origin_iata'],
+            cls.departure_date_scd == data['scheduled_departure_time'].date(),
+            # departure_time_scd is stored as CHAR(4)
+            cls.departure_time_scd == data['scheduled_departure_time'].strftime('%H%M'),
+        )
+
+
+class TrimmedNameMixin:
+
+    @classmethod
+    def trimmed_name(cls):
+        return sa.func.trim(cls.name)
+
+    @classmethod
+    def trimmed_first_name(cls):
+        return sa.func.trim(cls.first_name)
+
+    @classmethod
+    def trimmed_employee_no(cls):
+        return sa.func.trim(cls.employee_no)
+
 
 
 class ChainItemDaily(LSYBase):
@@ -33,7 +70,7 @@ class ChainItemDaily(LSYBase):
     ref_time_ci_cabin = sa.Column('REF_TIME_CI_CABIN', sa.String(4), nullable=False)
 
 
-class CrewMember(LSYBase):
+class CrewMember(TrimmedNameMixin, LSYBase):
     __tablename__ = "CREW_MEMBER"
 
     tlc = sa.Column(sa.String(8), primary_key=True, nullable=False)
@@ -133,20 +170,8 @@ class CrewMember(LSYBase):
     vac_awd_begin_date = sa.Column(sa.Date, nullable=False)
     vac_changes_notified_before = sa.Column(sa.Date, nullable=False)
 
-    @classmethod
-    def trimmed_name(cls):
-        return sa.func.trim(cls.name)
 
-    @classmethod
-    def trimmed_first_name(cls):
-        return sa.func.trim(cls.first_name)
-
-    @classmethod
-    def trimmed_employee_no(cls):
-        return sa.func.trim(cls.employee_no)
-
-
-class Duty(LSYBase):
+class Duty(FilterMixin, LSYBase):
     __tablename__ = "DUTY"
 
     tlc = sa.Column("TLC", sa.String(8), primary_key=True, nullable=False)
@@ -240,7 +265,7 @@ class Duty(LSYBase):
         )
 
 
-class ItemDaily(LSYBase):
+class ItemDaily(FilterMixin, LSYBase):
     __tablename__ = "ITEM_DAILY"
 
     uno = sa.Column("UNO", sa.Integer, primary_key=True, nullable=False)
@@ -356,20 +381,8 @@ class ItemDaily(LSYBase):
     def is_deadhead(self):
         return self.type_ == 'F'
 
-    @classmethod
-    def filter_for_data(cls, data):
-        return sa.and_(
-            cls.airline == data['airline_iata_code'],
-            cls.day_of_origin == data['flight_origin_date'],
-            cls.flight_no == data['flight_number'],
-            cls.airport_c_is_dep == data['origin_iata'],
-            cls.departure_date_scd == data['scheduled_departure_time'].date(),
-            # departure_time_scd is stored as CHAR(4)
-            cls.departure_time_scd == data['scheduled_departure_time'].strftime('%H%M'),
-        )
 
-
-class NonCrewMember(LSYBase):
+class NonCrewMember(TrimmedNameMixin, LSYBase):
     __tablename__ = "NON_CREW_MEMBER"
 
     employee_id = sa.Column(sa.String(12), primary_key=True, nullable=False)
@@ -389,6 +402,15 @@ class NonCrewMember(LSYBase):
     nationality = sa.Column(sa.String(3), nullable=False)
 
     remark = sa.Column(sa.String(254), nullable=False)
+
+    @hybrid_property
+    def employee_no(self):
+        # compatibility name with CrewMember
+        return self.employee_id
+
+    @employee_no.expression
+    def employee_no(cls):
+        return cls.employee_id
 
 
 class RemarkOfEvent(LSYBase):
@@ -425,41 +447,33 @@ class RemarkOfEvent(LSYBase):
     def is_jumpseat(self):
         return self.type_ == 'J'
 
-    def split_remark_for_jumpseats(self, session):
+    def parse_jumpseat_substrings(self):
+        """
+        Slit remark string for possible jumpseats hiding in there. Each
+        substring may be a special string requiring looking up the person from
+        another table; or their another string separated by a delimiter of
+        thier name, employee, and seat information.
+        """
         for remark_substr in self.remark.split(self.__remark_separator__):
             person_type = remark_substr[0]
             remaining = remark_substr[1:]
+            yield (person_type, remaining)
 
-            if person_type in 'CN':
-                if person_type == 'C':
-                    model = CrewMember
-                    id_field = model.employee_no
-                elif person_type == 'N':
-                    model = NonCrewMember
-                    id_field = model.employee_id
-                query = sa.select(
-                    model.trimmed_first_name().label('last_name'),
-                    model.trimmed_name().label('first_name'),
-                    model.trimmed_employee_no().label('employee_number'),
-                    sa.literal('ACM').label('seat'),
-                    # seat_order
-                    sa.literal(999).label('seat_order'),
-                    sa.literal(model.name).label('source'),
-                ).where(
-                    id_field == remaining,
-                )
-                for row in session.scalars(query):
-                    yield row._mapping
+    def split_remark_for_jumpseats(self, session):
+        """
+        Yield fully structured person dicts for all jumpseat remarks.
+        """
+        for person_type, remaining in self.parse_jumpseat_substrings():
+            query = JumpseatQueryManager.build_query(person_type, remaining)
+            if query is not None:
+                # known person type, fetch from DB
+                for row in session.execute(query).mappings():
+                    yield dict(row)
             else:
+                # unknown / Other jumpseat type, parse inline
                 person = dict(
                     zip(
-                        [
-                            'last_name',
-                            'first_name',
-                            'employee_number',
-                            'seat',
-                            'seat_order',
-                        ],
+                        ['last_name', 'first_name', 'employee_number', 'seat', 'seat_order'],
                         remaining.split(self.__value_separator__),
                         strict=True
                     )
@@ -468,3 +482,30 @@ class RemarkOfEvent(LSYBase):
                 person['seat_order'] = 999
                 person['source'] = f'parse with {self.__value_separator__}'
                 yield person
+
+
+class JumpseatQueryManager:
+    """
+    Builds queries for known person types (CrewMember, NonCrewMember).
+    """
+    
+    models = {
+        'C': (CrewMember, CrewMember.employee_no),
+        'N': (NonCrewMember, NonCrewMember.employee_id),
+    }
+
+    @classmethod
+    def build_query(cls, person_type: str, person_id: str):
+        """Return a SQLAlchemy selectable or None if unknown type."""
+        if person_type not in cls.models:
+            return None
+
+        model, id_field = cls.models[person_type]
+        return sa.select(
+            model.trimmed_first_name().label('last_name'),
+            model.trimmed_name().label('first_name'),
+            model.trimmed_employee_no().label('employee_number'),
+            sa.literal('ACM').label('seat'),
+            sa.literal(999).label('seat_order'),
+            sa.literal(f'{model.__name__} lookup').label('source'),
+        ).where(id_field == person_id)

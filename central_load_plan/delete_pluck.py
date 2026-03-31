@@ -108,6 +108,8 @@ def fromxml(root, default_data_maker=None):
         'FlightIdentifier',
     ))
     data['flight_identifier'] = elem.text
+    # TODO
+    # - move this next to schema
     data['flight_identifier_first_three'] = data['flight_identifier'][:3]
 
     # origin station IATA

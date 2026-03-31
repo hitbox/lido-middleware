@@ -1,3 +1,5 @@
+from .config import OracleConfSchema
+from .config import SMTPConfSchema
 from .lsyrept import ChainItemDailySchema
 from .lsyrept import CrewMemberSchema
 from .lsyrept import DutySchema
@@ -9,9 +11,3 @@ from .operational_flight_plan import CrewSchema
 from .operational_flight_plan import EFFArchivePathSchema
 from .operational_flight_plan import MELCDLItemSchema
 from .operational_flight_plan import OperationalFlightPlanSchema
-from .operational_flight_plan import OracleConfSchema
-from .operational_flight_plan import SMTPConfSchema
-from .operational_flight_plan import ofpschema
-from .operational_flight_plan import oracleconfschema
-from .operational_flight_plan import raise_for_mixed_units
-from .operational_flight_plan import smtpconfschema

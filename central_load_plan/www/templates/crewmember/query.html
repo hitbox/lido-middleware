@@ -9,11 +9,18 @@
     <h3><a href="{{ url_for('crewmember.query', **data) }}">{{ text }}</a></h3>{% endfor %}
 </nav>
 
-<form action="{{ url_for('crewmember.query') }}" method="GET">
-    {{ render_form2(eff_archive_form) }}
-</form>
+<div>
+    <p>Criteria for archived EFF XML files.</p>
+    <form action="{{ url_for('crewmember.query') }}" method="GET">
+        {{ render_form2(eff_archive_form) }}
+    </form>
+</div>
 
-{% if eff_paths %}
+{% if eff_paths is defined and not eff_paths %}
+    <p>No results</p>
+{% else %}
+    <p>List of matching archived EFF files</p>
+    <p>Click row to parse OFP XML file</p>
     <table>
         <thead>
             <tr>
@@ -23,12 +30,13 @@
                 <th>Time</th>
             </tr>
         </thead>
-        <tbody>{% for data in eff_paths %}
-                <tr data-href="{{ url_for('crewmember.from_data', airline_code=data.airline_code, archive_date=data.archive_date, origin=data.origin, destination=data.destination, time=data.time) }}">
-                    <td>{{ data.archive_date }}</td>
-                    <td>{{ data.origin }}</td>
-                    <td>{{ data.destination }}</td>
-                    <td>{{ data.time }}</td>
+        <tbody>{% for path_data in eff_paths %}
+                {% set row_url = url_for('crewmember.from_data', airline_code=path_data.airline_code, archive_date=path_data.archive_date, origin=path_data.origin, destination=path_data.destination, timestamp=path_data.timestamp) %}
+                <tr data-href="{{ row_url }}">
+                    <td>{{ path_data.archive_date }}</td>
+                    <td>{{ path_data.origin }}</td>
+                    <td>{{ path_data.destination }}</td>
+                    <td>{{ path_data.timestamp }}</td>
             </tr>{% endfor %}
         </tbody>
     </table>

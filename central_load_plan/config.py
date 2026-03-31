@@ -8,17 +8,23 @@ import central_load_plan.models
 
 from . import rendering
 from .constants import APPNAME
-from .schema import oracleconfschema
-from .schema import smtpconfschema
+from .models import EFFZipReader
+from .models import EmailOutput
+from .models import GlobSource
+from .models import NullArchive
+from .models import PathArchive
+from .models import XMLReader
+from .schema import OracleConfSchema
+from .schema import SMTPConfSchema
 from .utils import keyed_sections
 
 CONFIG_EVAL_CONTEXT = {
-    #'EFFZipReader': central_load_plan.models.EFFZipReader,
-    #'EmailOutput': central_load_plan.models.EmailOutput,
-    #'GlobSource': central_load_plan.models.GlobSource,
-    #'NullArchive': central_load_plan.models.NullArchive,
-    #'PathArchive': central_load_plan.models.PathArchive,
-    #'XMLReader': central_load_plan.models.XMLReader,
+    'EFFZipReader': EFFZipReader,
+    'EmailOutput': EmailOutput,
+    'GlobSource': GlobSource,
+    'NullArchive': NullArchive,
+    'PathArchive': PathArchive,
+    'XMLReader': XMLReader,
 }
 
 class ConfigError(Exception):
@@ -140,6 +146,9 @@ def process_original(cp):
 
     # Ad-hoc force write file for from nested zip eff file.
     force_write_out = appconf.get('force_write_out')
+
+    smtpconfschema = SMTPConfSchema()
+    oracleconfschema = OracleConfSchema()
 
     appconf_data = SimpleNamespace(
         sources = sources,

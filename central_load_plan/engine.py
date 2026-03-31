@@ -4,7 +4,8 @@ from flask import current_app
 
 def get_lsyrept_engine(airline_code):
     credentials = current_app.config.get('CREDENTIALS_FOR_AIRLINE', {})
-    airline_creds = credentials[airline_code]
+    # get to allow none
+    airline_creds = credentials.get(airline_code, {})
     keys = [
         'LSYREPT_PRODUCTION_DATABASE_URI',
         'LSYREPT_FALLBACK_DATABASE_URI',

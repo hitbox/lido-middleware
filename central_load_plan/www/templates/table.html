@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+
+{% from "render.html" import render_table %}
+
+
+{% block main %}
+    <h3>{{ model.__name__ }} objects</h3>
+    <table>
+        <thead>
+            <tr>{% for column in table.columns %}
+                <th>{{ column.header }}</th>{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% if not pagination.items %}
+                <tr><td colspan="{{ table.columns|length }}">No {{ model.__name__ }} objects</td></tr>
+            {% else %}
+            {% for instance in pagination %}<tr data-href="{{ url_for(edit_endpoint, id=instance.id) }}">
+                {% for column in table.columns %}<td>{{ column.valueof(instance) }}</td>{% endfor %}
+            </tr>{% endfor %}
+            {% endif %}
+            <tr>
+                <td colspan="{{ table.columns|length }}"><a href="{{ url_for(create_endpoint) }}">Create new</a></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class=pagination>{% for page in pagination.iter_pages() %}
+        {% if page %}
+            {% if page != pagination.page %}
+                 <a href="{{ url_for(request.endpoint, page=page) }}">{{ page }}</a>
+            {% else %}
+                <strong>{{ page }}</strong>
+            {% endif %}
+        {% else %}
+            <span class=ellipsis>…</span>
+        {% endif %}
+    {% endfor %}</div>
+{% endblock main %}

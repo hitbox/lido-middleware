@@ -1,5 +1,6 @@
 chardet
 flask
+flask-login
 flask-sqlalchemy
 flask-wtf
 fs
@@ -10,8 +11,10 @@ marshmallow
 marshmallow-sqlalchemy
 msal
 oracledb
+passlib[argon2]
 psycopg
 requests
 sqlalchemy
 sqlparse
 wtforms
+wtforms-sqlalchemy

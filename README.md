@@ -5,9 +5,21 @@ Python 3
 # Central Load Plan
 
 2025-09-25
-Pluck and deserialize, unread XML files and send emails and write files from templates for each airline. May need a database to hold email lists and allow an interface to update them. Apparently the email list we're using now are invalid and we'll have to manage them, something to do with Amazon. Move file to archive. This program is the main consumer of these xml files.
+
+Scrape and deserialize, unread XML files and send emails and write files from templates for each airline. May need a database to hold email lists and allow an interface to update them. Apparently the email list we're using now are invalid and we'll have to manage them, something to do with Amazon. Move file to archive. This program is the main consumer of these xml files.
+
 See incident 111038:
 https://support.atsginc.com/incidents/165428433-clp-email-rejected-fuel-messages
+
+2026-03-24
+
+Seriously needed to rewrite the description. We are moving to doing email
+routing here, in this application.
+
+1. Periodically read OFP XML files from a source location.
+2. Scrape OFP XML for data.
+3. Send emails and write files based on airline.
+4. Move files to an archive location.
 
 
 # Structure
@@ -19,6 +31,10 @@ experiment to avoid deeply nested things.
 python -m run path/to/config.py
 ```
 
+# Sable and Pistol
+
+Read emails from inboxes that contain human readable load plans in text; and
+write LIDO messages.
 
 # Process
 
