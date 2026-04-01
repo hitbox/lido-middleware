@@ -24,10 +24,6 @@ def argument_parser():
         action = 'store_true',
         help = 'Test SMTP connection and stop.',
     )
-    parser.add_argument('--test-oracle',
-        action = 'store_true',
-        help = 'Test oracle connection and stop.',
-    )
     parser.add_argument('--seconds',
         metavar = 'N',
         type = float,

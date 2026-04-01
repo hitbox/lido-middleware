@@ -3,7 +3,7 @@ from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from marshmallow_sqlalchemy import auto_field
 
 from central_load_plan.models.lsyrept import ChainItemDaily
-from central_load_plan.models.lsyrept import CrewMember
+from central_load_plan.models.lsyrept import LSYCrewMember
 from central_load_plan.models.lsyrept import Duty
 from central_load_plan.models.lsyrept import ItemDaily
 from central_load_plan.models.lsyrept import NonCrewMember
@@ -28,7 +28,7 @@ class ChainItemDailySchema(PreLoadMixin, SQLAlchemyAutoSchema):
 
 class CrewMemberSchema(PreLoadMixin, SQLAlchemyAutoSchema):
     class Meta:
-        model = CrewMember
+        model = LSYCrewMember
         load_instance = True
 
 
@@ -59,7 +59,7 @@ class RemarkOfEventSchema(PreLoadMixin, SQLAlchemyAutoSchema):
 # lookup schema from model
 lsyrept_model_schemas = {
     ChainItemDaily: ChainItemDailySchema,
-    CrewMember: CrewMemberSchema,
+    LSYCrewMember: CrewMemberSchema,
     Duty: DutySchema,
     ItemDaily: ItemDailySchema,
     NonCrewMember: NonCrewMemberSchema,

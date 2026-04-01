@@ -13,3 +13,14 @@ class Email(CLPBase):
     address = sa.Column(sa.String, unique=True, nullable=False)
 
     display_name = sa.Column(sa.String, nullable=True)
+
+    send_tos = sa.orm.relationship(
+        'SendTo',
+        back_populates = 'email',
+    )
+
+    def address_for_ofp_data(self, ofp_data):
+        """
+        Get email address from data scraped from ofp files.
+        """
+        return self.address.format(**ofp_data)

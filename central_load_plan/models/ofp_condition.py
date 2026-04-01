@@ -93,6 +93,10 @@ class OFPCondition(CLPBase):
         return python_type(value)
 
     def to_expression(self):
+        """
+        Query criteria expression useful to find all matching OFPFile objects
+        matching this condition.
+        """
         ofp_file_mapper = sa.inspect(OFPFile)
 
         ofp_file_column = ofp_file_mapper.columns[self.ofp_key]
@@ -105,6 +109,23 @@ class OFPCondition(CLPBase):
             return op(ofp_file_column, values)
         elif values:
             return op(ofp_file_column, values[0])
+
+    def is_match(self, ofp_file):
+        ofp_file_mapper = sa.inspect(OFPFile)
+
+        op = self.__valid_operators__[self.operator]
+
+        ofp_file_column = ofp_file_mapper.columns[self.ofp_key]
+
+        values = [ofp_value.value for ofp_value in self.values]
+
+        ofp_file_key_value = getattr(ofp_file, self.ofp_key)
+
+        if self.operator == 'contains':
+            # same as `b in a`
+            return ofp_file_key_value in values
+        else:
+            return op(ofp_file_key_value, values[0])
 
     @property
     def condition_as_string(self):

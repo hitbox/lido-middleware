@@ -1,3 +1,4 @@
+import json
 from datetime import date
 
 import sqlalchemy as sa
@@ -15,10 +16,12 @@ from wtforms import SubmitField
 from wtforms import TimeField
 from wtforms.validators import DataRequired
 from wtforms.validators import ValidationError
+from wtforms_sqlalchemy.fields import QuerySelectField
 from wtforms_sqlalchemy.orm import model_form
 
 from central_load_plan.models import JobTemplate
 from central_load_plan.models import JobType
+from central_load_plan.models import JobTypeEnum
 from central_load_plan.models import OFPCondition
 from central_load_plan.models import OFPConditionValue
 from central_load_plan.models import OFPFile
@@ -26,9 +29,11 @@ from central_load_plan.www.extension import db
 from central_load_plan.www.singlepage import DynamicListWidget
 from central_load_plan.www.widget import NestedFormWidget
 
-JobTypeForm = model_form(JobType, db_session=db.session)
+from central_load_plan.www.field import JSONField
 
-JobTemplateForm = model_form(JobTemplate, db_session=db.session, only=['name'])
+from .job_template import JobTemplateForm
+
+JobTypeForm = model_form(JobType, db_session=db.session)
 
 class LoginForm(Form):
 
@@ -106,7 +111,7 @@ class OFPConditionValueFormField(Form):
     value = StringField(validators=[DataRequired()])
 
 
-def name_is_unique(form, field):
+def ofp_condition_name_is_unique(form, field):
     if not form.delete.data:
         query = (
             db.select(OFPCondition)
@@ -170,7 +175,7 @@ class OFPConditionForm(Form):
         else:
             # Require unique name for new
             validators = list(self.name.validators)
-            validators.append(name_is_unique)
+            validators.append(ofp_condition_name_is_unique)
             self.name.validators = tuple(validators)
 
         # Dynamic choices

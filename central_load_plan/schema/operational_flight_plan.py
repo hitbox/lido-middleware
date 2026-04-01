@@ -53,12 +53,14 @@ class CrewSchema(Schema):
     Schema for crewmembers added from external database.
     """
 
-    seat = String()
-    source = String()
-    seat_order = Integer()
     first_name = String()
     last_name = String()
     employee_number = String()
+
+    seat = String()
+    seat_order = Integer()
+
+    source = String()
 
 
 class OperationalFlightPlanSchema(Schema):

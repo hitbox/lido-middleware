@@ -14,6 +14,7 @@ from markupsafe import Markup
 from sqlalchemy.exc import NoResultFound
 
 from central_load_plan.models import Email
+from central_load_plan.models import Job
 from central_load_plan.models import JobTemplate
 from central_load_plan.models import JobType
 from central_load_plan.models import OFPCondition
@@ -22,8 +23,8 @@ from central_load_plan.models import OFPFile
 from central_load_plan.models import User
 from central_load_plan.www.extension import db
 from central_load_plan.www.extension import login_manager
-from central_load_plan.www.form import JobTemplateForm
 from central_load_plan.www.form import EmailForm
+from central_load_plan.www.form import JobTemplateForm
 from central_load_plan.www.form import JobTypeForm
 from central_load_plan.www.form import OFPConditionForm
 from central_load_plan.www.form import UserForm
@@ -53,7 +54,8 @@ user_admin_blueprint = Blueprint('users', __name__)
 add_url_rule_for_table_listing(
     user_admin_blueprint,
     rule = '/users',
-    model = User,
+    pagination_factory = lambda: db.paginate(db.select(User)),
+    template = 'table.html',
     table = Table(
         model = User,
         columns = [
@@ -88,7 +90,8 @@ email_admin_blueprint = Blueprint('emails', __name__)
 add_url_rule_for_table_listing(
     email_admin_blueprint,
     rule = '/emails',
-    model = Email,
+    pagination_factory = lambda: db.paginate(db.select(Email)),
+    template = 'table.html',
     table = Table(
         model = Email,
         columns = [
@@ -132,7 +135,8 @@ ofp_condition_admin_blueprint = Blueprint('ofp_condition', __name__)
 add_url_rule_for_table_listing(
     ofp_condition_admin_blueprint,
     rule = '/ofp-condition',
-    model = OFPCondition,
+    pagination_factory = lambda: db.paginate(db.select(OFPCondition)),
+    template = 'table.html',
     table = Table(
         model = Email,
         columns = [
@@ -157,13 +161,14 @@ job_template_admin_blueprint = Blueprint('job_template', __name__)
 add_url_rule_for_table_listing(
     job_template_admin_blueprint,
     rule = '/job-template',
-    model = JobTemplate,
+    pagination_factory = lambda: db.paginate(db.select(JobTemplate)),
+    template = 'table.html',
     table = Table(
         model = JobTemplate,
         columns = [
             TableColumn('Name', 'name'),
-            TableColumn('Type', 'job_type'),
-            TableColumn('OFP Condition', 'ofp_condition'),
+            TableColumn('Type', 'job_type.name'),
+            TableColumn('OFP Condition', 'ofp_condition.blurb'),
         ],
     ),
 )
@@ -173,6 +178,82 @@ add_url_rule_for_creating(
     rule = '/job-template/new',
     model = JobTemplate,
     form_class = JobTemplateForm,
+    template = 'form.html',
+)
+
+add_url_rule_for_editing(
+    job_template_admin_blueprint,
+    rule = '/job-template/<uuid:id>',
+    form_class = JobTemplateForm,
+    model = JobTemplate,
+    template = 'form.html',
+)
+
+job_admin_blueprint = Blueprint('job', __name__)
+
+add_url_rule_for_table_listing(
+    job_admin_blueprint,
+    rule = '/job',
+    pagination_factory = lambda: db.paginate(db.select(Job)),
+    template = 'table.html',
+    table = Table(
+        model = Job,
+        columns = [
+            TableColumn('Name', 'name'),
+            TableColumn('Type', 'job_type.name'),
+            TableColumn('OFP Condition', 'ofp_condition.blurb'),
+        ],
+    ),
+)
+
+add_url_rule_for_creating(
+    job_admin_blueprint,
+    rule = '/job/new',
+    model = Job,
+    form_class = JobTemplateForm,
+    template = 'form.html',
+)
+
+add_url_rule_for_editing(
+    job_admin_blueprint,
+    rule = '/job/<uuid:id>',
+    form_class = JobTemplateForm,
+    model = Job,
+    template = 'form.html',
+)
+
+ofp_file_admin_blueprint = Blueprint('ofp_file', __name__)
+
+def ofp_files_pagination():
+    query = (
+        db.select(OFPFile)
+        .order_by(
+            OFPFile.flight_origin_date.desc(),
+            OFPFile.archive_path,
+        )
+    )
+    return db.paginate(query)
+
+add_url_rule_for_table_listing(
+    ofp_file_admin_blueprint,
+    '/ofp-file',
+    pagination_factory = ofp_files_pagination,
+    template = 'table.html',
+    edit_endpoint = 'job_template.from_ofp_file',
+    create_endpoint = None,
+    table = Table(
+        model = OFPFile,
+        columns = [
+            TableColumn('Path', 'display_path'),
+        ],
+    ),
+)
+
+add_url_rule_for_editing(
+    ofp_file_admin_blueprint,
+    rule = '/ofp-file/<uuid:id>',
+    form_class = JobTemplateForm,
+    model = Job,
     template = 'form.html',
 )
 
@@ -221,7 +302,8 @@ job_type_blueprint = Blueprint('job_type', __name__)
 add_url_rule_for_table_listing(
     job_type_blueprint,
     rule = '/job-types',
-    model = JobType,
+    template = 'table.html',
+    pagination_factory = lambda: db.paginate(db.select(JobType)),
     table = Table(
         model = JobType,
         columns = [
@@ -248,11 +330,12 @@ add_url_rule_for_creating(
 
 # Register sub-blueprints
 
-admin_bp.register_blueprint(user_admin_blueprint)
 admin_bp.register_blueprint(email_admin_blueprint)
-admin_bp.register_blueprint(ofp_condition_admin_blueprint)
-admin_bp.register_blueprint(job_type_blueprint)
 admin_bp.register_blueprint(job_template_admin_blueprint)
+admin_bp.register_blueprint(job_type_blueprint)
+admin_bp.register_blueprint(ofp_condition_admin_blueprint)
+admin_bp.register_blueprint(ofp_file_admin_blueprint)
+admin_bp.register_blueprint(user_admin_blueprint)
 
 @admin_bp.route('/')
 def root():
@@ -265,6 +348,7 @@ def root():
         ('OFPCondition', url_for('.ofp_condition.list')),
         ('JobType', url_for('.job_type.list')),
         ('JobTemplate', url_for('.job_template.list')),
+        ('OFPFile', url_for('.ofp_file.list')),
     ]
 
     html = ['<ul>']

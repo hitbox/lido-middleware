@@ -28,9 +28,12 @@ class EditObjectView(View):
         if instance is None:
             abort(404)
 
-        form = self.form_class(obj=instance)
+        if request.form:
+            form = self.form_class(data=request.form)
+        else:
+            form = self.form_class(obj=instance)
 
-        if request.method == 'POST':
+        if request.method == 'POST' and form.validate():
             if 'delete' in request.form:
                 db.session.delete(instance)
                 flash('Object deleted', 'success')

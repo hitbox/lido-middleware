@@ -22,14 +22,6 @@ def _test_smtp(conf):
         print(f'Connected SMTP {conf}')
 
 
-def _test_oracle(company_confs):
-    from .crewmember import get_engine
-    for company_code, company_dbconf in company_confs.items():
-        engine = get_engine(company_dbconf)
-        with engine.connect():
-            print(f'Connected {company_code} {engine}')
-
-
 def run(argv=None):
     """
     Create Central Load Plan emails, files, and JSON from XML files.
@@ -46,9 +38,6 @@ def run(argv=None):
 
         if clargs.test_smtp:
             _test_smtp(appconf.smtpconf)
-
-        if clargs.test_oracle:
-            _test_oracle(appconf.dbconf)
 
         return 0
 

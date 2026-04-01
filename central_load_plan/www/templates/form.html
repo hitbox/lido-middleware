@@ -5,10 +5,9 @@
 
 
 {% block main %}
-    {% if request.form %}<pre>{{ request.form }}</pre>{% endif %}
     <h3>Edit {{ model.__name__ }}</h3>
     <p>{{ model.__doc__ }}</p>
-    <form method="POST">
+    <form action="{{ url_for(request.endpoint, **request.view_args) }}" method="POST">
         {{ render_form2(form)}}
     </form>
 {% endblock main %}

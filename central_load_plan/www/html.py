@@ -16,7 +16,7 @@ class TableColumn:
         if self.cast:
             value = self.cast(instance)
         else:
-            value = getattr(instance, self.attr)
+            value = deep_getattr(instance, self.attr)
         return value
 
 
@@ -55,3 +55,8 @@ def yesno(value):
     else:
         return Markup('<span class="boolean-no">No</span>')
 
+def deep_getattr(obj, name):
+    names = name.split('.')
+    for name in names:
+        obj = getattr(obj, name)
+    return obj

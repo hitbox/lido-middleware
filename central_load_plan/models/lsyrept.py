@@ -14,18 +14,20 @@ class LSYBase(DeclarativeBase):
 class FilterMixin:
 
     @classmethod
-    def filter_for_data(cls, data):
-        flight_no = data['flight_number']
+    def filter_for_ofp_file(cls, ofp_file):
+        flight_no = ofp_file.flight_number
         if cls == Duty:
-            flight_no = str(data['flight_number'])
+            # Need string for Duty class
+            flight_no = str(ofp_file.flight_number)
+
         return sa.and_(
-            cls.airline == data['airline_iata_code'],
-            cls.day_of_origin == datetime.combine(data['flight_origin_date'], time()),
+            cls.airline == ofp_file.airline_iata_code,
+            cls.day_of_origin == datetime.combine(ofp_file.flight_origin_date, time()),
             cls.flight_no == flight_no,
-            cls.airport_c_is_dep == data['origin_iata'],
-            cls.departure_date_scd == data['scheduled_departure_time'].date(),
+            cls.airport_c_is_dep == ofp_file.origin_iata,
+            cls.departure_date_scd == ofp_file.scheduled_departure_time.date(),
             # departure_time_scd is stored as CHAR(4)
-            cls.departure_time_scd == data['scheduled_departure_time'].strftime('%H%M'),
+            cls.departure_time_scd == ofp_file.scheduled_departure_time.strftime('%H%M'),
         )
 
 
@@ -70,7 +72,7 @@ class ChainItemDaily(LSYBase):
     ref_time_ci_cabin = sa.Column('REF_TIME_CI_CABIN', sa.String(4), nullable=False)
 
 
-class CrewMember(TrimmedNameMixin, LSYBase):
+class LSYCrewMember(TrimmedNameMixin, LSYBase):
     __tablename__ = "CREW_MEMBER"
 
     tlc = sa.Column(sa.String(8), primary_key=True, nullable=False)
@@ -83,6 +85,15 @@ class CrewMember(TrimmedNameMixin, LSYBase):
     national_name = sa.Column(sa.String(160), nullable=False)
 
     employee_no = sa.Column(sa.String(12), nullable=False)
+
+    @hybrid_property
+    def trimmed_employee_no(self):
+        return self.employee_no.strip()
+
+    @trimmed_employee_no.expression
+    def trimmed_employee_no(cls):
+        return sa.func.trim(cls.employee_no)
+
     personal_id = sa.Column(sa.String(20), nullable=False)
 
     seniority = sa.Column(sa.Integer, nullable=False)
@@ -169,6 +180,38 @@ class CrewMember(TrimmedNameMixin, LSYBase):
 
     vac_awd_begin_date = sa.Column(sa.Date, nullable=False)
     vac_changes_notified_before = sa.Column(sa.Date, nullable=False)
+
+    @classmethod
+    def crew_query_from_ofp_file(cls, ofp_file):
+        """
+        """
+        return (
+            sa.select(
+                cls.trimmed_name().label('last_name'),
+                cls.trimmed_first_name().label('first_name'),
+                cls.trimmed_employee_no.label('employee_number'),
+                Duty.seat_case(ItemDaily.is_leg).label('seat'),
+                Duty.seat_order_case(ItemDaily.is_leg, ItemDaily.is_deadhead).label('seat_order'),
+                sa.literal('item_daily').label('source'),
+            )
+            .select_from(ItemDaily)
+            .join(
+                ChainItemDaily,
+                ChainItemDaily.item_daily_uno == ItemDaily.uno,
+            )
+            .join(
+                Duty,
+                Duty.chain_daily_uno == ChainItemDaily.chain_daily_uno,
+            )
+            .join(
+                cls,
+                cls.tlc == Duty.tlc,
+            )
+            .where(
+                ItemDaily.filter_for_ofp_file(ofp_file)
+            )
+            .order_by('seat_order')
+        )
 
 
 class Duty(FilterMixin, LSYBase):
@@ -262,6 +305,25 @@ class Duty(FilterMixin, LSYBase):
         return sa.case(
             (is_leg, cls.assigned_rank),
             (is_deadhead, 99),
+        )
+
+    @classmethod
+    def deadheads_query_from_ofp_file(cls, ofp_file):
+        # Incident 31169: some dead heads missing.
+        return (
+            sa.select(
+                LSYCrewMember.trimmed_name().label('last_name'),
+                LSYCrewMember.trimmed_first_name().label('first_name'),
+                LSYCrewMember.trimmed_employee_no.label('employee_number'),
+                sa.literal('ACM').label('seat'),
+                sa.literal(999).label('seat_order'),
+                sa.literal('duty').label('source'),
+            )
+            .join(cls, cls.tlc == LSYCrewMember.tlc)
+            .where(
+                cls.filter_for_ofp_file(ofp_file),
+                cls.is_deadhead,
+            )
         )
 
 
@@ -403,22 +465,35 @@ class NonCrewMember(TrimmedNameMixin, LSYBase):
 
     remark = sa.Column(sa.String(254), nullable=False)
 
-    @hybrid_property
-    def employee_no(self):
-        # compatibility name with CrewMember
-        return self.employee_id
-
-    @employee_no.expression
-    def employee_no(cls):
-        return cls.employee_id
-
 
 class RemarkOfEvent(LSYBase):
     __tablename__ = "REMARK_OF_EVENT"
 
-    __remark_separator__ = '|'
+    __acm_separator__ = '|'
 
     __value_separator__ = ';'
+
+    # keys for __value_separator__ separated values
+    __jumpseat_keys__ = [
+        'last_name',
+        'first_name',
+        'employee_number',
+        'seat',
+        'seat_order',
+    ]
+
+    __jumpseat_types__ = {
+        'last_name': str,
+        'first_name': str,
+        'employee_number': str,
+        'seat': str,
+    }
+
+    __value_separated_defaults__ = {
+        'seat': 'ACM',
+        'seat_order': 999,
+        'source': 'remark parsed {self.remark}',
+    }
 
     uno = sa.Column("UNO", sa.Integer, primary_key=True, nullable=False)
     type_ = sa.Column("TYPE", sa.String(1), primary_key=True, nullable=False)
@@ -454,14 +529,14 @@ class RemarkOfEvent(LSYBase):
         another table; or their another string separated by a delimiter of
         thier name, employee, and seat information.
         """
-        for remark_substr in self.remark.split(self.__remark_separator__):
+        for remark_substr in self.remark.split(self.__acm_separator__):
             person_type = remark_substr[0]
             remaining = remark_substr[1:]
             yield (person_type, remaining)
 
     def split_remark_for_jumpseats(self, session):
         """
-        Yield fully structured person dicts for all jumpseat remarks.
+        Yield person dicts for all jumpseat remarks.
         """
         for person_type, remaining in self.parse_jumpseat_substrings():
             query = JumpseatQueryManager.build_query(person_type, remaining)
@@ -473,39 +548,82 @@ class RemarkOfEvent(LSYBase):
                 # unknown / Other jumpseat type, parse inline
                 person = dict(
                     zip(
-                        ['last_name', 'first_name', 'employee_number', 'seat', 'seat_order'],
+                        self.__jumpseat_keys__,
                         remaining.split(self.__value_separator__),
                         strict=True
                     )
                 )
-                person['seat'] = 'ACM'
-                person['seat_order'] = 999
-                person['source'] = f'parse with {self.__value_separator__}'
+                for key, value in self.__value_separated_defaults__.items():
+                    if isinstance(value, str):
+                        value = value.format(**locals())
+                    person[key] = value
+                    person.setdefault(key, value)
                 yield person
+
+    @classmethod
+    def jumpseats_query_from_ofp_file(cls, ofp_file):
+        return (
+            sa.select(cls)
+            .join(ItemDaily, cls.uno == ItemDaily.uno)
+            .where(
+                ItemDaily.filter_for_ofp_file(ofp_file),
+                cls.is_jumpseat,
+            )
+        )
 
 
 class JumpseatQueryManager:
     """
-    Builds queries for known person types (CrewMember, NonCrewMember).
+    Builds queries for known person types (LSYCrewMember, NonCrewMember).
     """
     
     models = {
-        'C': (CrewMember, CrewMember.employee_no),
-        'N': (NonCrewMember, NonCrewMember.employee_id),
+        'C': (LSYCrewMember, LSYCrewMember.employee_no, LSYCrewMember.trimmed_employee_no),
+        'N': (NonCrewMember, NonCrewMember.employee_id, LSYCrewMember.trimmed_employee_no),
     }
 
     @classmethod
-    def build_query(cls, person_type: str, person_id: str):
-        """Return a SQLAlchemy selectable or None if unknown type."""
+    def build_query(cls, person_type, person_id):
+        """
+        Return a SQLAlchemy selectable or None if unknown type.
+        """
         if person_type not in cls.models:
             return None
 
-        model, id_field = cls.models[person_type]
-        return sa.select(
+        # Get the model and field needed to filter for employee/person.
+        model, id_field, selected_id_field = cls.models[person_type]
+        query = sa.select(
             model.trimmed_first_name().label('last_name'),
             model.trimmed_name().label('first_name'),
-            model.trimmed_employee_no().label('employee_number'),
+            selected_id_field.label('employee_number'),
             sa.literal('ACM').label('seat'),
             sa.literal(999).label('seat_order'),
             sa.literal(f'{model.__name__} lookup').label('source'),
-        ).where(id_field == person_id)
+        ).where(
+            id_field == person_id
+        )
+        return query
+
+def crew_members_from_ofp(session, ofp_file):
+    crew_members = []
+
+    result = {
+        'crew_members': crew_members,
+        'errors': [],
+    }
+
+    crew_query = LSYCrewMember.crew_query_from_ofp_file(ofp_file)
+    jumpseats_query = RemarkOfEvent.jumpseats_query_from_ofp_file(ofp_file)
+    deadheads_query = Duty.deadheads_query_from_ofp_file(ofp_file)
+
+    for person in session.execute(crew_query).mappings():
+        crew_members.append(person)
+
+    for remark_of_event in session.execute(jumpseats_query).scalars():
+        for person in remark_of_event.split_remark_for_jumpseats(session):
+            crew_members.append(person)
+
+    for person in session.execute(deadheads_query).mappings():
+        crew_members.append(person)
+
+    return result

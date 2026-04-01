@@ -14,7 +14,12 @@ class CoreObjects:
 
     @property
     def ati_ofp_condition(self):
-        query = db.select(OFPCondition).where(OFPCondition.name == 'ABX OFP')
+        query = db.select(OFPCondition).where(OFPCondition.name == 'ATI OFP')
+        return db.session.scalars(query).one()
+
+    @property
+    def abx_and_ati_ofp_condition(self):
+        query = db.select(OFPCondition).where(OFPCondition.name == 'ABX or ATI')
         return db.session.scalars(query).one()
 
 instances = CoreObjects()

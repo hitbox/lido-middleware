@@ -15,20 +15,29 @@ class ListView(View):
     Queryable database object view.
     """
 
-    def __init__(self, model, template, table, edit_endpoint, create_endpoint):
-        self.model = model
+    def __init__(
+        self,
+        pagination_factory,
+        template,
+        table,
+        filter_form = None,
+        edit_endpoint = None,
+        create_endpoint = None,
+    ):
+        self.pagination_factory = pagination_factory
         self.template = template
         self.table = table
         self.edit_endpoint = edit_endpoint
         self.create_endpoint = create_endpoint
 
     def dispatch_request(self, **kwargs):
-        pagination = db.paginate(db.select(self.model))
+        pagination = self.pagination_factory()
         context = {
-            'model': self.model,
             'table': self.table,
             'pagination': pagination,
-            'edit_endpoint': self.edit_endpoint,
-            'create_endpoint': self.create_endpoint,
         }
+        for name in ['edit_endpoint', 'create_endpoint', 'filter_form']:
+            attr = getattr(self, name, None)
+            if attr is not None:
+                context[name] = attr
         return render_template(self.template, **context)

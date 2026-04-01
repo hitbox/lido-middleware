@@ -1,5 +1,12 @@
-from wtforms import SubmitField
+import json
+
 from markupsafe import Markup
+from wtforms import Field
+from wtforms import SubmitField
+from wtforms import ValidationError
+from wtforms.widgets import TextArea
+from wtforms.widgets import TextInput
+from wtforms.widgets import html_params
 
 class AddFieldListEntry(SubmitField):
     """
@@ -42,3 +49,27 @@ class AddFieldListEntry(SubmitField):
         </script>
         """
         return Markup(html)
+
+
+
+class JSONField(Field):
+    """
+    A WTForms field that handles JSON input.
+    Converts the input string into a Python dictionary/list.
+    """
+
+    widget = TextInput()
+
+    def _value(self):
+        if self.data:
+            return json.dumps(self.data)
+        return ''
+
+    def process_formdata(self, valuelist):
+        if valuelist:
+            try:
+                self.data = json.loads(valuelist[0])
+            except ValueError as e:
+                raise ValidationError(f'Invalid JSON {e}')
+        else:
+            self.data = None

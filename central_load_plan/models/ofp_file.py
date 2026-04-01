@@ -1,6 +1,10 @@
 import uuid
 
+from datetime import timedelta
+from datetime import datetime
+
 import sqlalchemy as sa
+from sqlalchemy.orm import Session
 
 from .clp_base import CLPBase
 
@@ -110,12 +114,100 @@ class OFPFile(CLPBase):
     crewmembers = sa.orm.relationship(
         'CrewMember',
         back_populates = 'ofp_files',
+        order_by = lambda: CrewMember.seat_order,
     )
 
     jobs = sa.orm.relationship(
         'Job',
         back_populates = 'ofp_file',
     )
+
+    @property
+    def estimated_arrival_time(self):
+        return self.estimated_departure_time + timedelta(
+            hours = self.estimated_block_time.hour,
+            minutes = self.estimated_block_time.minute,
+        )
+
+    @property
+    def flight_identifier_first_three(self):
+        return self.flight_identifier[:3]
+
+    @property
+    def unit_for_reporting(self):
+        return f'{self.planned_payload_unit.upper()}S'
+
+    @property
+    def runtime(self):
+        return datetime.now()
+
+    __dict_keys__ = [
+        'aircraft_equipment_status_list',
+        'aircraft_registration',
+        'airline_iata_code',
+        'archive_path',
+        'ballast_fuel',
+        'ballast_fuel_unit',
+        'crewmembers',
+        'destination_iata',
+        'dow',
+        'dow_unit',
+        'estimated_arrival_time',
+        'estimated_block_time',
+        'estimated_departure_time',
+        'estimated_time_enroute',
+        'flight_identifier',
+        'flight_identifier_first_three',
+        'flight_number',
+        'flight_origin_date',
+        'flight_plan_id',
+        'fuel_burn',
+        'fuel_burn_unit',
+        'id',
+        'runtime',
+        'landing_fuel',
+        'landing_fuel_unit',
+        'leg_departure_date_utc',
+        'mldg',
+        'mldg_unit',
+        'mtow',
+        'mtow_unit',
+        'mzfw',
+        'mzfw_unit',
+        'origin_iata',
+        'original_path',
+        'planned_payload',
+        'planned_payload_unit',
+        'ramp_fuel',
+        'ramp_fuel_unit',
+        'scheduled_departure_time',
+        'takeoff_fuel',
+        'takeoff_fuel_unit',
+        'taxi_fuel',
+        'taxi_fuel_unit',
+        'unit_for_reporting',
+        'version_number',
+    ]
+
+    def as_dict(self):
+        return {k: getattr(self, k) for k in self.__dict_keys__}
+
+    def as_dict_with_crew(self):
+        from central_load_plan.engine import get_lsyrept_engine
+        from central_load_plan.models.lsyrept import crew_members_from_ofp
+
+        ofp_data = self.as_dict()
+        engine = get_lsyrept_engine(self.airline_iata_code)
+        with Session(engine) as session:
+            crewmembers_result = crew_members_from_ofp(session, self)
+            ofp_data['crewmembers'] = crewmembers_result['crew_members']
+
+        return ofp_data
+
+    @property
+    def has_crew(self):
+        ofp_data = self.as_dict_with_crew()
+        return bool(ofp_data['crewmembers'])
 
 
 class AircraftEquipmentStatus(CLPBase):
