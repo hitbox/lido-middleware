@@ -5,7 +5,7 @@ from datetime import timedelta
 from marshmallow import Schema
 from marshmallow import post_load
 from marshmallow.fields import Date
-from marshmallow.fields import DateTime
+from marshmallow.fields import AwareDateTime
 from marshmallow.fields import Integer
 from marshmallow.fields import List
 from marshmallow.fields import Method
@@ -74,7 +74,7 @@ class OperationalFlightPlanSchema(Schema):
     units = ['kg', 'lb']
 
     flight_plan_id = String()
-    leg_departure_date_utc = DateTime(format=datetime_format)
+    leg_departure_date_utc = AwareDateTime(format=datetime_format, default_timezone="utc")
     flight_origin_date = Date(format=DATE_UTC_FORMAT)
     version_number = String()
     flight_number = Integer() # most lsyrept datasebase tables need integer for crew members
@@ -88,8 +88,8 @@ class OperationalFlightPlanSchema(Schema):
     estimated_block_time = Time(format=DURATION_FMT)
     estimated_time_enroute = Time(format=DURATION_FMT)
 
-    scheduled_departure_time = DateTime(format=datetime_format)
-    estimated_departure_time = DateTime(format=datetime_format)
+    scheduled_departure_time = AwareDateTime(format=datetime_format, default_timezone="utc")
+    estimated_departure_time = AwareDateTime(format=datetime_format, default_timezone="utc")
 
     planned_payload = Integer()
     planned_payload_unit = String(validate=OneOf(units))

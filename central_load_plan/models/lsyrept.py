@@ -3,8 +3,9 @@ from datetime import time
 
 import sqlalchemy as sa
 
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.dialects import oracle
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import DeclarativeBase
 
 class LSYBase(DeclarativeBase):
 
@@ -15,15 +16,12 @@ class FilterMixin:
 
     @classmethod
     def filter_for_ofp_file(cls, ofp_file):
-        flight_no = ofp_file.flight_number
-        if cls == Duty:
-            # Need string for Duty class
-            flight_no = str(ofp_file.flight_number)
+        flight_no_value = str(ofp_file.flight_number)
 
         return sa.and_(
             cls.airline == ofp_file.airline_iata_code,
-            cls.day_of_origin == datetime.combine(ofp_file.flight_origin_date, time()),
-            cls.flight_no == flight_no,
+            cls.day_of_origin == ofp_file.flight_origin_date,
+            cls.flight_no == flight_no_value,
             cls.airport_c_is_dep == ofp_file.origin_iata,
             cls.departure_date_scd == ofp_file.scheduled_departure_time.date(),
             # departure_time_scd is stored as CHAR(4)
@@ -604,6 +602,12 @@ class JumpseatQueryManager:
         )
         return query
 
+def dump_sql(query):
+    return query.compile(
+        dialect = oracle.dialect(),
+        compile_kwargs = {"literal_binds": True}
+    )
+
 def crew_members_from_ofp(session, ofp_file):
     crew_members = []
 
@@ -616,14 +620,29 @@ def crew_members_from_ofp(session, ofp_file):
     jumpseats_query = RemarkOfEvent.jumpseats_query_from_ofp_file(ofp_file)
     deadheads_query = Duty.deadheads_query_from_ofp_file(ofp_file)
 
+    if False:
+        print('--crew query')
+        print(dump_sql(crew_query))
+        print('--jumpseats query')
+        print(dump_sql(jumpseats_query))
+        print('--deadheads query')
+        print(dump_sql(deadheads_query))
+
     for person in session.execute(crew_query).mappings():
+        print(person)
+        breakpoint()
         crew_members.append(person)
 
     for remark_of_event in session.execute(jumpseats_query).scalars():
+        breakpoint()
         for person in remark_of_event.split_remark_for_jumpseats(session):
+            print(person)
+            breakpoint()
             crew_members.append(person)
 
     for person in session.execute(deadheads_query).mappings():
+        breakpoint()
+        print(person)
         crew_members.append(person)
 
     return result

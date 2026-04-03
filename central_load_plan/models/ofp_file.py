@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from datetime import timedelta
@@ -29,10 +30,10 @@ class OFPFile(CLPBase):
 
     @property
     def display_path(self):
-        if self.original_path:
-            return self.original_path
-        else:
+        if self.archive_path is not None:
             return self.archive_path
+        else:
+            return self.original_path
 
     flight_plan_id = sa.Column(sa.String, nullable=False)
 
@@ -188,6 +189,30 @@ class OFPFile(CLPBase):
         'unit_for_reporting',
         'version_number',
     ]
+
+    def update_from_path(self, session, path):
+        from central_load_plan.flight_plan_parser import FlightPlanParser
+        from central_load_plan.schema import OperationalFlightPlanSchema
+
+        if os.path.isfile(path) and os.path.getsize(path) > 0:
+            # Parse
+            flight_plan_parser = FlightPlanParser()
+            ofp_strings = flight_plan_parser.parse_path(path)
+
+            # Deserialize
+            ofp_schema = OperationalFlightPlanSchema()
+            ofp_file = ofp_schema.load(ofp_strings, session=session, transient=True)
+            ofp_file.archive_path = path
+
+            # Update matching keys
+            for key in self.__dict_keys__:
+                if key != 'id':
+                    if hasattr(ofp_file, key):
+                        try:
+                            setattr(self, key, getattr(ofp_file, key))
+                        except AttributeError:
+                            # ignore properties without setters
+                            pass
 
     def as_dict(self):
         return {k: getattr(self, k) for k in self.__dict_keys__}

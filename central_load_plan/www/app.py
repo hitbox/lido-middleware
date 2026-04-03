@@ -1,5 +1,7 @@
 from flask import Flask
+from flask import redirect
 from flask import render_template
+from flask import url_for
 
 from . import converter
 from . import extension
@@ -23,7 +25,7 @@ def create_app():
         """
         List of links to enabled views' indexes.
         """
-        return render_template('index.html', blueprints=app.blueprints)
+        return redirect(url_for('admin.root'))
 
     @app.cli.command('create-db')
     def create_db():

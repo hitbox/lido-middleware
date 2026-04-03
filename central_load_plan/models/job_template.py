@@ -1,4 +1,5 @@
 import json
+import os
 import uuid
 
 from datetime import datetime
@@ -103,6 +104,9 @@ class EmailFromTemplateJobTemplate(JobTemplate):
     )
 
     def html_preview(self, ofp_file):
+        """
+        HTML Markup for preview of the email this job template would produce.
+        """
         ofp_data = ofp_file.as_dict_with_crew()
 
         html = ['<div>']
@@ -111,7 +115,7 @@ class EmailFromTemplateJobTemplate(JobTemplate):
         html.append(f'<pre>{self.name}</pre>')
 
         html.append('<p>For OFP File</p>')
-        html.append(f'<pre>{ofp_file.display_path}</pre>')
+        html.append(f'<pre>{os.path.normpath(ofp_file.display_path)}</pre>')
 
         html.append('<p>From</p>')
         html.append(f'<div>{ self.from_email.address.format(**ofp_data) }</div>')

@@ -1,9 +1,3 @@
-import csv
-import datetime
-import glob
-import os
-import re
-
 import click
 import sqlalchemy as sa
 
@@ -21,26 +15,10 @@ from sqlalchemy.orm import Session
 
 import central_load_plan.crewmember
 
-from central_load_plan.constants import AIRLINE_CODES
-from central_load_plan.engine import get_lsyrept_engine
-from central_load_plan.flight_plan_parser import FlightPlanParser
-from central_load_plan.models import ChainItemDaily
 from central_load_plan.models import JobTemplate
-from central_load_plan.models import Duty
-from central_load_plan.models import ItemDaily
-from central_load_plan.models import LSYBase
-from central_load_plan.models import NonCrewMember
-from central_load_plan.models import OFPCondition
 from central_load_plan.models import OFPFile
-from central_load_plan.models import RemarkOfEvent
-from central_load_plan.models.lsyrept import crew_members_from_ofp
-from central_load_plan.schema import EFFArchivePathSchema
-from central_load_plan.schema import OperationalFlightPlanSchema
-from central_load_plan.schema import lsyrept_model_schemas
 from central_load_plan.www.extension import db
 from central_load_plan.www.extension import login_manager
-from central_load_plan.www.form import CrewmemberArgsForm
-from central_load_plan.www.form import EFFArchiveFilterForm
 
 job_template_bp = Blueprint('job_template', __name__)
 
@@ -82,6 +60,9 @@ def from_ofp_file(id):
 
 @job_template_bp.route('/preview/<uuid:job_template_id>/<uuid:ofp_file_id>')
 def preview_job_template_for_file(job_template_id, ofp_file_id):
+    """
+    Preview work to be done by job template object.
+    """
     job_template = db.session.get(JobTemplate, job_template_id)
 
     if job_template is None:
@@ -90,6 +71,8 @@ def preview_job_template_for_file(job_template_id, ofp_file_id):
     ofp_file = db.session.get(OFPFile, ofp_file_id)
     if ofp_file is None:
         abort(404)
+
+    ofp_file.update_from_path(db.session, ofp_file.archive_path)
 
     context = {
         'markup': job_template.html_preview(ofp_file),
