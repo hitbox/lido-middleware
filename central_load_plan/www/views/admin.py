@@ -23,6 +23,7 @@ from central_load_plan.models import OFPFile
 from central_load_plan.models import User
 from central_load_plan.www.extension import db
 from central_load_plan.www.extension import login_manager
+from central_load_plan.www.form import OFPFileFilterForm
 from central_load_plan.www.form import EmailForm
 from central_load_plan.www.form import JobTemplateForm
 from central_load_plan.www.form import JobTypeForm
@@ -239,6 +240,7 @@ add_url_rule_for_table_listing(
     '/ofp-file',
     pagination_factory = ofp_files_pagination,
     template = 'table.html',
+    filter_form = OFPFileFilterForm,
     edit_endpoint = 'job_template.from_ofp_file',
     create_endpoint = None,
     table = Table(

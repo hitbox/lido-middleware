@@ -32,6 +32,7 @@ from central_load_plan.www.widget import NestedFormWidget
 from central_load_plan.www.field import JSONField
 
 from .job_template import JobTemplateForm
+from .ofp_file import OFPFileFilterForm
 
 JobTypeForm = model_form(JobType, db_session=db.session)
 

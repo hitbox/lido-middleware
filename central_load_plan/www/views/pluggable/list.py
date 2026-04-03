@@ -36,6 +36,11 @@ class ListView(View):
             'table': self.table,
             'pagination': pagination,
         }
+
+        if self.filter_form:
+            filter_form = self.filter_form(*request.args)
+            filter_form.validate()
+
         for name in ['edit_endpoint', 'create_endpoint', 'filter_form']:
             attr = getattr(self, name, None)
             if attr is not None:

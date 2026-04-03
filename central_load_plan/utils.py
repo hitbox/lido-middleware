@@ -120,3 +120,10 @@ def startofmonth(value):
 
 def endofmonth(value):
     return date(value.year, value.month, calendar.mdays[value.month])
+
+def literal_sql(query, dialect):
+    return query.compile(
+        dialect = dialect,
+        compile_kwargs = {"literal_binds": True}
+    )
+

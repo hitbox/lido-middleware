@@ -7,6 +7,8 @@ from sqlalchemy.dialects import oracle
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase
 
+from central_load_plan.utils import literal_sql
+
 class LSYBase(DeclarativeBase):
 
     __bind_key__ = 'lsyrept'
@@ -17,12 +19,13 @@ class FilterMixin:
     @classmethod
     def filter_for_ofp_file(cls, ofp_file):
         flight_no_value = str(ofp_file.flight_number)
-
+        # Some flight_no fields are integer and some are string, oracle seems
+        # to figure it out.
         return sa.and_(
-            cls.airline == ofp_file.airline_iata_code,
+            sa.func.trim(cls.airline) == ofp_file.airline_iata_code,
             cls.day_of_origin == ofp_file.flight_origin_date,
-            cls.flight_no == flight_no_value,
-            cls.airport_c_is_dep == ofp_file.origin_iata,
+            #cls.flight_no == flight_no_value,
+            sa.func.trim(cls.airport_c_is_dep) == ofp_file.origin_iata,
             cls.departure_date_scd == ofp_file.scheduled_departure_time.date(),
             # departure_time_scd is stored as CHAR(4)
             cls.departure_time_scd == ofp_file.scheduled_departure_time.strftime('%H%M'),
@@ -188,8 +191,12 @@ class LSYCrewMember(TrimmedNameMixin, LSYBase):
                 cls.trimmed_name().label('last_name'),
                 cls.trimmed_first_name().label('first_name'),
                 cls.trimmed_employee_no.label('employee_number'),
+                #Duty.seat_name_for_assigned_rank.label('seat'),
                 Duty.seat_case(ItemDaily.is_leg).label('seat'),
-                Duty.seat_order_case(ItemDaily.is_leg, ItemDaily.is_deadhead).label('seat_order'),
+                sa.case(
+                    (ItemDaily.is_leg, Duty.assigned_rank),
+                    (ItemDaily.is_deadhead, 99),
+                ).label('seat_order'),
                 sa.literal('item_daily').label('source'),
             )
             .select_from(ItemDaily)
@@ -323,6 +330,32 @@ class Duty(FilterMixin, LSYBase):
                 cls.is_deadhead,
             )
         )
+
+    @hybrid_property
+    def seat_name_for_assigned_rank(self):
+        assigned_rank_seat_name = {
+            0: 'PIC',
+            1: 'SIC',
+            2: 'IRO',
+            3: 'CP',
+            5: 'FA',
+        }
+        if self.is_leg and self.assigned_rank in assigned_rank_seat_name:
+            return assigned_rank_seat_name[self.assigned_rank]
+        else:
+            return 'AMC'
+
+    @seat_name_for_assigned_rank.expression
+    def seat_position_for_assigned_rank(self):
+        return sa.case(
+            (sa.and_(self.is_leg, cls.assigned_rank == 0), 'PIC'),
+            (sa.and_(self.is_leg, cls.assigned_rank == 1), 'SIC'),
+            (sa.and_(self.is_leg, cls.assigned_rank == 2), 'IRO'),
+            (sa.and_(self.is_leg, cls.assigned_rank == 3), 'CP'),
+            (sa.and_(self.is_leg, cls.assigned_rank == 5), 'FA'),
+            else_ = 'ACM',
+        )
+
 
 
 class ItemDaily(FilterMixin, LSYBase):
@@ -602,12 +635,6 @@ class JumpseatQueryManager:
         )
         return query
 
-def dump_sql(query):
-    return query.compile(
-        dialect = oracle.dialect(),
-        compile_kwargs = {"literal_binds": True}
-    )
-
 def crew_members_from_ofp(session, ofp_file):
     crew_members = []
 
@@ -621,27 +648,24 @@ def crew_members_from_ofp(session, ofp_file):
     deadheads_query = Duty.deadheads_query_from_ofp_file(ofp_file)
 
     if False:
+        dialect = oracle.dialect()
         print('--crew query')
-        print(dump_sql(crew_query))
+        print(literal_sql(crew_query, dialect))
         print('--jumpseats query')
-        print(dump_sql(jumpseats_query))
+        print(literal_sql(jumpseats_query, dialect))
         print('--deadheads query')
-        print(dump_sql(deadheads_query))
+        print(literal_sql(deadheads_query, dialect))
 
     for person in session.execute(crew_query).mappings():
         print(person)
-        breakpoint()
         crew_members.append(person)
 
     for remark_of_event in session.execute(jumpseats_query).scalars():
-        breakpoint()
         for person in remark_of_event.split_remark_for_jumpseats(session):
             print(person)
-            breakpoint()
             crew_members.append(person)
 
     for person in session.execute(deadheads_query).mappings():
-        breakpoint()
         print(person)
         crew_members.append(person)
 
