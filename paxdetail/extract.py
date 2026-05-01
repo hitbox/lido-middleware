@@ -4,6 +4,7 @@ import pistol2.extract
 class Extract:
     """
     Handle extracting data from message for sable or pistol via from address.
+    Depending on the from-address, we route to the loadplan extractor.
     """
 
     def __init__(self, sable_from, pistol_from):
