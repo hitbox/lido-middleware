@@ -49,7 +49,7 @@ class Runner:
         message_archive,
         raise_exc,
     ):
-        logger.debug('processing message ' + self.message_fmt(message))
+        logger.debug('processing message %s', self.message_fmt(message))
         # return values
         extract_data = None
         loadplan = None
