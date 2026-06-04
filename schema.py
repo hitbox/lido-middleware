@@ -156,9 +156,15 @@ class MessageSchema(Schema):
                 )
 
 
+        # 2026-06-04: on email_address dict came in missing 'address'.
+        to = []
+        for to_data in data['toRecipients']:
+            if 'email_address' in to_data:
+                if 'address' in to_data['email_address']:
+                    to.append(to_data['email_address']['address'])
         email_like = EmailLike(
             from_ = data['sender']['email_address']['address'],
-            to = [ to_data['email_address']['address'] for to_data in data['toRecipients'] ],
+            to = to,
             subject = data['subject'],
             date = data['received_datetime'],
             body = data['body']['content'],
